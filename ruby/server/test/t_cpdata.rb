@@ -7,11 +7,14 @@ $LOAD_PATH << path + "/../lib"
 $LOAD_PATH << path  + "/../../commons/lib"
 $LOAD_PATH << path  + "/../../client/lib"
 
+require 'rbconfig'
 require 'shell'
 require 'roma/client/rclient'
 require 'timeout'
 
 def start_roma
+  ruby_path = File.join(RbConfig::CONFIG["bindir"],
+                        RbConfig::CONFIG["ruby_install_name"])
   path =  File.dirname(File.expand_path($PROGRAM_NAME))
   sh = Shell.new
   sh.transact do
@@ -20,12 +23,12 @@ def start_roma
   rm_rf("localhost_11211")
   rm_rf("localhost_11212")
   
-  sh.system("ruby","#{path}/../bin/mkroute",
+  sh.system(ruby_path,"#{path}/../bin/mkroute",
             "localhost_11211","localhost_11212",
             "-d","3",
             "--enabled_repeathost")
-  sh.system("ruby","#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
-  sh.system("ruby","#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
+  sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
+  sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
   sleep 2
 end
 

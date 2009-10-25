@@ -8,6 +8,7 @@ $LOAD_PATH << path + "/../lib"
 $LOAD_PATH << path  + "/../../commons/lib"
 $LOAD_PATH << path  + "/../../client/lib"
 
+require 'rbconfig'
 require 'roma/client/rclient'
 
 MiniTest::Unit.class_eval{
@@ -20,6 +21,8 @@ MiniTest::Unit.class_eval{
   end
 
   def start_roma
+    ruby_path = File.join(RbConfig::CONFIG["bindir"],
+                          RbConfig::CONFIG["ruby_install_name"])
     path =  File.dirname(File.expand_path($PROGRAM_NAME))
     sh = Shell.new
     sh.transact do
@@ -29,13 +32,13 @@ MiniTest::Unit.class_eval{
     rm_rf("localhost_11212")
     sleep 1
 
-    sh.system("ruby","#{path}/../bin/mkroute",
+    sh.system(ruby_path,"#{path}/../bin/mkroute",
               "localhost_11211","localhost_11212",
               "-d","3",
               "--enabled_repeathost")
     sleep 1
-    sh.system("ruby","#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
-    sh.system("ruby","#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
+    sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
+    sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
     sleep 2
   end
 
@@ -299,10 +302,12 @@ class RClientTest < Test::Unit::TestCase
 
 
     # 再起動
+    ruby_path = File.join(RbConfig::CONFIG["bindir"],
+                          RbConfig::CONFIG["ruby_install_name"])
     path =  File.dirname(File.expand_path($PROGRAM_NAME))
     sh = Shell.new
-    sh.system("ruby","#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
-    sh.system("ruby","#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
+    sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
+    sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
     sleep 2
     Roma::Messaging::ConPool.instance.close_all
 
