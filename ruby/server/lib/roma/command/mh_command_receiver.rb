@@ -101,6 +101,7 @@ module Roma
       
       # looked like a "rm -rf" command
       def rm_rf(fname)
+        return unless File.exists?(fname)
         if File::directory?(fname)
           Dir["#{fname}/*"].each{|f| rm_rf(f) }
           Dir.rmdir(fname)

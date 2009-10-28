@@ -546,7 +546,7 @@ module Roma
       else
         # synchronize a data
         @storages.each_key{ |hname|
-          res = send(Roma::Config::DATACOPY_METHOD, hname, vn, to_nid)
+          res = push_a_vnode_stream(hname, vn, to_nid)
           if res != "STORED"
             @log.error("push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
             return false
