@@ -42,14 +42,12 @@ class TCStorageTest < Test::Unit::TestCase
 
   # 普通のset get
   def test_set_get
-    puts "#{self.class} #{__method__}"
     assert_equal( 'abc_data',@st.set(0,'abc',0,0xffffffff,'abc_data')[4])
     assert_equal( 'abc_data', @st.get(0,'abc',0)  )
   end
 
   # 普通のset delete
   def test_set_delete
-    puts "#{self.class} #{__method__}"
     @st.set(0,'abc',0,0xffffffff,'abc_data')
     assert_equal( 'abc_data', @st.delete(0,'abc',0)[4]) # 存在するキーの削除は value が返る
     assert_nil( @st.get(0,'abc',0) )
@@ -58,7 +56,6 @@ class TCStorageTest < Test::Unit::TestCase
 
   # 有効期限
   def test_set_exptime
-    puts "#{self.class} #{__method__}"
     @st.set(0,'abc',0,Time.now.to_i,'abc_data')
     assert_equal('abc_data', @st.get(0,'abc',0) ) # 期限内
     @st.set(0,'abc',0,Time.now.to_i-1,'abc_data') # 有効期限を1秒前に
@@ -67,14 +64,12 @@ class TCStorageTest < Test::Unit::TestCase
 
   # 期限切れデータの削除
   def test_exp_delete
-    puts "#{self.class} #{__method__}"
     assert_nil( @st.delete(0,'abc',0)[4])
     assert_equal('abc_data' , @st.set(0,'abc',0,Time.now.to_i-1,'abc_data')[4]) # 有効期限を1秒前に
     assert_nil( @st.delete(0,'abc',0)[4]) # 期限切れ
   end
 
   def test_rset
-    puts "#{self.class} #{__method__}"
     # クロックがカウントアップされる
     assert_equal(0, @st.set(0,'abc',0,Time.now.to_i,'abc_data')[2] )
     assert_equal(1, @st.set(0,'abc',0,Time.now.to_i,'abc_data')[2] )
@@ -87,7 +82,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_rdelete
-    puts "#{self.class} #{__method__}"
     # 指定したクロックで削除マークされる
     assert_equal(2, @st.rdelete(0,'abc',0,2)[2] )
     # 古いクロックの挿入は許されない
@@ -101,7 +95,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_out
-    puts "#{self.class} #{__method__}"
     assert( !@st.out(0,'abc',0) )
     @st.set(0,'abc',0,Time.now.to_i,'abc_data')
     assert( @st.out(0,'abc',0) )
@@ -109,7 +102,6 @@ class TCStorageTest < Test::Unit::TestCase
 
   # 論理クロックの境界をテスト
   def test_clock_count
-    puts "#{self.class} #{__method__}"
     assert_equal( 0xfffffffe, @st.rset(0,'set',0,0xfffffffe,Time.now.to_i,'new_data')[2])
     assert_equal(0xffffffff, @st.set(0,'set',0,Time.now.to_i,'abc_data')[2])
     assert_equal(0, @st.set(0,'set',0,Time.now.to_i,'abc_data')[2] )
@@ -134,7 +126,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_add
-    puts "#{self.class} #{__method__}"
     assert_equal('abc_data',@st.add(0,'abc',0,Time.now.to_i+1,'abc_data')[4])
     assert_nil( @st.add(0,'abc',0,Time.now.to_i+1,'abc_data') ) # 上書きは失敗する
     assert_equal( 'abc_data', @st.delete(0,'abc',0)[4])
@@ -142,7 +133,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_replace
-    puts "#{self.class} #{__method__}"
     assert_nil( @st.replace(0,'abc',0,Time.now.to_i,'abc_data') )
     assert_equal('abc_data', @st.add(0,'abc',0,Time.now.to_i,'abc_data')[4])
     assert_equal('new_data', @st.replace(0,'abc',0,Time.now.to_i,'new_data')[4] )
@@ -150,7 +140,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_append
-    puts "#{self.class} #{__method__}"
     assert_nil( @st.append(0,'abc',0,Time.now.to_i,'abc_data') )
     assert_equal('abc_data',  @st.set(0,'abc',0,Time.now.to_i,'abc_data')[4])
     assert_equal( 'abc_data123',@st.append(0,'abc',0,Time.now.to_i,'123')[4] )
@@ -158,7 +147,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_prepend
-    puts "#{self.class} #{__method__}"
     assert_nil( @st.prepend(0,'abc',0,Time.now.to_i,'abc_data') )
     assert_equal('abc_data',  @st.set(0,'abc',0,Time.now.to_i,'abc_data')[4])
     assert_equal('123abc_data',  @st.prepend(0,'abc',0,Time.now.to_i,'123')[4])
@@ -166,7 +154,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_incr
-    puts "#{self.class} #{__method__}"
     assert_nil( @st.incr(0,'abc',0,1) )
     assert_equal('100', @st.set(0,'abc',0,Time.now.to_i,'100')[4] )
     assert_equal('101',  @st.incr(0,'abc',0,1)[4])
@@ -181,7 +168,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_decr
-    puts "#{self.class} #{__method__}"
     assert_nil( @st.decr(0,'abc',0,1) )
     assert_equal('100', @st.set(0,'abc',0,Time.now.to_i,'100')[4] )
     assert_equal('99',  @st.decr(0,'abc',0,1)[4])
@@ -196,7 +182,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_dump
-    puts "#{self.class} #{__method__}"
     assert_nil( @st.dump(0) ) # 最初は０件
     @st.set(0,'abc',0,0xffffffff,'abc_data')
     assert_equal(1, Marshal.load(@st.dump(0)).length )
@@ -214,7 +199,6 @@ class TCStorageTest < Test::Unit::TestCase
 
   # 10万件程度
   def test_volume
-    puts "#{self.class} #{__method__}"
     n=@ndat
     n.times{|i|
       @st.set(0,i.to_s,0,0xffffffff,'abc_data')
@@ -230,7 +214,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_clean_up
-    puts "#{self.class} #{__method__}"
     @st.each_clean_up_sleep = 0
     n=@ndat
     n.times{|i|
@@ -254,7 +237,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_each_clean_up
-    puts "#{self.class} #{__method__}"
     n=10
 
     vnhash={}
@@ -348,7 +330,6 @@ class TCStorageTest < Test::Unit::TestCase
 
   # 途中で止めるテスト
   def test_each_clean_up2
-    puts "#{self.class} #{__method__}"
     n=10
 
     # テストデータを100件登録する
@@ -385,7 +366,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_dump_and_load
-    puts "#{self.class} #{__method__}"
     n=10
     n.times{|i|
       @st.set(0,i.to_s,0,0xffffffff,'abc_data')
@@ -405,7 +385,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_dump_and_load2
-    puts "#{self.class} #{__method__}"
     n=10
     n.times{|i|
       assert_nil( @st.delete(0,i.to_s,0)[4] ) # データが存在しなくても削除記録を残す
@@ -426,7 +405,6 @@ class TCStorageTest < Test::Unit::TestCase
 
   # closedb 後のアクセスは NoMethodError が発生することを確認する
   def test_close
-    puts "#{self.class} #{__method__}"
     @st.closedb
 
     assert_raise NoMethodError do
@@ -479,7 +457,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_dump_file
-    puts "#{self.class} #{__method__}"
     n=100
     n.times{|i|
       @st.set(0,"key#{i}",0,0x7fffffff,"val#{i}")
@@ -527,7 +504,6 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_each_vn_dump
-    puts "#{self.class} #{__method__}"
     n=100
     n.times{|i|
       @st.set(0,"key#{i}",0,0x7fffffff,"val#{i}")
@@ -586,7 +562,6 @@ class RubyHashStorageTest < TCStorageTest
   end
 
   def test_cmp_clk
-    puts "#{self.class} #{__method__}"
     (0x001E00000..0x002000000).each{|clk|
       assert_equal(0, @st.send(:cmp_clk,clk, clk) )
     }
