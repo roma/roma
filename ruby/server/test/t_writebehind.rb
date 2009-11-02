@@ -33,7 +33,6 @@ class FileWriterTest < Test::Unit::TestCase
 
   # 作成と write のテスト
   def test_write
-    puts "#{self.class} #{__method__}"
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, @log)
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
@@ -65,7 +64,6 @@ class FileWriterTest < Test::Unit::TestCase
 
   # サイズによるローテーションのテスト
   def test_rotation
-    puts "#{self.class} #{__method__}"
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, @log)
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
@@ -85,7 +83,6 @@ class FileWriterTest < Test::Unit::TestCase
 
   # 時間によるローテーションのテスト
   def test_rotation2
-    puts "#{self.class} #{__method__}"
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, @log)
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
@@ -124,7 +121,6 @@ class FileWriterTest < Test::Unit::TestCase
 
   # 外部からローテーションするテスト
   def test_rotation3
-    puts "#{self.class} #{__method__}"
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, @log)
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
@@ -167,7 +163,6 @@ class FileWriterTest < Test::Unit::TestCase
 
 
   def test_get_current_file_path
-    puts "#{self.class} #{__method__}"
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, @log)
 
@@ -186,7 +181,6 @@ class FileWriterTest < Test::Unit::TestCase
   end
 
   def test_get_path
-    puts "#{self.class} #{__method__}"
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, @log)
     path = File.expand_path("./wb_test/roma0_11211/roma")

@@ -83,7 +83,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_set_get_delete
-    puts "#{self.class} #{__method__}"
     @rc.delete("abc")
     assert_nil( @rc.get("abc") )
     assert_equal("STORED", @rc.set("abc","value abc"))
@@ -95,7 +94,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_set_get
-    puts "#{self.class} #{__method__}"
     10.times{|i|
       s = i.to_s * 1024000
       assert_equal("STORED", @rc.set("abc", s))
@@ -104,7 +102,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_out
-    puts "#{self.class} #{__method__}"
     # 本当に消す
     @rc.out("key-out")
     # 本当にない場合は NOT_DELETED
@@ -119,7 +116,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_add
-    puts "#{self.class} #{__method__}"
     assert_nil( @rc.get("add") )
     assert_equal("STORED", @rc.add("add","value add"))
     assert_equal("NOT_STORED", @rc.add("add","value add")) # 上書きは失敗する
@@ -129,7 +125,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_replace
-    puts "#{self.class} #{__method__}"
     assert_nil( @rc.get("replace") )
     assert_equal("NOT_STORED", @rc.replace("replace","value replace"))
     assert_nil( @rc.get("replace") )
@@ -139,7 +134,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_append
-    puts "#{self.class} #{__method__}"
     assert_nil( @rc.get("append") )
     assert_equal("NOT_STORED", @rc.append("append","append"))
     assert_equal("STORED", @rc.set("append","set"))
@@ -150,7 +144,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_prepend
-    puts "#{self.class} #{__method__}"
     assert_nil( @rc.get("prepend"))
     assert_equal("NOT_STORED", @rc.prepend("prepend","prepend"))
     assert_equal("STORED", @rc.set("prepend","set"))
@@ -161,7 +154,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_incr
-    puts "#{self.class} #{__method__}"
     assert_nil( @rc.get("incr"))
     assert_equal("NOT_FOUND", @rc.incr("incr"))
     assert_equal("STORED", @rc.set("incr","100"))
@@ -171,7 +163,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_decr
-    puts "#{self.class} #{__method__}"
     assert_nil( @rc.get("decr") )
     assert_equal("NOT_FOUND", @rc.decr("decr"))
     assert_equal("STORED", @rc.set("decr","100"))
@@ -181,7 +172,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_createhash
-    puts "#{self.class} #{__method__}"
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
     con.write("hashlist\r\n")
     ret = con.gets
@@ -277,7 +267,6 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_createhash2
-    puts "#{self.class} #{__method__}"
     # test ハッシュを追加し終了する
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
     con.write("hashlist\r\n")
@@ -335,7 +324,6 @@ class RClientTest < Test::Unit::TestCase
   end
   
   def test_createhash3
-    puts "#{self.class} #{__method__}"
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
 
     # 存在しないハッシュを削除

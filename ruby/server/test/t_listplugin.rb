@@ -87,7 +87,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_error_case
-    puts "#{self.class} #{__method__}"
     @rc.set("aa","123")
     begin
       @rc.alist_to_s("aa")
@@ -105,7 +104,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_at
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
     assert_nil( @rc.alist_at("aa",0) )
     assert_equal('STORED', @rc.alist_push("aa","11"))
@@ -121,7 +119,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_delete
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
     assert_equal('STORED', @rc.alist_push("aa","11") )
     assert_equal('STORED', @rc.alist_push("aa","22") )
@@ -139,7 +136,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_delete_at
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
     assert_equal('STORED', @rc.alist_push("aa","11"))
     assert_equal('STORED', @rc.alist_push("aa","22"))
@@ -154,7 +150,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_empty?
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
     assert_equal('NOT_FOUND', @rc.alist_empty?("aa"))
     assert_equal('STORED', @rc.alist_push("aa","11"))
@@ -164,7 +159,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_first_last
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
 
     assert_nil( @rc.alist_first("aa"))
@@ -184,7 +178,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_gets
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
     
     assert( @rc.alist_gets("aa")[0]==0 )
@@ -202,7 +195,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_include?
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('NOT_FOUND', @rc.alist_include?("aa","11"))
@@ -214,7 +206,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_index
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('NOT_FOUND', @rc.alist_index("aa","22"))
@@ -227,7 +218,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_insert
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('STORED', @rc.alist_insert("aa",0,"11"))
@@ -237,7 +227,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_sized_insert
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('STORED', @rc.alist_sized_insert("aa",5,"11"))
@@ -255,7 +244,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_sized_insert2
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     100.times{|i|
@@ -273,7 +261,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_swap_and_insert
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('STORED', @rc.alist_swap_and_insert("aa","11"))
@@ -291,7 +278,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_swap_and_sized_insert
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('STORED', @rc.alist_swap_and_sized_insert("aa",5,"11"))
@@ -309,7 +295,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_expired_swap_and_insert
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('STORED', @rc.alist_expired_swap_and_insert("aa",5,"11"))
@@ -325,7 +310,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_expired_swap_and_sized_insert
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     # for sized logic
@@ -355,7 +339,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_join
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert( @rc.alist_join("aa","|")==nil )
@@ -388,7 +371,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_json
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_nil( @rc.alist_to_json("aa") )
@@ -410,7 +392,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_length
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('NOT_FOUND', @rc.alist_length("aa"))
@@ -426,7 +407,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_pop
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_nil( @rc.alist_pop("aa") )
@@ -448,7 +428,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_push
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
     assert_equal('STORED', @rc.alist_push("aa","11"))
     res = @rc.alist_to_s("aa")
@@ -469,7 +448,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_sized_push
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
     assert_equal('STORED', @rc.alist_sized_push("aa",5,"11"))
     assert_equal('STORED', @rc.alist_sized_push("aa",5,"22"))
@@ -482,7 +460,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_swap_and_push
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
     assert_equal('STORED', @rc.alist_swap_and_push("aa","11"))
     assert_equal(["11"], @rc.alist_to_s("aa")[1])
@@ -497,7 +474,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_swap_and_sized_push
-    puts "#{self.class} #{__method__}"
     @rc.alist_clear("aa")
     assert_equal('STORED', @rc.alist_swap_and_sized_push("aa",5,"11"))
     assert_equal('STORED', @rc.alist_swap_and_sized_push("aa",5,"22"))
@@ -516,7 +492,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_expired_swap_and_push
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_equal('STORED', @rc.alist_expired_swap_and_push("aa",5,"11"))
@@ -532,7 +507,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_expired_swap_and_sized_push
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     # for sized logic
@@ -562,7 +536,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_shift
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_nil( @rc.alist_shift("aa"))
@@ -584,7 +557,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_to_s
-    puts "#{self.class} #{__method__}"
     @rc.delete("aa")
 
     assert_nil( @rc.alist_to_s("aa") )
@@ -606,7 +578,6 @@ class ListPluginTest < Test::Unit::TestCase
   end
 
   def test_alist_spushv
-    puts "#{self.class} #{__method__}"
 
     st, nid, vn = create_storage_and_calc_vn('aa')
 

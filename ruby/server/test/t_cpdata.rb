@@ -165,7 +165,6 @@ class CopyDataTest < Test::Unit::TestCase
   end
 
   def test_pushv
-    puts "#{self.class} #{__method__}"
     make_dummy(1000)
     dat = reqpushv('roma',0)
     assert_not_nil( dat )
@@ -215,8 +214,6 @@ class CopyDataTest < Test::Unit::TestCase
   
 
   def test_spushv
-    puts "#{self.class} #{__method__}"
-    
     # vn = 0 のキー
     keys = []
     n = 1000
@@ -265,7 +262,6 @@ class CopyDataTest < Test::Unit::TestCase
 
 
   def test_reqpushv
-    puts "#{self.class} #{__method__}"
     make_dummy(1000)
 
     dat=[]
