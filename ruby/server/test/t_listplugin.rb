@@ -88,18 +88,12 @@ class ListPluginTest < Test::Unit::TestCase
 
   def test_error_case
     @rc.set("aa","123")
-    begin
+    assert_raise(RuntimeError) do
       @rc.alist_to_s("aa")
-      assert(false)
-    rescue => e
-      assert(true)
     end
 
-    begin
+    assert_raise(RuntimeError) do
       @rc.alist_push("aa","123")
-      assert(false)
-    rescue =>e
-      assert(true)
     end
   end
 
