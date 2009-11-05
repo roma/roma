@@ -21,7 +21,7 @@ class FileWriterTest < Test::Unit::TestCase
     @stats.address = 'roma0'
     @stats.port = 11211
 
-    @log = Logger.new(STDOUT)
+    @log = Logger.new(StringIO.new)
     @log.level = Logger::INFO
   rescue =>e
     p e
