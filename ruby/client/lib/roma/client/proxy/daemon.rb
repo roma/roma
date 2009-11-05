@@ -20,12 +20,12 @@ module Roma
         attr_reader :connected
     
         def post_init
-          puts("Connected to roma")
+          $log.info("Connected to roma")
           @connected = true
         end
 
         def unbind
-          puts("Disconnected from roma")
+          $log.info("Disconnected from roma")
           @connected = nil
         end
       end # module RomaHandler
@@ -33,7 +33,7 @@ module Roma
       module ClientHandler
 
         def post_init
-          puts("Connected from client")
+          $log.info("Connected from client")
           @cmd = ''
         end
 
@@ -47,18 +47,18 @@ module Roma
             EM::enable_proxy(@roma_h, self)
           end
         rescue =>e
-          puts "#{e} #{$@}"
+          $log.error("#{e} #{$@}")
         end
 
         def unbind
-          puts("Disconnected from client")
+          $log.info("Disconnected from client")
           EM::disable_proxy(self)
           if @roma_h
             EM::disable_proxy(@roma_h)
             Conpool::instance.return_connection(@roma_h)
           end
         rescue =>e
-          puts "#{e} #{$@}"
+          $log.error("#{e} #{$@}")
         end
 
         def get_roma_handler(cmd_line)
@@ -67,7 +67,7 @@ module Roma
           nid, d = Daemon::rttable.search_node(key)
           Conpool::instance.get_connection(nid, RomaHandler)
         rescue =>e
-          puts "#{e} #{$@}"
+          $log.error("#{e} #{$@}")
         end
 
       end #  module ClientHandler
@@ -120,7 +120,7 @@ module Roma
               begin
                 @pool[ap].shift.close_connection
               rescue =>e
-                puts "#{e} #{$@}"
+                $log.error("#{e} #{$@}")
               end
             end
             @pool.delete(ap)
@@ -139,8 +139,15 @@ module Roma
 
         def initialize(argv = nil)
           options(argv)
+          initialize_logger
           @sender = Roma::Client::Sender.new
           update_rttable(@init_nodes)
+        end
+
+        def initialize_logger
+          Roma::Logging::RLogger.create_singleton_instance(@log_path,
+                                                           @log_age,
+                                                           @log_size)
         end
 
         def start
@@ -154,7 +161,7 @@ module Roma
                 EventMachine.start_unix_domain_server("/tmp/#{@uds_name}", ClientHandler)
               end
             rescue =>e
-              puts "#{e} #{$@}"
+              $log.error("#{e} #{$@}")
               retry
             end
           end
@@ -191,7 +198,7 @@ module Roma
           end
           nil
         rescue =>e
-          puts "#{e} #{$@}"
+          $log.error("#{e} #{$@}")
           nil
         end
 
@@ -203,6 +210,11 @@ module Roma
           opts.on("-n", "--name [name]") { |v| @uds_name = v }
           @daemon = true
           opts.on(nil, "--debug"){ @daemon = false }
+
+          # @log_path = STDOUT
+          @log_path = "./rcdaemon.log"
+          @log_age = 10
+          @log_size = 1024 * 1024
 
           opts.parse!(argv)
           raise OptionParser::ParseError.new if argv.length < 1
@@ -256,6 +268,7 @@ module Roma
 end # module Roma
 
 d = Roma::Client::Proxy::Daemon.new(ARGV)
+$log = Roma::Logging::RLogger.instance
 if d.daemon
   Roma::Client::Proxy::Daemon.daemon{ d.start }
 else
