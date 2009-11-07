@@ -64,7 +64,7 @@ module Roma
 
         nodes.each { |node|
           rt = make_rttable(node)
-          if rt != nil
+          if rt
             @rttable = rt
             return
           end
