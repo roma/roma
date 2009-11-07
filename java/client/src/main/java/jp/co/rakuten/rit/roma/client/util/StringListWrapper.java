@@ -48,177 +48,175 @@ import jp.co.rakuten.rit.roma.client.RomaClient;
 public class StringListWrapper {
 
     public static class Entry {
-	private String value;
 
-	private long time;
+        private String value;
+        private long time;
 
-	Entry(byte[] value, long time) {
-	    this(new String(value), time);
-	}
+        Entry(byte[] value, long time) {
+            this(new String(value), time);
+        }
 
-	Entry(String value, long time) {
-	    this.value = value;
-	    this.time = time;
-	}
+        Entry(String value, long time) {
+            this.value = value;
+            this.time = time;
+        }
 
-	public String getValue() {
-	    return value;
-	}
+        public String getValue() {
+            return value;
+        }
 
-	public long getTime() {
-	    return time;
-	}
+        public long getTime() {
+            return time;
+        }
 
-	@Override
-	public String toString() {
-	    return value + "_" + time;
-	}
+        @Override
+        public String toString() {
+            return value + "_" + time;
+        }
     }
-
     protected StringListAdaptor adaptor;
-
     private boolean useCommands;
 
     public StringListWrapper(RomaClient client) throws ClientException {
-	this(new StringWrapper(client), false, 0, 0);
+        this(new StringWrapper(client), false, 0, 0);
     }
 
     public StringListWrapper(RomaClient client, int listSize)
-    		throws ClientException {
-	this(new StringWrapper(client), false, listSize, 0);
+            throws ClientException {
+        this(new StringWrapper(client), false, listSize, 0);
     }
 
     public StringListWrapper(RomaClient client, long expiry)
-    		throws ClientException {
-	this(new StringWrapper(client), false, 0, expiry);
+            throws ClientException {
+        this(new StringWrapper(client), false, 0, expiry);
     }
 
     public StringListWrapper(StringWrapper appender) throws ClientException {
-	this(appender, false, 0, 0);
+        this(appender, false, 0, 0);
     }
 
     public StringListWrapper(StringWrapper wrapper, int listSize)
-    		throws ClientException {
-	this(wrapper, false, listSize, 0);
+            throws ClientException {
+        this(wrapper, false, listSize, 0);
     }
 
     public StringListWrapper(StringWrapper wrapper, long expiry)
-    		throws ClientException {
-	this(wrapper, false, 0, expiry);
+            throws ClientException {
+        this(wrapper, false, 0, expiry);
     }
 
     public StringListWrapper(RomaClient client, boolean useCommands)
-	    throws ClientException {
-	this(new StringWrapper(client), useCommands, 0, 0);
+            throws ClientException {
+        this(new StringWrapper(client), useCommands, 0, 0);
     }
 
     public StringListWrapper(RomaClient client, boolean useCommands,
-	    int listSize) throws ClientException {
-	this(new StringWrapper(client), useCommands, listSize, 0);
+            int listSize) throws ClientException {
+        this(new StringWrapper(client), useCommands, listSize, 0);
     }
-    
+
     public StringListWrapper(RomaClient client, boolean useCommands,
-	    long expiry) throws ClientException {
-	this(new StringWrapper(client), useCommands, 0, expiry);
+            long expiry) throws ClientException {
+        this(new StringWrapper(client), useCommands, 0, expiry);
     }
-    
+
     public StringListWrapper(RomaClient client, boolean useCommands,
-	    int listSize, long expiry) throws ClientException {
-	this(new StringWrapper(client), useCommands, listSize, expiry);
+            int listSize, long expiry) throws ClientException {
+        this(new StringWrapper(client), useCommands, listSize, expiry);
     }
 
     public StringListWrapper(StringWrapper wrapper, boolean useCommands)
-	    throws ClientException {
-	this(wrapper, useCommands, 0, 0);
+            throws ClientException {
+        this(wrapper, useCommands, 0, 0);
     }
-    
+
     public StringListWrapper(StringWrapper wrapper, boolean useCommands,
-	    int listSize) throws ClientException {
-	this(wrapper, useCommands, listSize, 0);
+            int listSize) throws ClientException {
+        this(wrapper, useCommands, listSize, 0);
     }
-    
+
     public StringListWrapper(StringWrapper wrapper, boolean useCommands,
-	    long expiry) throws ClientException {
-	this(wrapper, useCommands, 0, expiry);
+            long expiry) throws ClientException {
+        this(wrapper, useCommands, 0, expiry);
     }
-    
+
     public StringListWrapper(StringWrapper wrapper, boolean useCommands,
-	    int listSize, long expiry) throws ClientException {
-	this.useCommands = useCommands;
-	if (this.useCommands) {
-	    adaptor = (StringListAdaptor) new StringListAdaptor2Impl(wrapper);
-	} else {
-	    adaptor = (StringListAdaptor) new StringListAdaptor1Impl(wrapper);
-	}
-	adaptor.setListSize(listSize);
-	adaptor.setExpiry(expiry);
+            int listSize, long expiry) throws ClientException {
+        this.useCommands = useCommands;
+        if (this.useCommands) {
+            adaptor = (StringListAdaptor) new StringListAdaptor2Impl(wrapper);
+        } else {
+            adaptor = (StringListAdaptor) new StringListAdaptor1Impl(wrapper);
+        }
+        adaptor.setListSize(listSize);
+        adaptor.setExpiry(expiry);
     }
 
     public boolean usedCommands() {
-	return adaptor instanceof StringListAdaptor2Impl;
+        return adaptor instanceof StringListAdaptor2Impl;
     }
 
     public int getListSize() {
-	return adaptor.getListSize();
+        return adaptor.getListSize();
     }
-    
+
     public long getExpiry() {
-	return adaptor.getExpiry();
+        return adaptor.getExpiry();
     }
 
     public StringWrapper getStringAppender() {
-	return adaptor.getStringWrapper();
+        return adaptor.getStringWrapper();
     }
 
     public boolean append(String key, String value) throws ClientException {
-	return adaptor.append(key, value);
+        return adaptor.append(key, value);
     }
 
     public void deleteList(String key) throws ClientException {
-	adaptor.deleteList(key);
+        adaptor.deleteList(key);
     }
 
     public boolean delete(String key, int index) throws ClientException {
-	return adaptor.delete(key, index);
+        return adaptor.delete(key, index);
     }
 
     public boolean delete(String key, String value) throws ClientException {
-	return adaptor.delete(key, value);
+        return adaptor.delete(key, value);
     }
 
     public boolean deleteAndAppend(String key, String value)
-	    throws ClientException {
-	return adaptor.deleteAndAppend(key, value);
+            throws ClientException {
+        return adaptor.deleteAndAppend(key, value);
     }
 
     public boolean deleteAndPrepend(String key, String value)
-	    throws ClientException {
-	return adaptor.deleteAndPrepend(key, value);
+            throws ClientException {
+        return adaptor.deleteAndPrepend(key, value);
     }
 
     public List<String> get(String key) throws ClientException {
-	return adaptor.get(key);
+        return adaptor.get(key);
     }
 
     public List<Entry> getEntries(String key) throws ClientException {
-	return adaptor.getEntries(key);
+        return adaptor.getEntries(key);
     }
 
     public List<String> get(String key, int begin, int len)
-	    throws ClientException {
-	return adaptor.get(key, begin, len);
+            throws ClientException {
+        return adaptor.get(key, begin, len);
     }
 
     public List<Entry> getEntries(String key, int begin, int len)
-	    throws ClientException {
-	return adaptor.getEntries(key, begin, len);
+            throws ClientException {
+        return adaptor.getEntries(key, begin, len);
     }
 
     public boolean prepend(String key, String value) throws ClientException {
-	return adaptor.prepend(key, value);
+        return adaptor.prepend(key, value);
     }
 
     public int size(String key) throws ClientException {
-	return adaptor.size(key);
+        return adaptor.size(key);
     }
 }

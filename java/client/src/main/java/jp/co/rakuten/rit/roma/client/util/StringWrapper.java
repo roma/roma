@@ -51,76 +51,79 @@ public class StringWrapper {
     protected RomaClient client;
 
     public StringWrapper(RomaClient client) {
-	if (client == null) {
-	    throw new NullPointerException();
-	}
-	this.client = client;
+        if (client == null) {
+            throw new NullPointerException();
+        }
+        this.client = client;
     }
 
     public RomaClient getRomaClient() {
-	return this.client;
+        return this.client;
     }
 
     public boolean append(String key, String value) throws ClientException {
-	return append(key, value, new Date(0));
+        return append(key, value, new Date(0));
     }
 
     public boolean append(String key, String value, Date expiry)
-	    throws ClientException {
-	try {
-	    return client.append(key, value.getBytes(StringUtil.ENCODING), expiry);
-	} catch (UnsupportedEncodingException e) {
-	    throw new ClientException(e);
-	}
+            throws ClientException {
+        try {
+            return client
+                    .append(key, value.getBytes(StringUtil.ENCODING), expiry);
+        } catch (UnsupportedEncodingException e) {
+            throw new ClientException(e);
+        }
     }
 
     public boolean delete(String key) throws ClientException {
-	return client.delete(key);
+        return client.delete(key);
     }
 
     public String get(String key) throws ClientException {
-	if (key == null) {
-	    throw new NullPointerException("key is null");
-	}
-	if (key.equals("")) {
-	    throw new IllegalArgumentException();
-	}
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        if (key.equals("")) {
+            throw new IllegalArgumentException();
+        }
 
-	byte[] b = client.get(key);
-	if (b == null) {
-	    return null;
-	} else {
-	    try {
-		return new String(b, StringUtil.ENCODING);
-	    } catch (UnsupportedEncodingException e) {
-		throw new ClientException(e);
-	    }
-	}
+        byte[] b = client.get(key);
+        if (b == null) {
+            return null;
+        } else {
+            try {
+                return new String(b, StringUtil.ENCODING);
+            } catch (UnsupportedEncodingException e) {
+                throw new ClientException(e);
+            }
+        }
     }
 
     public boolean prepend(String key, String value) throws ClientException {
-	return prepend(key, value, new Date(0));
+        return prepend(key, value, new Date(0));
     }
 
     public boolean prepend(String key, String value, Date expiry)
-	    throws ClientException {
-	try {
-	    return client.prepend(key, value.getBytes(StringUtil.ENCODING), expiry);
-	} catch (UnsupportedEncodingException e) {
-	    throw new ClientException(e);
-	}
+            throws ClientException {
+        try {
+            return client
+                    .prepend(key, value.getBytes(StringUtil.ENCODING), expiry);
+        } catch (UnsupportedEncodingException e) {
+            throw new ClientException(e);
+        }
     }
 
     public boolean put(String key, String value) throws ClientException {
-	return this.put(key, value, new Date(0));
+        return this.put(key, value, new Date(0));
     }
 
     public boolean put(String key, String value, Date expiry)
-	    throws ClientException {
-	try {
-	    return client.put(key, value.getBytes(StringUtil.ENCODING), expiry);
-	} catch (UnsupportedEncodingException e) {
-	    throw new ClientException(e);
-	}
+            throws ClientException {
+        try {
+            return client
+                    .put(key, value.getBytes(StringUtil.ENCODING), expiry);
+        } catch (UnsupportedEncodingException e) {
+            throw new ClientException(e);
+        }
     }
 }

@@ -40,31 +40,28 @@ public class RomaClientFactory {
     private static RomaClientFactory INSTANCE = null;
 
     public static RomaClientFactory getInstance() {
-	if (INSTANCE == null) {
-	    INSTANCE = new RomaClientFactory();
-	}
-	return INSTANCE;
+        if (INSTANCE == null) {
+            INSTANCE = new RomaClientFactory();
+        }
+        return INSTANCE;
     }
-
     protected RoutingTable routingTable = null;
-
     protected ConnectionPool connPool = null;
-
     protected CommandGenerator commandGen = null;
 
     protected RomaClientFactory() {
     }
 
     public void setRoutingTable(RoutingTable routingTable) {
-	this.routingTable = routingTable;
+        this.routingTable = routingTable;
     }
 
     public void setConnectionPool(ConnectionPool connPool) {
-	this.connPool = connPool;
+        this.connPool = connPool;
     }
 
     public void setCommandGenerator(CommandGenerator commandGenerator) {
-	this.commandGen = commandGenerator;
+        this.commandGen = commandGenerator;
     }
 
     /**
@@ -74,7 +71,7 @@ public class RomaClientFactory {
      * @throws ClientException
      */
     public RomaClient newRomaClient() throws ClientException {
-	return newRomaClient(new Properties());
+        return newRomaClient(new Properties());
     }
 
     /**
@@ -85,60 +82,59 @@ public class RomaClientFactory {
      * @throws ClientException
      */
     public RomaClient newRomaClient(Properties props) throws ClientException {
-	RomaClient client = new RomaClientImpl();
+        RomaClient client = new RomaClientImpl();
 
-	// routing table
-	if (routingTable == null) {
-	    routingTable = new RoutingTable(client);
-	}
-	client.setRoutingTable(routingTable);
+        // routing table
+        if (routingTable == null) {
+            routingTable = new RoutingTable(client);
+        }
+        client.setRoutingTable(routingTable);
 
-	// connection pool
-	if (connPool == null) {
-	    String size0 = props.getProperty(Config.CONNECTION_POOL_SIZE,
-		    Config.DEFAULT_CONNECTION_POOL_SIZE);
-	    try {
-		int size = Integer.parseInt(size0);
-		connPool = new JakartaConnectionPoolImpl(size);
-		//connPool = new HashMapConnectionPoolImpl(size);
-	    } catch (NumberFormatException e) {
-		throw new ClientException(e);
-	    }
-	}
-	client.setConnectionPool(connPool);
+        // connection pool
+        if (connPool == null) {
+            String size0 = props.getProperty(Config.CONNECTION_POOL_SIZE,
+                    Config.DEFAULT_CONNECTION_POOL_SIZE);
+            try {
+                int size = Integer.parseInt(size0);
+                connPool = new JakartaConnectionPoolImpl(size);
+                //connPool = new HashMapConnectionPoolImpl(size);
+            } catch (NumberFormatException e) {
+                throw new ClientException(e);
+            }
+        }
+        client.setConnectionPool(connPool);
 
-	// timeout & timeout threadnum
-	try {
-	    String period0 = props.getProperty(Config.TIMEOUT_PERIOD,
-		    Config.DEFAULT_TIMEOUT_PERIOD);
-	    long period = Long.parseLong(period0);
-	    client.setTimeout(period);
-	    
-	    String num0 = props.getProperty(Config.NUM_OF_THREADS,
-		    Config.DEFAULT_NUM_OF_THREADS);
-	    int num = Integer.parseInt(num0);
-	    client.setNumOfThreads(num);
-	    
-	    String retryCount0 = props.getProperty(Config.RETRY_THRESHOLD,
-		    Config.DEFAULT_RETRY_THRESHOLD);
-	    int retryCount = Integer.parseInt(retryCount0);
-	    client.setRetryCount(retryCount);
-	    
-	    String retrySleepTime0 = props.getProperty(Config.RETRY_SLEEP_TIME,
-		    Config.DEFAULT_RETRY_SLEEP_TIME);
-	    long sleepTime = Long.parseLong(retrySleepTime0);
-	    client.setRetrySleepTime(sleepTime);
-	} catch (NumberFormatException e) {
-	    throw new ClientException(e);
-	}
+        // timeout & timeout threadnum
+        try {
+            String period0 = props.getProperty(Config.TIMEOUT_PERIOD,
+                    Config.DEFAULT_TIMEOUT_PERIOD);
+            long period = Long.parseLong(period0);
+            client.setTimeout(period);
 
-	// command generator
-	if (commandGen == null) {
-	    commandGen = new CommandGeneratorImpl();
-	}
-	client.setCommandGenerator(commandGen);
+            String num0 = props.getProperty(Config.NUM_OF_THREADS,
+                    Config.DEFAULT_NUM_OF_THREADS);
+            int num = Integer.parseInt(num0);
+            client.setNumOfThreads(num);
 
-	return (RomaClient) client;
+            String retryCount0 = props.getProperty(Config.RETRY_THRESHOLD,
+                    Config.DEFAULT_RETRY_THRESHOLD);
+            int retryCount = Integer.parseInt(retryCount0);
+            client.setRetryCount(retryCount);
+
+            String retrySleepTime0 = props.getProperty(Config.RETRY_SLEEP_TIME,
+                    Config.DEFAULT_RETRY_SLEEP_TIME);
+            long sleepTime = Long.parseLong(retrySleepTime0);
+            client.setRetrySleepTime(sleepTime);
+        } catch (NumberFormatException e) {
+            throw new ClientException(e);
+        }
+
+        // command generator
+        if (commandGen == null) {
+            commandGen = new CommandGeneratorImpl();
+        }
+        client.setCommandGenerator(commandGen);
+
+        return (RomaClient) client;
     }
-
 }

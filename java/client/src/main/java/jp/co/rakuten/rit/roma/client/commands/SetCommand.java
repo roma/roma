@@ -7,6 +7,6 @@ public class SetCommand extends StoreCommand {
 
     @Override
     public String getCommand() throws BadCommandException {
-	return STR_SET;
+        return STR_SET;
     }
 }
