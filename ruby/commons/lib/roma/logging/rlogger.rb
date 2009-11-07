@@ -38,7 +38,7 @@ module Roma
             raise RuntimeError.new("'#{age_file}' already exists.")
           end
           @dev.close
-          File.rename("#{@filename}", age_file)
+          File.rename(@filename, age_file)
           @dev = create_logfile(@filename)
           return true
         end

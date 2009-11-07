@@ -30,7 +30,7 @@ module Roma
       def self.load(fname)
         rd=load_snapshot(fname)
         rd.load_log_all(fname)
-        return rd
+        rd
       end
 
       def self.load_snapshot(fname)
@@ -91,7 +91,7 @@ module Roma
       end
 
       def parse_log(t,line)
-        s=line.split(/ /)
+        s=line.split(' ')
         case s[0]
         when 'setroute'
           # setroute <vnode-id> <clock> <node-id> ...
@@ -130,9 +130,9 @@ module Roma
 
       # Returns the losted vnode-id list.
       def get_lost_vnodes
-        ret = []
+        ret=[]
         v_idx.each_pair{|vn,nids|
-          ret << vn if nids.length == 0
+          ret<<vn if nids.length == 0
         }
         ret
       end
@@ -171,15 +171,15 @@ module Roma
 
       class RandomNodeListMaker
         def initialize(nodes,repethost)
-          @repethost = repethost
-          @nodes = nodes
-          @host_idx = {}
+          @repethost=repethost
+          @nodes=nodes
+          @host_idx={}
           nodes.each{|nid|
-            h,p = nid.split('_')
+            h,p=nid.split('_')
             if @host_idx.key?(h)
-              @host_idx[h] << nid
+              @host_idx[h]<<nid
             else
-              @host_idx[h] = [nid]
+              @host_idx[h]=[nid]
             end
           }          
         end
@@ -187,16 +187,16 @@ module Roma
         # Returns the random node-list without repetition.
         # +n+:: list length
         def list(n)
-          ret = []
-          hosts = []
+          ret=[]
+          hosts=[]
           proc_other_one = :get_other_one
           proc_other_one = :get_other_one_repethost if @repethost
           n.times{
-            nid = nil
-            nid = send(proc_other_one,hosts,ret)
+            nid=nil
+            nid=send(proc_other_one,hosts,ret)
             break unless nid
-            hosts << nid.split('_')[0]
-            ret << nid
+            hosts<<nid.split('_')[0]
+            ret<<nid
           }
           ret
         end
@@ -206,7 +206,7 @@ module Roma
         # +exp_hosts+:: ignore
         # +exp_nodes+:: exceptional nodes(ex.['roma0_11211'])
         def get_other_one_repethost(exp_hosts,exp_nodes)
-          buf = @nodes.clone
+          buf=@nodes.clone
           buf.delete_if{|nid| exp_nodes.include?(nid)}
           buf[rand(buf.length)]
         end
@@ -214,12 +214,12 @@ module Roma
         # +exp_hosts+:: exceptional hosts(ex.['roma0','roma1'])
         # +exp_nodes+:: ignore
         def get_other_one(exp_hosts,exp_nodes)
-          hidx = @host_idx.clone
+          hidx=@host_idx.clone
           exp_hosts.each{|h| hidx.delete(h) }
           return nil if hidx.length == 0
           
-          rh = hidx.keys[rand(hidx.keys.length)]
-          nodes = hidx[rh]
+          rh=hidx.keys[rand(hidx.keys.length)]
+          nodes=hidx[rh]
           nodes[rand(nodes.length)]
         end
       end # class RandomNodeListMaker
