@@ -22,7 +22,7 @@ module Roma
 
       def save(fname)
         @nodes.sort!
-        open("#{fname}",'wb'){|io|
+        open(fname,'wb'){|io|
           io.write(YAML.dump(self))
         }
       end
@@ -35,7 +35,7 @@ module Roma
 
       def self.load_snapshot(fname)
         rd=nil
-        open("#{fname}",'rb'){|io|
+        open(fname,'rb'){|io|
           rd = YAML.load(io.read)
         }
         rd
