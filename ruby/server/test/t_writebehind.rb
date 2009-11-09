@@ -23,8 +23,6 @@ class FileWriterTest < Test::Unit::TestCase
 
     @log = Logger.new(StringIO.new)
     @log.level = Logger::INFO
-  rescue =>e
-    p e
   end
 
   def teardown
