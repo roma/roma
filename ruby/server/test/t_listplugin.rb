@@ -8,6 +8,7 @@ $LOAD_PATH << path + "/../lib"
 $LOAD_PATH << path  + "/../../commons/lib"
 $LOAD_PATH << path  + "/../../client/lib"
 
+require 'fileutils'
 require 'rbconfig'
 require 'roma/client/rclient'
 require 'roma/plugin/plugin_alist'
@@ -30,8 +31,8 @@ MiniTest::Unit.class_eval{
     sh.transact do
       Dir.glob("localhost_1121?.*").each{|f| rm f }
     end
-    rm_rf("localhost_11211")
-    rm_rf("localhost_11212")
+    FileUtils.rm_rf("localhost_11211")
+    FileUtils.rm_rf("localhost_11212")
     sleep 1
 
     sh.system(ruby_path,"#{path}/../bin/mkroute",
@@ -42,18 +43,6 @@ MiniTest::Unit.class_eval{
     sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
     sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
     sleep 3
-  end
-
-  # looked like a "rm -rf" command
-  def rm_rf(fname)
-    return unless File::exist?(fname)
-    if File::directory?(fname)
-      Dir["#{fname}/*"].each{|f| rm_rf(f) }
-      Dir.rmdir(fname)
-    else
-
-      File.delete(fname)
-    end
   end
 
   def stop_roma

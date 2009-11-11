@@ -8,6 +8,7 @@ $LOAD_PATH << path  + "/../../commons/lib"
 $LOAD_PATH << path  + "/../../client/lib"
 
 require 'rbconfig'
+require 'fileutils'
 require 'shell'
 require 'roma/client/rclient'
 require 'timeout'
@@ -20,8 +21,8 @@ def start_roma
   sh.transact do
     Dir.glob("localhost_1121?.*").each{|f| rm f }
   end
-  rm_rf("localhost_11211")
-  rm_rf("localhost_11212")
+  FileUtils.rm_rf("localhost_11211")
+  FileUtils.rm_rf("localhost_11212")
   
   sh.system(ruby_path,"#{path}/../bin/mkroute",
             "localhost_11211","localhost_11212",
@@ -44,17 +45,6 @@ def stop_roma
   Roma::Messaging::ConPool.instance.close_all
 rescue =>e
   puts "#{e}"
-end
-
-# looked like a "rm -rf" command
-def rm_rf(fname)
-  return unless File::exist?(fname)
-  if File::directory?(fname)
-    Dir["#{fname}/*"].each{|f| rm_rf(f) }
-    Dir.rmdir(fname)
-  else
-    File.delete(fname)
-  end
 end
 
 $dat = {}
