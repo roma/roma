@@ -121,6 +121,27 @@ module Roma
         @rttable.fail_cnt_threshold = s[1].to_i
         send_data("STORED\r\n")
       end
+
+      # set_gap_for_failover
+      def ev_set_gap_for_failover(s)
+        if s.length != 2
+          return send_data("usage:set_gap_for_failover <n>\r\n")
+        end
+        res = broadcast_cmd("rset_gap_for_failover #{s[1]}\r\n")
+        @rttable.fail_cnt_gap = s[1].to_f
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")        
+      end
+
+      # rset_gap_for_failover
+      def ev_rset_gap_for_failover(s)
+        if s.length != 2
+          return send_data("usage:rset_gap_for_failover <n>\r\n")
+        end
+        @rttable.fail_cnt_gap = s[1].to_f
+        send_data("STORED\r\n")        
+      end
+
     end # module RoutingCommandReceiver
   end # module Command
 end # module Roma

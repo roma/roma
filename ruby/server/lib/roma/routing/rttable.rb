@@ -13,11 +13,12 @@ module Roma
       attr :rd
       attr :search_mask
       attr :fail_cnt
+      attr :mtree
       attr_reader :hbits
       attr_reader :rn
       attr_reader :div_bits
-      attr :mtree
       attr_accessor :fail_cnt_threshold
+      attr_accessor :fail_cnt_gap
 
       def initialize(rd)
         @log = Roma::Logging::RLogger.instance
@@ -28,6 +29,8 @@ module Roma
         @search_mask = @rd.search_mask
         @fail_cnt = Hash.new(0)
         @fail_cnt_threshold = 5
+        @fail_cnt_gap = 0
+        @fail_time = Time.now
         init_mtree
       end
 
@@ -58,6 +61,7 @@ module Roma
         ret['routing.short_vnodes'] = short
         ret['routing.lost_vnodes'] = lost
         ret['routing.fail_cnt_threshold'] = @fail_cnt_threshold
+        ret['routing.fail_cnt_gap'] = @fail_cnt_gap
         ret
       end
 
@@ -119,10 +123,14 @@ module Roma
       end
 
       def proc_failed(nid)
-        @fail_cnt[nid] += 1
-        if @fail_cnt[nid] >= @fail_cnt_threshold
-          leave(nid)
+        t = Time.now
+        if t - @fail_time > @fail_cnt_gap
+          @fail_cnt[nid] += 1
+          if @fail_cnt[nid] >= @fail_cnt_threshold
+            leave(nid)
+          end
         end
+        @fail_time = t
       end
 
       def proc_succeed(nid)

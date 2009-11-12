@@ -83,7 +83,7 @@ module Roma
     private
 
     def initialize_stats
-      if Roma::Config.const_defined? :REDUNDANT_ZREDUNDANT_SIZE
+      if Roma::Config.const_defined?(:REDUNDANT_ZREDUNDANT_SIZE)
         @stats.size_of_zredundant = Roma::Config::REDUNDANT_ZREDUNDANT_SIZE
       end
     end
@@ -238,6 +238,12 @@ module Roma
         @rttable = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
       end
       
+      if Roma::Config.const_defined?(:ROUTING_FAIL_CNT_THRESHOLD)
+        @rttable.fail_cnt_threshold = Roma::Config::ROUTING_FAIL_CNT_THRESHOLD
+      end
+      if Roma::Config.const_defined?(:ROUTING_FAIL_CNT_GAP)
+        @rttable.fail_cnt_gap = Roma::Config::ROUTING_FAIL_CNT_GAP
+      end
       @rttable.lost_action = Roma::Config::DEFAULT_LOST_ACTION
       @rttable.enabled_failover = @stats.start_with_failover
       @rttable.set_leave_proc{|nid|
