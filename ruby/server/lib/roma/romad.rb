@@ -478,7 +478,7 @@ module Roma
       
       res = async_send_cmd(nid,"getroute #{vn}\r\n")
       return unless res
-      clk,*nids = res.split(/ /)
+      clk,*nids = res.split(' ')
       clk = @rttable.set_route(vn, clk.to_i, nids)
       
       if clk.is_a?(Integer) == false

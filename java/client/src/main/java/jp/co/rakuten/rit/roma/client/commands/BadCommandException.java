@@ -10,11 +10,10 @@ public class BadCommandException extends ClientException {
     private static final long serialVersionUID = -8399538669461642337L;
 
     public BadCommandException() {
-	super();
+        super();
     }
 
     public BadCommandException(Throwable t) {
-	super(t);
+        super(t);
     }
-
 }

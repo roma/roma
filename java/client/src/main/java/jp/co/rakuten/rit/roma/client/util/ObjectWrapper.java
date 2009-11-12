@@ -43,57 +43,57 @@ public class ObjectWrapper<T> {
     protected RomaClient client;
 
     public ObjectWrapper(RomaClient client) {
-	this.client = client;
+        this.client = client;
     }
 
     public boolean delete(String key) throws ClientException {
-	return client.delete(key);
+        return client.delete(key);
     }
 
     @SuppressWarnings("unchecked")
     public T get(String key) throws ClientException, IOException,
-	    ClassNotFoundException {
-	byte[] value = client.get(key);
-	if (value == null) {
-	    return (T) null;
-	}
-	Object obj = DataSerialization.toObject(value);
-	return (T) obj;
+            ClassNotFoundException {
+        byte[] value = client.get(key);
+        if (value == null) {
+            return (T) null;
+        }
+        Object obj = DataSerialization.toObject(value);
+        return (T) obj;
     }
 
     public boolean put(String key, T obj) throws ClientException, IOException {
-	return put(key, obj, new Date(0));
+        return put(key, obj, new Date(0));
     }
 
     public boolean put(String key, T obj, Date expiry) throws ClientException,
-	    IOException {
-	byte[] value = DataSerialization.toByteArray(obj);
-	return client.put(key, value, expiry);
+            IOException {
+        byte[] value = DataSerialization.toByteArray(obj);
+        return client.put(key, value, expiry);
     }
 
     public static class DataSerialization {
 
-	public static Object toObject(byte[] bytes) throws IOException,
-		ClassNotFoundException {
-	    if (bytes == null || bytes.length == 0) {
-		return null;
-	    }
-	    ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-	    ObjectInputStream oin = new ObjectInputStream(in);
-	    Object obj = oin.readObject();
-	    return obj;
-	}
+        public static Object toObject(byte[] bytes) throws IOException,
+                ClassNotFoundException {
+            if (bytes == null || bytes.length == 0) {
+                return null;
+            }
+            ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+            ObjectInputStream oin = new ObjectInputStream(in);
+            Object obj = oin.readObject();
+            return obj;
+        }
 
-	public static byte[] toByteArray(Object obj) throws IOException {
-	    if (obj == null) {
-		return new byte[0];
-	    }
-	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-	    ObjectOutputStream oout = new ObjectOutputStream(out);
-	    oout.writeObject(obj);
-	    oout.flush();
-	    oout.close();
-	    return out.toByteArray();
-	}
+        public static byte[] toByteArray(Object obj) throws IOException {
+            if (obj == null) {
+                return new byte[0];
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            ObjectOutputStream oout = new ObjectOutputStream(out);
+            oout.writeObject(obj);
+            oout.flush();
+            oout.close();
+            return out.toByteArray();
+        }
     }
 }

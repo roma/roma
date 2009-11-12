@@ -15,7 +15,7 @@ module Roma
           conn.write "mklhash 0\r\n"
           ret = conn.gets
           Roma::Messaging::ConPool.instance.return_connection(node_id, conn)
-          return ret.chomp! if ret
+          return ret.chomp if ret
         }
       rescue =>e
         STDERR.puts "#{node_id} #{e.inspect}"
@@ -75,7 +75,7 @@ module Roma
         conn.write("version\r\n")
         res = conn.gets.chomp
         Roma::Messaging::ConPool.instance.return_connection(ap, conn)
-        raise if res == nil
+        raise unless res
         return res
       end
 
@@ -106,14 +106,13 @@ module Roma
 
       def oneline_receiver(con)
         ret = con.gets
-        ret.chomp! if ret
-        ret
+        ret.chomp if ret
       end
 
       def value_receiver(con)
         ret = []
         while (line = con.gets) != "END\r\n"
-          s = line.split(/ /)
+          s = line.split(' ')
           return line.chomp if s[0] == 'SERVER_ERROR' || s[0] == 'CLIENT_ERROR'
           ret << read_bytes(con, s[3].to_i)
           read_bytes(con, 2)
@@ -131,7 +130,7 @@ module Roma
 
       def read_bytes(con, len)
         ret = ''
-        while (ret.length != len)
+        until (ret.length == len)
           ret = ret + con.read(len - ret.length)
         end
         ret

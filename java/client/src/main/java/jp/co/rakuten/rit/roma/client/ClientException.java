@@ -8,19 +8,18 @@ public class ClientException extends Exception {
     private static final long serialVersionUID = -7032182229500031385L;
 
     public ClientException() {
-	super();
+        super();
     }
 
     public ClientException(Throwable cause) {
-	super(cause);
+        super(cause);
     }
 
     public ClientException(String reason) {
-	super(reason);
+        super(reason);
     }
 
     public ClientException(String reason, Throwable cause) {
-	super(reason, cause);
+        super(reason, cause);
     }
-
 }

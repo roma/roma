@@ -157,7 +157,7 @@ module Roma
         con = Roma::Messaging::ConPool.instance.get_connection(nid)
         con.write("add #{key}\eroma 0 86400 #{nid.length}\r\n#{nid}\r\n")
         res = con.gets
-        if res!="STORED\r\n"
+        unless res=="STORED\r\n"
           con.write("append #{key}\eroma 0 86400 #{nid.length+1}\r\n,#{nid}\r\n")
           res = con.gets
         end
@@ -211,7 +211,7 @@ module Roma
       @stats.run_recover = true
       Thread::new{
         begin
-          if args == nil
+          unless args
             acquired_recover_process
           elsif args[0] == '-s'
             recover_process
@@ -467,7 +467,7 @@ module Roma
 @log.debug("sync_a_vnode_for_release:#{vn} #{to_nid}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid
-        return false if @rttable.transaction(vn, nids) == false
+        return false unless @rttable.transaction(vn, nids)
 
         # synchronize a data
         @storages.each_key{ |hname|
@@ -514,7 +514,7 @@ module Roma
 @log.debug("sync_a_vnode:#{vn} #{to_nid} #{is_primary}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid
-        return false if @rttable.transaction(vn, nids) == false
+        return false unless @rttable.transaction(vn, nids)
 
         # synchronize a data
         @storages.each_key{ |hname|
@@ -630,7 +630,7 @@ module Roma
       res
     rescue =>e
       @log.error("#{e}\n#{$@}")
-      "#{e}"
+      e.to_s
     ensure
       @stats.run_iterate_storage = false
     end

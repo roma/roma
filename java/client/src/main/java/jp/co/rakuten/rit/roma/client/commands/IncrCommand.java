@@ -7,6 +7,6 @@ public class IncrCommand extends IncrAndDecrCommand {
 
     @Override
     public String getCommand() throws BadCommandException {
-	return STR_INCREMENT;
+        return STR_INCREMENT;
     }
 }
