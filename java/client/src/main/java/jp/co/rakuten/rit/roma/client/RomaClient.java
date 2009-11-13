@@ -35,23 +35,23 @@ public interface RomaClient {
     void setTimeout(long timeout);
 
     long getTimeout();
-    
+
     void setNumOfThreads(int num);
-    
+
     int getNumOfThreads();
-    
+
     void setRetryCount(int retryCount);
-    
+
     int getRetryCount();
-    
+
     void setRetrySleepTime(long sleepTime);
-    
+
     long getRetrySleepTime();
 
     boolean isOpen();
 
     List<Object> routingdump(Node node) throws ClientException;
-    
+
     /**
      * Return the names of ROMA processes.
      * 
@@ -136,7 +136,7 @@ public interface RomaClient {
      * @throws ClientException
      */
     boolean append(String key, byte[] value, Date expiry)
-	    throws ClientException;
+            throws ClientException;
 
     /**
      * Prepend the given value to the existing value.  
@@ -158,7 +158,7 @@ public interface RomaClient {
      * @throws ClientException
      */
     boolean prepend(String key, byte[] value, Date expiry)
-	    throws ClientException;
+            throws ClientException;
 
     /**
      * Deletes ta stored value specified by the key
@@ -189,9 +189,5 @@ public interface RomaClient {
     BigInteger decr(String key, int count) throws ClientException;
 
     boolean exec(Command command, CommandContext context)
-	    throws CommandException;
-
-
-
-
+            throws CommandException;
 }

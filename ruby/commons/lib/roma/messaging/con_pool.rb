@@ -10,16 +10,15 @@ module Roma
 
       attr_accessor :maxlength
 
-      def initialize
+      def initialize(maxlength = 10)
         @pool = {}
-        @maxlength = 10
+        @maxlength = maxlength
         @lock = Mutex.new
       end
 
       def get_connection(ap)
         ret = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
-        ret = create_connection(ap) if ret == nil
-        ret
+        ret = create_connection(ap) unless ret
       rescue
         nil
       end

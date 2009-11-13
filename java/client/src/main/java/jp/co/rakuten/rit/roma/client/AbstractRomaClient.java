@@ -9,67 +9,64 @@ import jp.co.rakuten.rit.roma.client.routing.RoutingTable;
  * 
  */
 public abstract class AbstractRomaClient implements RomaClient {
+
     protected ConnectionPool connPool;
-
     protected RoutingTable routingTable;
-
     protected CommandGenerator commandGenerator;
 
     public final void setConnectionPool(ConnectionPool pool) {
-	this.connPool = pool;
+        this.connPool = pool;
     }
 
     public final ConnectionPool getConnectionPool() {
-	return connPool;
+        return connPool;
     }
 
     public final void setRoutingTable(RoutingTable routingTable) {
-	this.routingTable = routingTable;
+        this.routingTable = routingTable;
     }
 
     public final RoutingTable getRoutingTable() {
-	return routingTable;
+        return routingTable;
     }
 
     public final void setCommandGenerator(CommandGenerator commandGenerator) {
-	this.commandGenerator = commandGenerator;
+        this.commandGenerator = commandGenerator;
     }
 
     public final CommandGenerator getCommandGenerator() {
-	return commandGenerator;
+        return commandGenerator;
     }
 
     public final void setTimeout(long timeout) {
-	TimeoutFilter.timeout = timeout;
+        TimeoutFilter.timeout = timeout;
     }
 
     public final long getTimeout() {
-	return TimeoutFilter.timeout;
+        return TimeoutFilter.timeout;
     }
-    
+
     public final void setNumOfThreads(int num) {
-	TimeoutFilter.numOfThreads = num;
+        TimeoutFilter.numOfThreads = num;
     }
-    
+
     public final int getNumOfThreads() {
-	return TimeoutFilter.numOfThreads;
+        return TimeoutFilter.numOfThreads;
     }
 
     public void setRetryCount(int retryCount) {
-	FailOverFilter.retryThreshold = retryCount;
+        FailOverFilter.retryThreshold = retryCount;
     }
 
     public int getRetryCount() {
-	return FailOverFilter.retryThreshold;
+        return FailOverFilter.retryThreshold;
     }
 
     public void setRetrySleepTime(long sleepTime) {
-	FailOverFilter.sleepPeriod = sleepTime;
-    }
-    
-    public long getRetrySleepTime() {
-	return FailOverFilter.sleepPeriod;
+        FailOverFilter.sleepPeriod = sleepTime;
     }
 
-    
+    public long getRetrySleepTime() {
+        return FailOverFilter.sleepPeriod;
+    }
 }

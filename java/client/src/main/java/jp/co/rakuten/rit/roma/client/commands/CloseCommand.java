@@ -12,21 +12,19 @@ public class CloseCommand extends DefaultCommand {
 
     @Override
     protected void create(CommandContext context) throws BadCommandException {
-	// TODO Auto-generated method stub
+        // TODO Auto-generated method stub
     }
 
     @Override
     protected boolean parseResult(CommandContext context)
-	    throws ClientException {
-	// TODO Auto-generated method stub
-	return false;
+            throws ClientException {
+        // TODO Auto-generated method stub
+        return false;
     }
 
     @Override
     protected void sendAndReceive(CommandContext context) throws IOException,
-	    ClientException {
-	// TODO Auto-generated method stub
-
+            ClientException {
+        // TODO Auto-generated method stub
     }
-
 }

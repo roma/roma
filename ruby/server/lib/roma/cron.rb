@@ -13,9 +13,9 @@ module Roma
 
     def cron
       return unless @stats.crontab
-      @stats.crontab.split(/[\r\n|\n]/).each { |line|
+      @stats.crontab.split(/\r?\n/).each { |line|
         next if line[0]=='#'
-        mi,h,d,m,w,cmd,*args=line.split(/ /)
+        mi,h,d,m,w,cmd,*args=line.split(' ')
         begin
           send("cron_#{cmd}",args) if exec_cron?(mi,h,d,m,w)
         rescue =>e
