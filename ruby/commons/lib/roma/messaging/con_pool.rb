@@ -19,6 +19,7 @@ module Roma
       def get_connection(ap)
         ret = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
         ret = create_connection(ap) unless ret
+        ret
       rescue
         nil
       end
