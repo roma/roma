@@ -1,51 +1,7 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
-require 'test/unit'
 
-path =  File.dirname(File.expand_path($PROGRAM_NAME))
-$LOAD_PATH << path + "/../lib"
-$LOAD_PATH << path  + "/../../commons/lib"
-$LOAD_PATH << path  + "/../../client/lib"
-
-require 'rbconfig'
-require 'fileutils'
-require 'shell'
 require 'roma/client/rclient'
-require 'timeout'
-
-def start_roma
-  ruby_path = File.join(RbConfig::CONFIG["bindir"],
-                        RbConfig::CONFIG["ruby_install_name"])
-  path =  File.dirname(File.expand_path($PROGRAM_NAME))
-  sh = Shell.new
-  sh.transact do
-    Dir.glob("localhost_1121?.*").each{|f| rm f }
-  end
-  FileUtils.rm_rf("localhost_11211")
-  FileUtils.rm_rf("localhost_11212")
-  
-  sh.system(ruby_path,"#{path}/../bin/mkroute",
-            "localhost_11211","localhost_11212",
-            "-d","3",
-            "--enabled_repeathost")
-  sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
-  sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
-  sleep 2
-end
-
-
-def stop_roma
-  puts "#{__method__}"
-  conn = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
-  conn.write "balse\r\n"
-  conn.gets
-  conn.write "yes\r\n"
-  conn.gets
-  conn.close
-  Roma::Messaging::ConPool.instance.close_all
-rescue =>e
-  puts "#{e}"
-end
 
 $dat = {}
 
@@ -126,32 +82,19 @@ rescue =>e
   false
 end
 
-
-MiniTest::Unit.class_eval{
-  alias run2 run
-  undef run
-
-  def run args = []
-    Thread.new{ receive_command_server }
-#    start_roma
-    run2 args
-#    stop_roma
-    
-  end
-}
-
 # vnode をコピーするテスト
 class CopyDataTest < Test::Unit::TestCase
+  include RomaTestUtils
 
   def setup
-#    @th = Thread.new{ receive_command_server }
+    @th = Thread.new{ receive_command_server }
     start_roma
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
   end
 
   def teardown
     stop_roma
-#    @th.kill
+    @th.kill
   end
 
   def test_pushv

@@ -1,10 +1,5 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
-require 'test/unit'
-
-path =  File.dirname(File.expand_path($PROGRAM_NAME))
-$LOAD_PATH << path + "/../lib"
-$LOAD_PATH << path  + "/../../commons/lib"
 
 require 'roma/storage/tc_storage'
 require 'roma/storage/dbm_storage'

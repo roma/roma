@@ -1,63 +1,9 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
-require 'test/unit'
-require 'shell'
 
-path =  File.dirname(File.expand_path($PROGRAM_NAME))
-$LOAD_PATH << path + "/../lib"
-$LOAD_PATH << path  + "/../../commons/lib"
-$LOAD_PATH << path  + "/../../client/lib"
-
-require 'fileutils'
-require 'rbconfig'
 require 'roma/client/rclient'
 require 'roma/plugin/plugin_alist'
 require 'roma/storage/tc_storage'
-
-MiniTest::Unit.class_eval{
-  alias run2 run
-
-  def run args = []
-    start_roma
-    run2 args
-    stop_roma
-  end
-
-  def start_roma
-    ruby_path = File.join(RbConfig::CONFIG["bindir"],
-                          RbConfig::CONFIG["ruby_install_name"])
-    path =  File.dirname(File.expand_path($PROGRAM_NAME))
-    sh = Shell.new
-    sh.transact do
-      Dir.glob("localhost_1121?.*").each{|f| rm f }
-    end
-    FileUtils.rm_rf("localhost_11211")
-    FileUtils.rm_rf("localhost_11212")
-    sleep 1
-
-    sh.system(ruby_path,"#{path}/../bin/mkroute",
-              "localhost_11211","localhost_11212",
-              "-d","3",
-              "--enabled_repeathost")
-    sleep 1
-    sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
-    sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
-    sleep 3
-  end
-
-  def stop_roma
-    conn = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
-    if conn
-      conn.write "balse\r\n"
-      conn.gets
-      conn.write "yes\r\n"
-      conn.gets
-      conn.close
-    end
-  rescue =>e
-    puts "#{e} #{$@}"
-  end
-}
 
 Roma::Client::RomaClient.class_eval{
   def init_sync_routing_proc
@@ -65,14 +11,17 @@ Roma::Client::RomaClient.class_eval{
 }
 
 class ListPluginTest < Test::Unit::TestCase
+  include RomaTestUtils
 
   def setup
+    start_roma
     @rc=Roma::Client::RomaClient.new(
                                      ["localhost_11211","localhost_11212"],
                                      [::Roma::ClientPlugin::PluginAshiatoList])
   end
 
   def teardown
+    stop_roma
   end
 
   def test_error_case
@@ -625,8 +574,7 @@ end # ListPluginTest
 
 class ListPluginTestForceForward < ListPluginTest
   def setup
-    @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"],
-                                     [::Roma::ClientPlugin::PluginAshiatoList])
+    super
     @rc.rttable.instance_eval{
       undef search_node
 

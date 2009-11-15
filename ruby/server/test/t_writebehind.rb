@@ -1,13 +1,7 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
-require 'test/unit'
+
 require 'logger'
-
-path =  File.dirname(File.expand_path($PROGRAM_NAME))
-$LOAD_PATH << path + "/../lib"
-$LOAD_PATH << path  + "/../../commons/lib"
-$LOAD_PATH << path  + "/../../client/lib"
-
 require 'roma/write_behind'
 
 class FileWriterTest < Test::Unit::TestCase
