@@ -89,7 +89,11 @@ public class TimeoutFilter extends AbstractCommandFilter {
             final CommandContext context) throws CommandException {
         int commandID = (Integer) context.get(CommandContext.COMMAND_ID);
         if (executor == null) {
-            executor = Executors.newFixedThreadPool(numOfThreads);
+	    if (numOfThreads > 0) {
+		executor = Executors.newFixedThreadPool(numOfThreads);
+	    } else {
+		executor = Executors.newCachedThreadPool();
+	    }
             // executor = Executors.newSingleThreadExecutor();
             //executor = Executors.newCachedThreadPool();
         }
