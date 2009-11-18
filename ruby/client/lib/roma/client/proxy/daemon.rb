@@ -157,7 +157,7 @@ module Roma
           loop do
             begin
               EventMachine::run do
-                EventMachine.start_server('0.0.0.0', 12345, ClientHandler)
+                EventMachine.start_server('0.0.0.0', @port, ClientHandler)
                 EventMachine.start_unix_domain_server("/tmp/#{@uds_name}", ClientHandler)
               end
             rescue =>e
@@ -207,12 +207,18 @@ module Roma
           opts.banner="usage:#{File.basename($0)} [options] addr_port"
 
           @uds_name = 'roma'
-          opts.on("-n", "--name [name]") { |v| @uds_name = v }
+          opts.on("-n", "--name [name]","Unix domain socket name.default=roma") { |v| @uds_name = v }
+          @port = 12345
+          opts.on("-p", "--port [port number]","default=12345"){ |v| @port = v.to_i }
+          @log_path = "./rcdaemon.log"
+          opts.on("-l", "--log [path]","default=./"){ |v|
+            @log_path = v
+            @log_path << "/" if @log_path[-1] != "/"
+            @log_path << "rcdaemon.log"
+          }
+
           @daemon = true
           opts.on(nil, "--debug"){ @daemon = false }
-
-          # @log_path = STDOUT
-          @log_path = "./rcdaemon.log"
           @log_age = 10
           @log_size = 1024 * 1024
 
