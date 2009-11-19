@@ -102,6 +102,43 @@ module Roma
         send_data("SERVER_ERROR Message forward failed.\r\n")
       end
 
+      # gets <key>*\r\n
+      def ev_gets(s)
+        nk = {} # {node-id1=>[key1,key2,..],node-id2=>[key3,key4,..]}
+        s[1..-1].each{|kh|
+          key, = kh.split("\e") # split a hash-name
+          d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+          vn = @rttable.get_vnode_id(d)
+          nodes = @rttable.search_nodes(vn)
+          unless nodes.empty? # check the node existence
+            nk[nodes[0]]=[] unless nk.key?(nodes[0])
+            nk[nodes[0]] << kh
+          end
+        }
+        
+        res = {} # result data {key1=>val1,key2=>val2,...}
+        nk[@nid].each{|kh|
+          key,hname = kh.split("\e")
+          if @storages.key?(hname)
+            val = @storages[hname].get(vn, key, 0)
+            @stats.read_count += 1
+            res[key] = val if val
+          end
+        }
+        nk.delete(@nid)
+
+        nk.each_pair{|nid,keys|
+          @log.debug("#{nid} #{kyes.inspect}")
+#          res.merge!(forward_gets(nid,keys))
+        }
+
+        res.each_pair{|key,val|
+          send_data("VALUE #{key} 0 #{val.length}\r\n#{val}\r\n")
+        }
+        send_data("END\r\n")
+      end
+
+
       # delete <key> [<time>] [noreply]\r\n
       def ev_delete(s)
         key,hname = s[1].split("\e")
