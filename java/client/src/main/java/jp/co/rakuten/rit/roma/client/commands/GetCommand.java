@@ -19,7 +19,7 @@ public class GetCommand extends DefaultCommand implements CommandID {
             // "get key\r\n"
             StringBuilder sb = new StringBuilder();
             sb.append(STR_GET).append(STR_WHITE_SPACE)
-                    .append(context.get(CommandContext.KEY))]
+                    .append(context.get(CommandContext.KEY))
                     .append(STR_CRLR);
 
             Connection conn = (Connection) context.get(CommandContext.CONNECTION);
