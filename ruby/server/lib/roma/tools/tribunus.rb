@@ -5,11 +5,12 @@ require 'ipaddr'
 require 'optparse'
 UDP_PORT=14329
 MULTICAST_ADDR="225.0.0.123"
-ROMA_LOAD_PATH=File.expand_path(File.join(File.dirname(__FILE__),".."))
+ROMA_LOAD_PATH=File.expand_path(File.join(File.dirname(__FILE__),"../.."))
 RUBY_COMMAND_OPTIONS=["-I",ROMA_LOAD_PATH]
 ROMAD_OPTIONS=["--enabled_repeathost"]
-ROMAD_PATH= File.expand_path(File.join(File.dirname(__FILE__),"romad.rb"))
-MKROUTE_PATH= File.expand_path(File.join(File.dirname(__FILE__),"mkroute.rb"))
+bin_dir=File.expand_path(File.join(File.dirname(__FILE__),"../../../bin"))
+ROMAD_PATH= File.expand_path(File.join(bin_dir,"romad"))
+MKROUTE_PATH= File.expand_path(File.join(bin_dir,"mkroute"))
 
 ROMAD_WORK_DIR='.'
 class Tribunus
@@ -63,7 +64,9 @@ class Tribunus
     end
     nodes << "#{remote_host}_#{remote_port}" if remote_host
     pid=Process.spawn(@ruby_command_name,*RUBY_COMMAND_OPTIONS,MKROUTE_PATH,*nodes,:chdir=>@romad_work_dir)
-    Process.waitpid(pid)
+    if(Process.waitpid2(pid)[1].to_i!=0)
+      raise "failed to make route"
+    end
     
     @local_romad_host.ports.each do|port|
       pid=Process.spawn(@ruby_command_name,*RUBY_COMMAND_OPTIONS,ROMAD_PATH,*ROMAD_OPTIONS,"-p",port.to_s,@local_romad_host.hostname, :chdir=>@romad_work_dir)
@@ -170,7 +173,7 @@ class Tribunus
 
   def set_trap
     [:INT,:TERM,:HUP].each do|sig|
-      Signal.trap(sig){ Process.kill(sig,*romads.values)  }
+      Signal.trap(sig){ Process.kill(sig,*@romads.values);exit(1)  }
     end
   end
 
