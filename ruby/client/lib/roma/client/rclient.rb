@@ -144,11 +144,22 @@ module Roma
       end
 
       def get(key)
-        sender(:value_receiver, key, nil, "get %s")[0]
+        sender(:value_list_receiver, key, nil, "get %s")[0]
       end
 
       def gets(keys)
-        raise RuntimeError.new("Unsupported yet") # TODO
+        kn = {}
+        keys.each{|key|
+          nid, d = @rttable.search_node(key)
+          kn[nid] ||= []
+          kn[nid] << key
+        }
+
+        res = {}
+        kn.each_pair{|nid,ks|
+          res.merge!(gets_sender(nid, ks))
+        }
+        res
       end
 
       def flush_all()
@@ -183,6 +194,8 @@ module Roma
         @sender.send_verbosity_command
       end
 
+      private
+
       def sender(receiver, key, value ,cmd, *params)
         nid, d = @rttable.search_node(key)
         cmd2 = sprintf(cmd, "#{key}\e#{@default_hash_name}", *params)
@@ -200,7 +213,26 @@ module Roma
         raise e
       end
 
-    end
+      def gets_sender(nid, keys)
+        cmd = "gets"
+        keys.each{ |k|
+          cmd << " #{k}\e#{@default_hash_name}"
+        }
 
-  end
-end
+        timeout(@@timeout){
+          return @sender.send_command(nid, cmd, nil, :value_hash_receiver)
+        }
+      rescue => e
+        unless e.instance_of?(RuntimeError)
+          @rttable.proc_failed(nid)
+          Roma::Messaging::ConPool.instance.delete_connection(nid)
+        end
+        sleep 0.3
+        retry if (cnt ||= 0; cnt += 1) < @retry_count_write
+        raise e
+      end
+
+    end # class RomaClient
+
+  end # module Client
+end # module Roma
