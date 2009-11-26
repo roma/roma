@@ -70,8 +70,8 @@ module Roma
 
       # get <key>*\r\n
       def ev_get(s)
-        # forward test
-        #return send_data(forward_get('roma0_11212',s[1],0)) if @nid=='roma0_11211'
+        return ev_gets(s) if s.length > 2
+
         key,hname = s[1].split("\e")
         hname ||= @defhash
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
@@ -101,6 +101,46 @@ module Roma
         end
         send_data("SERVER_ERROR Message forward failed.\r\n")
       end
+
+      # gets <key>*\r\n
+      def ev_gets(s)
+        nk = {} # {node-id1=>[key1,key2,..],node-id2=>[key3,key4,..]}
+        kvn = {} # {key1=>vn1, key2=>vn2, ... }
+        s[1..-1].each{|kh|
+          key, = kh.split("\e") # split a hash-name
+          d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+          kvn[key] = vn = @rttable.get_vnode_id(d)
+          nodes = @rttable.search_nodes(vn)
+          unless nodes.empty? # check the node existence
+            nk[nodes[0]]=[] unless nk.key?(nodes[0])
+            nk[nodes[0]] << kh
+          end
+        }
+
+        res = {} # result data {key1=>val1,key2=>val2,...}
+        if nk.key?(@nid)
+          nk[@nid].each{|kh|
+            key,hname = kh.split("\e")
+            hname ||= @defhash
+            if @storages.key?(hname)
+              val = @storages[hname].get(kvn[key], key, 0)
+              @stats.read_count += 1
+              res[key] = val if val
+            end
+          }
+          nk.delete(@nid)
+        end
+
+        nk.each_pair{|nid,keys|
+          res.merge!(forward_gets(nid,keys))
+        }
+
+        res.each_pair{|key,val|
+          send_data("VALUE #{key} 0 #{val.length}\r\n#{val}\r\n")
+        }
+        send_data("END\r\n")
+      end
+
 
       # delete <key> [<time>] [noreply]\r\n
       def ev_delete(s)
@@ -279,6 +319,24 @@ module Roma
       rescue => e
         @rttable.proc_failed(nid)
         @log.error("forward get failed:nid=#{nid} key=#{key}")
+        nil
+      end
+
+      def forward_gets(nid, keys)
+        con = get_connection(nid)
+        con.send("gets #{keys.join(' ')}\r\n")
+        res = {}
+        while((line = con.gets)!="END\r\n")
+          s = line.split(/ /)
+          res[s[1]] = con.read_bytes(s[3].to_i)
+          con.read_bytes(2)
+        end
+        return_connection(nid, con)
+        @rttable.proc_succeed(nid)
+        res
+      rescue => e
+        @rttable.proc_failed(nid)
+        @log.error("forward gets failed:nid=#{nid} key=#{keys}")
         nil
       end
 

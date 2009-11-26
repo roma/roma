@@ -1361,7 +1361,7 @@ module Roma
     module PluginAshiatoList
       
       def alist_at(key, index)
-        ret = sender(:value_receiver, key, nil, "alist_at %s #{index}")
+        ret = sender(:value_list_receiver, key, nil, "alist_at %s #{index}")
         return nil if ret.length == 0
         ret[0]
       end
@@ -1384,16 +1384,16 @@ module Roma
       end
 
       def alist_first(key)
-        ret = sender(:value_receiver, key, nil, "alist_first %s")
+        ret = sender(:value_list_receiver, key, nil, "alist_first %s")
         return nil if ret.length == 0
         ret[0]
       end
 
       def alist_gets(key, range=nil)
         if range
-          ret = sender(:value_receiver, key, nil, "alist_gets %s #{range}")
+          ret = sender(:value_list_receiver, key, nil, "alist_gets %s #{range}")
         else
-          ret = sender(:value_receiver, key, nil, "alist_gets %s")
+          ret = sender(:value_list_receiver, key, nil, "alist_gets %s")
         end
         return nil if ret.length == 0
         ret[0] = ret[0].to_i
@@ -1402,9 +1402,9 @@ module Roma
 
       def alist_gets_with_time(key, range=nil)
         if range
-          ret = sender(:value_receiver, key, nil, "alist_gets_with_time %s #{range}")
+          ret = sender(:value_list_receiver, key, nil, "alist_gets_with_time %s #{range}")
         else
-          ret = sender(:value_receiver, key, nil, "alist_gets_with_time %s")
+          ret = sender(:value_list_receiver, key, nil, "alist_gets_with_time %s")
         end
         return nil if ret.length == 0
         ret[0] = ret[0].to_i
@@ -1455,9 +1455,9 @@ module Roma
 
       def alist_join(key, sep, range=nil)
         if range
-          ret = sender(:value_receiver, key, sep, "alist_join %s #{sep.length} #{range}")
+          ret = sender(:value_list_receiver, key, sep, "alist_join %s #{sep.length} #{range}")
         else
-          ret = sender(:value_receiver, key, sep, "alist_join %s #{sep.length}")
+          ret = sender(:value_list_receiver, key, sep, "alist_join %s #{sep.length}")
         end
         return nil if ret.length == 0
         ret[0] = ret[0].to_i
@@ -1466,10 +1466,10 @@ module Roma
 
       def alist_join_with_time(key, sep, range=nil)
         if range
-          ret = sender(:value_receiver, key, sep,
+          ret = sender(:value_list_receiver, key, sep,
                        "alist_join_with_time %s #{sep.length} #{range}")
         else
-          ret = sender(:value_receiver, key, sep,
+          ret = sender(:value_list_receiver, key, sep,
                        "alist_join_with_time %s #{sep.length}")
         end
         return nil if ret.length == 0
@@ -1479,16 +1479,16 @@ module Roma
 
       def alist_to_json(key, range=nil)
         if range
-          ret = sender(:value_receiver, key, nil, "alist_to_json %s #{range}")
+          ret = sender(:value_list_receiver, key, nil, "alist_to_json %s #{range}")
         else
-          ret = sender(:value_receiver, key, nil, "alist_to_json %s")
+          ret = sender(:value_list_receiver, key, nil, "alist_to_json %s")
         end
         return nil if ret.length == 0
         ret[0]
       end
 
       def alist_last(key)
-        ret = sender(:value_receiver, key, nil, "alist_last %s")
+        ret = sender(:value_list_receiver, key, nil, "alist_last %s")
         return nil if ret.length == 0
         ret[0]
       end
@@ -1500,7 +1500,7 @@ module Roma
       end
 
       def alist_pop(key)
-        ret = sender(:value_receiver, key, nil, "alist_pop %s")
+        ret = sender(:value_list_receiver, key, nil, "alist_pop %s")
         return nil if ret.length == 0
         ret[0]
       end
@@ -1540,16 +1540,16 @@ module Roma
       end
 
       def alist_shift(key)
-        ret = sender(:value_receiver, key, nil, "alist_shift %s")
+        ret = sender(:value_list_receiver, key, nil, "alist_shift %s")
         return nil if ret.length == 0
         ret[0]
       end
 
       def alist_to_s(key, range=nil)
         if range
-          ret = sender(:value_receiver, key, nil, "alist_to_s %s #{range}")
+          ret = sender(:value_list_receiver, key, nil, "alist_to_s %s #{range}")
         else
-          ret = sender(:value_receiver, key, nil, "alist_to_s %s")
+          ret = sender(:value_list_receiver, key, nil, "alist_to_s %s")
         end
         return ret if ret.instance_of?(String)
         return nil if ret.length == 0

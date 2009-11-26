@@ -109,7 +109,7 @@ module Roma
         ret.chomp if ret
       end
 
-      def value_receiver(con)
+      def value_list_receiver(con)
         ret = []
         while (line = con.gets) != "END\r\n"
           s = line.split(' ')
@@ -119,6 +119,17 @@ module Roma
         end
         ret
       end
+
+      def value_hash_receiver(con)
+        ret = {}
+        while (line = con.gets) != "END\r\n"
+          s = line.split(' ')
+          return line.chomp if s[0] == 'SERVER_ERROR' || s[0] == 'CLIENT_ERROR'
+          ret[s[1]] = read_bytes(con, s[3].to_i)
+          read_bytes(con, 2)
+        end
+        ret
+      end      
 
       def multiplelines_receiver(con) 
         ret = []
