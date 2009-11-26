@@ -15,6 +15,8 @@ module Roma
     LOG_SHIFT_AGE = 10
     LOG_SHIFT_SIZE = 1024 * 1024 * 10
     LOG_PATH = '.'
+    # :debug | :info | :warn | :error
+    LOG_LEVEL = :debug
 
     # routing setting
     RTTABLE_PATH = '.'

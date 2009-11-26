@@ -130,6 +130,19 @@ module Roma
                                                        Roma::Config::LOG_SHIFT_AGE,
                                                        Roma::Config::LOG_SHIFT_SIZE)
       @log = Roma::Logging::RLogger.instance
+
+      if Config.const_defined? :LOG_LEVEL
+        case Config::LOG_LEVEL
+        when :debug
+          @log.level = Roma::Logging::RLogger::Severity::DEBUG
+        when :info
+          @log.level = Roma::Logging::RLogger::Severity::INFO
+        when :warn
+          @log.level = Roma::Logging::RLogger::Severity::WARN
+        when :error
+          @log.level = Roma::Logging::RLogger::Severity::ERROR
+        end
+      end
     end
 
     def options(argv)

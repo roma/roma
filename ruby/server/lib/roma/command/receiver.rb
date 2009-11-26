@@ -221,6 +221,27 @@ module Roma
         send_data("RESTARTED\r\n")
       end
 
+      # set_log_level [ 'debug' | 'info' | 'warn' | 'error' ] 
+      def ev_set_log_level(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
+        end
+
+        case s[1].downcase
+        when 'debug'
+          @log.level = Roma::Logging::RLogger::Severity::DEBUG
+        when 'info'
+          @log.level = Roma::Logging::RLogger::Severity::INFO
+        when 'warn'
+          @log.level = Roma::Logging::RLogger::Severity::WARN
+        when 'error'
+          @log.level = Roma::Logging::RLogger::Severity::ERROR
+        else
+          return send_data("CLIENT_ERROR no match log-level string\r\n")
+        end
+        send_data("STORED\r\n")
+      end
+
       private 
 
       def dcnice(p)
