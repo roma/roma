@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import jp.co.rakuten.rit.roma.client.AllTests;
 import jp.co.rakuten.rit.roma.client.Node;
 import jp.co.rakuten.rit.roma.client.RomaClient;
 import jp.co.rakuten.rit.roma.client.RomaClientFactory;
@@ -10,16 +11,17 @@ import jp.co.rakuten.rit.roma.client.util.ListWrapper;
 import jp.co.rakuten.rit.roma.client.util.StringListWrapper;
 import junit.framework.TestCase;
 
-
 public class PerfTest2 extends TestCase {
+    private static String NODE_ID = AllTests.NODE_ID;
+
     private static String KEY_PREFIX1 = PerfTest.class.getName() + "1";
-    
+
     private static String KEY_PREFIX2 = PerfTest.class.getName() + "2";
-    
+
     private static String KEY_PREFIX3 = PerfTest.class.getName() + "3";
 
     private static RomaClient CLIENT = null;
-    
+
     private static StringListWrapper LISTUTIL2 = null;
 
     //public static int BIG_LOOP_COUNT = 100;
@@ -43,9 +45,7 @@ public class PerfTest2 extends TestCase {
 	CLIENT = factory.newRomaClient(new Properties());
 	List<Node> nodes = new ArrayList<Node>();
 	CLIENT.setNumOfThreads(NUM_OF_THREADS);
-	//nodes.add(Node.create("192.168.12.254_11211"));
-	//nodes.add(Node.create("192.168.12.254_11212"));
-	nodes.add(Node.create("10.162.127.145_11211"));
+	nodes.add(Node.create(NODE_ID));
 	LISTUTIL2 = new StringListWrapper(CLIENT, true, 15);
 	CLIENT.open(nodes);
 	CLIENT.setTimeout(PERIOD_OF_TIMEOUT);
@@ -57,7 +57,7 @@ public class PerfTest2 extends TestCase {
 	CLIENT.close();
 	CLIENT = null;
     }
-    
+
     public void testDummy() {
 	assertTrue(true);
     }
@@ -83,7 +83,7 @@ public class PerfTest2 extends TestCase {
 	for (int i = 0; i < threads.length; ++i) {
 	    threads[i].start();
 	}
-	
+
 	while (true) {
 	    Thread.sleep(1000);
 	}
@@ -155,7 +155,7 @@ public class PerfTest2 extends TestCase {
 	count_min = 0;
 	count_max = 0;
     }
-    
+
     private void small_loop0(int[] rand, int user, int hotel) throws Exception {
 	String userID = "user:" + user;
 	LISTUTIL2.get(userID, 0, 15);
@@ -166,7 +166,7 @@ public class PerfTest2 extends TestCase {
     }
 
     private static final char A = 'b';
-    
+
     private static final String DUMMY_PREFIX = makeDummyPrefix();
 
     private static String makeDummyPrefix() {
@@ -178,7 +178,7 @@ public class PerfTest2 extends TestCase {
 	//sb.append("::");
 	return sb.toString();
     }
-    
+
     public static void main(final String[] args) throws Exception {
 	PerfTest test = new PerfTest();
 	test.setUp();
