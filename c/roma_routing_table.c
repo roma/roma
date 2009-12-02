@@ -1,8 +1,8 @@
 /* 
+ * ROMA client
  * File:   roma_sender.c
  * Author: yosuke hara
  *
- * Created on 2009/06/29
  */
 
 #include <stdlib.h>

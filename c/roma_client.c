@@ -1,8 +1,8 @@
 /* 
+ * ROMA client
  * File:   rmc_client.c
- * Author: yosuke
+ * Author: yosuke hara
  *
- * Created on 2009/06/26
  */
 
 #include <stdio.h>

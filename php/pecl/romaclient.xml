@@ -36,19 +36,6 @@ This is ROMA-Client PHP extension module.
   </deps>
 
   <!-- functions. -->
-  <!--
-  int rmc_connect(int hosts, char** str_hosts);
-  int rmc_disconnect();
-  int rmc_set(char *key, char *value, int exptime);
-  char *rmc_get(char *key);  
-  int rmc_add(char *key, char *value, int exptime);
-  int rmc_replace(char *key, char *value, int exptime);
-  int rmc_append(char *key, char *value, int exptime);
-  int rmc_prepend(char *key, char *value, int exptime);
-  int rmc_cas(char *key, char *value, int exptime);
-  int rmc_delete(char *key);
-  -->
-
   <!-- 1. rmc_version -->
   <function name="rmc_version" role="public">
     <proto>int rmc_version()</proto>
@@ -157,27 +144,6 @@ Output "Delete Value." and linebreak.
   </function>
 
   <!-- ===== Plugin - ListCommand ===== -->
-  <!--
-  12.[x] char *rmc_alist_at(char *key, int index);
-  13.[x] int rmc_alist_clear(char *key);
-  14.[x] int rmc_alist_delete(char *key, char *value);
-  15.[x] int rmc_alist_delete_at(char *key, int index);
-  16.[x] int rmc_alist_empty(char *key);
-  17.[x] char *rmc_alist_first(char *key);
-  18.[x] int rmc_alist_include(char *key, char *value);
-  19.[x] int rmc_alist_index(char *key, char *value);
-  20.[x] int rmc_alist_insert(char *key, int index, char *value);
-  21.[x] int rmc_alist_sized_insert(char *key, int size, char *value);
-  22.[x] char *rmc_alist_join(char *key, char *separator);
-  23.[x] char *rmc_alist_to_json(char * key);
-  24.[x] char *rmc_alist_last(char *key);
-  25.[x] int rmc_alist_length(char *key);
-  26.[x] char *rmc_alist_pop(char *key);
-  27.[x] int rmc_alist_push(char *key, char *value);
-  28.[x] char *rmc_alist_shift(char *key);
-  29.[x] char *rmc_alist_tostr(char *key);
-  -->
-
   <!-- 12. char *rmc_alist_at(char *key, int index); -->
   <function name="rmc_alist_at" role="public">
     <proto>string rmc_alist_at(string key, int index)</proto>

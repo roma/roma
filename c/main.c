@@ -1,8 +1,7 @@
 /* 
+ * ROMA client.
  * File:   main.c
- * Author: yosuke
- *
- * Created on 2009/06/26
+ * Author: yosuke hara
  */
 
 #include <stdio.h>
