@@ -20,7 +20,7 @@ public class SwapAndSizedPushCommand extends UpdateCommand {
                 ListCommandID.STR_WHITE_SPACE).append(
                 context.get(UpdateCommand.ARRAY_SIZE)) // array-size
                 .append(ListCommandID.STR_WHITE_SPACE).append(
-                ((byte[]) context.get(CommandContext.VALUE)).length).append(ListCommandID.STR_CRLR);
+                ((byte[]) context.get(CommandContext.VALUE)).length).append(ListCommandID.STR_CRLF);
         context.put(CommandContext.STRING_DATA, sb);
     }
 

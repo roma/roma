@@ -3,6 +3,7 @@ package jp.co.rakuten.rit.roma.client;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import jp.co.rakuten.rit.roma.client.command.Command;
 import jp.co.rakuten.rit.roma.client.command.CommandContext;
@@ -115,6 +116,8 @@ public interface RomaClient {
      * @throws ClientException
      */
     byte[] get(String key) throws ClientException;
+    
+    Map<String, byte[]> gets(List<String> keys) throws ClientException;
 
     /**
      * Append the given value to the existing value.

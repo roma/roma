@@ -1,6 +1,9 @@
 package jp.co.rakuten.rit.roma.client;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import jp.co.rakuten.rit.roma.client.commands.TimeoutFilter;
@@ -11,9 +14,9 @@ public class RomaClientImplTest extends TestCase {
 	private static String NODE_ID = AllTests.NODE_ID;
 
 	private static String KEY_PREFIX = RomaClientImplTest.class.getName();
-	
+
 	private static RomaClient CLIENT = null;
-	
+
 	private static String KEY = null;
 
 	public RomaClientImplTest() {
@@ -27,7 +30,7 @@ public class RomaClientImplTest extends TestCase {
 		CLIENT.open(Node.create(NODE_ID));
 		TimeoutFilter.timeout = 100 * 1000;
 	}
-	
+
 	@Override
 	public void tearDown() throws Exception {
 		CLIENT.delete(KEY);
@@ -35,7 +38,82 @@ public class RomaClientImplTest extends TestCase {
 		CLIENT = null;
 		KEY = null;
 	}
-	
+
+	public void testGets01() throws Exception {
+		try {
+			KEY = KEY_PREFIX + "testGets01";
+			assertTrue(CLIENT.put(KEY + "01", "01".getBytes()));
+			assertTrue(CLIENT.put(KEY + "02", "02".getBytes()));
+			assertTrue(CLIENT.put(KEY + "03", "03".getBytes()));
+			List<String> keys = new ArrayList<String>();
+			keys.add(KEY + "01");
+			keys.add(KEY + "02");
+			keys.add(KEY + "03");
+			Map<String, byte[]> values = CLIENT.gets(keys);
+			assertEquals(3, values.size());
+			assertEquals("01", new String(values.get(KEY + "01")));
+			assertEquals("02", new String(values.get(KEY + "02")));
+			assertEquals("03", new String(values.get(KEY + "03")));
+		} finally {
+			CLIENT.delete(KEY + "01");
+			CLIENT.delete(KEY + "02");
+			CLIENT.delete(KEY + "03");
+		}
+	}
+
+	public void testGets02() throws Exception {
+		try {
+			KEY = KEY_PREFIX + "testGets02";
+			assertTrue(CLIENT.put(KEY + "01", "01".getBytes()));
+			assertTrue(CLIENT.put(KEY + "02", "02".getBytes()));
+			assertTrue(CLIENT.put(KEY + "03", "03".getBytes()));
+			List<String> keys = new ArrayList<String>();
+			keys.add(KEY + "01");
+			keys.add(KEY + "02");
+			keys.add(KEY + "04");
+			keys.add(KEY + "05");
+			keys.add(KEY + "03");
+			Map<String, byte[]> values = CLIENT.gets(keys);
+			assertEquals(3, values.size());
+			assertEquals("01", new String(values.get(KEY + "01")));
+			assertEquals("02", new String(values.get(KEY + "02")));
+			assertEquals("03", new String(values.get(KEY + "03")));
+		} finally {
+			CLIENT.delete(KEY + "01");
+			CLIENT.delete(KEY + "02");
+			CLIENT.delete(KEY + "03");
+		}
+	}
+
+	public void testGets03() throws Exception {
+		try {
+			KEY = KEY_PREFIX + "testGets03";
+			assertTrue(CLIENT.put(KEY + "01", "01".getBytes(), new Date(2000)));
+			assertTrue(CLIENT.put(KEY + "02", "02".getBytes()));
+			assertTrue(CLIENT.put(KEY + "03", "03".getBytes()));
+			List<String> keys = new ArrayList<String>();
+			keys.add(KEY + "01");
+			keys.add(KEY + "02");
+			keys.add(KEY + "04");
+			keys.add(KEY + "05");
+			keys.add(KEY + "03");
+			Map<String, byte[]> values = CLIENT.gets(keys);
+			assertEquals(3, values.size());
+			assertEquals("01", new String(values.get(KEY + "01")));
+			assertEquals("02", new String(values.get(KEY + "02")));
+			assertEquals("03", new String(values.get(KEY + "03")));
+			Thread.sleep(3000);
+			values = CLIENT.gets(keys);
+			assertEquals(2, values.size());
+			assertEquals("02", new String(values.get(KEY + "02")));
+			assertEquals("03", new String(values.get(KEY + "03")));
+		} finally {
+			CLIENT.delete(KEY + "01");
+			CLIENT.delete(KEY + "02");
+			CLIENT.delete(KEY + "03");
+		}
+	}
+
 	public void testPut01() throws Exception {
 		KEY = KEY_PREFIX + "testPut01";
 		assertTrue(CLIENT.put(KEY, "01".getBytes()));
@@ -135,6 +213,5 @@ public class RomaClientImplTest extends TestCase {
 		Thread.sleep(3000);
 		assertFalse(CLIENT.prepend(KEY, "04".getBytes()));
 	}
-
 
 }

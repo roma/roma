@@ -26,11 +26,12 @@ public class UpdateCommand extends DefaultCommand {
     @Override
     protected void sendAndReceive(CommandContext context) throws IOException,
             ClientException {
-        StringBuilder sb = (StringBuilder) context.get(CommandContext.STRING_DATA);
+        StringBuilder sb = (StringBuilder) context
+                .get(CommandContext.STRING_DATA);
         Connection conn = (Connection) context.get(CommandContext.CONNECTION);
         conn.out.write(sb.toString().getBytes());
         conn.out.write((byte[]) context.get(CommandContext.VALUE));
-        conn.out.write(ListCommandID.STR_CRLR.getBytes());
+        conn.out.write(ListCommandID.STR_CRLF.getBytes());
         conn.out.flush();
         sb = new StringBuilder();
         sb.append(conn.in.readLine());
@@ -40,7 +41,8 @@ public class UpdateCommand extends DefaultCommand {
     @Override
     protected boolean parseResult(CommandContext context)
             throws ClientException {
-        StringBuilder sb = (StringBuilder) context.get(CommandContext.STRING_DATA);
+        StringBuilder sb = (StringBuilder) context
+        .get(CommandContext.STRING_DATA);
         String s = sb.toString();
         // STORED | NOT_STORED | SERVER_ERROR
         if (s.startsWith("STORED")) {

@@ -25,12 +25,12 @@ public class DeleteCommand extends DefaultCommand {
                     .append(context.get(CommandContext.KEY))
                     .append(ListCommandID.STR_WHITE_SPACE)
                     .append(((byte[]) context.get(CommandContext.VALUE)).length)
-                    .append(ListCommandID.STR_CRLR);
+                    .append(ListCommandID.STR_CRLF);
 
             Connection conn = (Connection) context.get(CommandContext.CONNECTION);
             conn.out.write(sb.toString().getBytes());
             conn.out.write((byte[]) context.get(CommandContext.VALUE));
-            conn.out.write(ListCommandID.STR_CRLR.getBytes());
+            conn.out.write(ListCommandID.STR_CRLF.getBytes());
             conn.out.flush();
 
             String s = conn.in.readLine();

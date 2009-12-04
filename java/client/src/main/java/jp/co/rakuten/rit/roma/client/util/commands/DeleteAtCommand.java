@@ -24,7 +24,7 @@ public class DeleteAtCommand extends DefaultCommand {
                     context.get(CommandContext.KEY)).append(
                     ListCommandID.STR_WHITE_SPACE).append(
                     new String((byte[]) context.get(CommandContext.VALUE)))
-                    .append(ListCommandID.STR_CRLR);
+                    .append(ListCommandID.STR_CRLF);
 
             Connection conn = (Connection) context
                     .get(CommandContext.CONNECTION);

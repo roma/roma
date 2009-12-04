@@ -25,7 +25,7 @@ public class StoreCommand extends DefaultCommand {
                 ((Date) context.get(CommandContext.EXPIRY)).getTime() / 1000)
                 .append(STR_WHITE_SPACE)
                 .append(((byte[]) context.get(CommandContext.VALUE)).length)
-                .append(STR_CRLR);
+                .append(STR_CRLF);
         context.put(CommandContext.STRING_DATA, sb);
     }
 
@@ -39,7 +39,7 @@ public class StoreCommand extends DefaultCommand {
         Connection conn = (Connection) context.get(CommandContext.CONNECTION);
         conn.out.write(sb.toString().getBytes());
         conn.out.write(((byte[]) context.get(CommandContext.VALUE)));
-        conn.out.write(STR_CRLR.getBytes());
+        conn.out.write(STR_CRLF.getBytes());
         conn.out.flush();
         sb = new StringBuilder();
         sb.append(conn.in.readLine());

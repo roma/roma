@@ -34,8 +34,8 @@ public class JoinWithTimeCommand extends DefaultCommand {
             if (!range.equals(NULL)) {
                 sb.append(ListCommandID.STR_WHITE_SPACE).append((String) range);
             }
-            sb.append(ListCommandID.STR_CRLR).append(SEP).append(
-                    ListCommandID.STR_CRLR);
+            sb.append(ListCommandID.STR_CRLF).append(SEP).append(
+                    ListCommandID.STR_CRLF);
             Connection conn = (Connection) context
                     .get(CommandContext.CONNECTION);
             conn.out.write(sb.toString().getBytes());

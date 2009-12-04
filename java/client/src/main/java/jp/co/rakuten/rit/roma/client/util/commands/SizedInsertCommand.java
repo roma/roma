@@ -21,7 +21,7 @@ public class SizedInsertCommand extends UpdateCommand {
                 context.get(UpdateCommand.ARRAY_SIZE)).append(
                 ListCommandID.STR_WHITE_SPACE).append(
                 ((byte[]) context.get(CommandContext.VALUE)).length).append(
-                ListCommandID.STR_CRLR);
+                ListCommandID.STR_CRLF);
         context.put(CommandContext.STRING_DATA, sb);
     }
 }

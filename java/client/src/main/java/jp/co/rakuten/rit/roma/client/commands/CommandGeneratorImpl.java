@@ -25,8 +25,10 @@ public class CommandGeneratorImpl implements CommandGenerator {
         try {
             createCommand(CommandID.GET, GetCommand.class, new Class[]{
                         TimeoutFilter.class, FailOverFilter.class});
+            createCommand(CommandID.GETS, GetsCommand.class, new Class[]{
+            	TimeoutFilter.class, FailOverFilter.class});
             createCommand(CommandID.SET, SetCommand.class, new Class[]{
-                        TimeoutFilter.class, FailOverFilter.class});
+            	TimeoutFilter.class, FailOverFilter.class});
             createCommand(CommandID.APPEND, AppendCommand.class, new Class[]{
                         TimeoutFilter.class, FailOverFilter.class});
             createCommand(CommandID.PREPEND, PrependCommand.class, new Class[]{

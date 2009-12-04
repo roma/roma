@@ -3,8 +3,10 @@ package jp.co.rakuten.rit.roma.client;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import jp.co.rakuten.rit.roma.client.command.CommandContext;
 import jp.co.rakuten.rit.roma.client.command.CommandException;
@@ -260,7 +262,12 @@ public class RomaClientImpl extends AbstractRomaClient {
      * @see RomaClient#get(String)
      */
     public byte[] get(String key) throws ClientException {
-        return get(CommandID.GET, key);
+        return (byte[])get(CommandID.GET, key);
+    }
+    
+    @SuppressWarnings("unchecked")
+	public Map<String, byte[]> gets(List<String> keys) throws ClientException {
+    	return (Map<String, byte[]>)gets(CommandID.GETS, keys);
     }
 
     protected byte[] get(int commandID, String key) throws ClientException {
@@ -274,6 +281,31 @@ public class RomaClientImpl extends AbstractRomaClient {
             boolean ret = exec(command, context);
             if (ret) {
                 return (byte[]) context.get(CommandContext.RESULT);
+            } else {
+                return null;
+            }
+        } catch (CommandException e) {
+            throw toClientException(e);
+        }
+    }
+    
+    protected Object gets(int commandID, List<String> keys)
+    		throws ClientException {
+    	if (keys.size() == 0) {
+    		return new HashMap<String, byte[]>();
+    	}
+    	
+        CommandContext context = new CommandContext();
+        try {
+            context.put(CommandContext.CONNECTION_POOL, connPool);
+            context.put(CommandContext.ROUTING_TABLE, routingTable);
+            context.put(CommandContext.KEY, keys.get(0));
+            context.put(CommandContext.KEYS, keys);
+            context.put(CommandContext.COMMAND_ID, commandID);
+            Command command = commandGenerator.getCommand(commandID);
+            boolean ret = exec(command, context);
+            if (ret) {
+            	return context.get(CommandContext.RESULT);
             } else {
                 return null;
             }

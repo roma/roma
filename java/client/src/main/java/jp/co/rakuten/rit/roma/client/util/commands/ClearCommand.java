@@ -22,7 +22,7 @@ public class ClearCommand extends DefaultCommand {
             sb.append(ListCommandID.STR_ALIST_CLEAR).append(
                     ListCommandID.STR_WHITE_SPACE).append(
                     context.get(CommandContext.KEY)).append(
-                    ListCommandID.STR_CRLR);
+                    ListCommandID.STR_CRLF);
 
             Connection conn = (Connection) context
                     .get(CommandContext.CONNECTION);

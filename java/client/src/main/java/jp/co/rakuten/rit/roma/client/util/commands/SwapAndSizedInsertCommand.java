@@ -20,7 +20,7 @@ public class SwapAndSizedInsertCommand extends UpdateCommand {
                 .append(context.get(UpdateCommand.ARRAY_SIZE))
                 .append(ListCommandID.STR_WHITE_SPACE)
                 .append(((byte[]) context.get(CommandContext.VALUE)).length)
-                .append(ListCommandID.STR_CRLR);
+                .append(ListCommandID.STR_CRLF);
         context.put(CommandContext.STRING_DATA, sb);
     }
 }
