@@ -9,18 +9,20 @@ public interface CommandID {
     int GET = 50;
     
     int GETS = 51;
+    
+    int GETS_OPT = 52;
+    
+    int SET = 54;
 
-    int SET = 52;
+    int APPEND = 55;
 
-    int APPEND = 53;
+    int PREPEND = 56;
 
-    int PREPEND = 54;
+    int DELETE = 57;
 
-    int DELETE = 55;
+    int INCREMENT = 58;
 
-    int INCREMENT = 56;
-
-    int DECREMENT = 57;
+    int DECREMENT = 59;
 
     String STR_CRLF = "\r\n";
 

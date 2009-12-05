@@ -12,10 +12,10 @@ import jp.co.rakuten.rit.roma.client.command.CommandGenerator;
 import jp.co.rakuten.rit.roma.client.routing.RoutingTable;
 
 /**
- * This interface is provided as an interface for intaracting
- * with ROMA.  
+ * This interface is provided as an interface for intaracting with ROMA.
  * 
- * The basic usage is written on {@link jp.co.rakuten.rit.roma.client.RomaClientFactory}.    
+ * The basic usage is written on
+ * {@link jp.co.rakuten.rit.roma.client.RomaClientFactory}.
  * 
  * @version 0.3.5
  */
@@ -91,33 +91,41 @@ public interface RomaClient {
     /**
      * Store the value in ROMA.
      * 
-     * @param key key to store value
-     * @param value value to store
+     * @param key
+     *            key to store value
+     * @param value
+     *            value to store
      * @return true, if the value was successfully stored
      */
     boolean put(String key, byte[] value) throws ClientException;
 
     /**
-     * Store the value in ROMA.  
+     * Store the value in ROMA.
      * 
-     * @param key key to store value 
-     * @param value value to store
-     * @param expiry expire time
+     * @param key
+     *            key to store value
+     * @param value
+     *            value to store
+     * @param expiry
+     *            expire time
      * @return true, if the value was successfully stored
      * @throws ClientException
      */
     boolean put(String key, byte[] value, Date expiry) throws ClientException;
 
     /**
-     * Get a value with a key.  
+     * Get a value with a key.
      * 
      * @param key
      * @return
      * @throws ClientException
      */
     byte[] get(String key) throws ClientException;
-    
+
     Map<String, byte[]> gets(List<String> keys) throws ClientException;
+
+    Map<String, byte[]> gets(List<String> keys, boolean useThreads)
+            throws ClientException;
 
     /**
      * Append the given value to the existing value.
@@ -130,11 +138,12 @@ public interface RomaClient {
     boolean append(String key, byte[] value) throws ClientException;
 
     /**
-     * Append the given value to the existing value.  
+     * Append the given value to the existing value.
      * 
      * @param key
      * @param value
-     * @param expiry expire time
+     * @param expiry
+     *            expire time
      * @return
      * @throws ClientException
      */
@@ -142,7 +151,7 @@ public interface RomaClient {
             throws ClientException;
 
     /**
-     * Prepend the given value to the existing value.  
+     * Prepend the given value to the existing value.
      * 
      * @param key
      * @param value
@@ -152,11 +161,12 @@ public interface RomaClient {
     boolean prepend(String key, byte[] value) throws ClientException;
 
     /**
-     * Prepend the given value to the existing value.  
-     *  
+     * Prepend the given value to the existing value.
+     * 
      * @param key
      * @param value
-     * @param expiry expire time
+     * @param expiry
+     *            expire time
      * @return
      * @throws ClientException
      */
@@ -166,13 +176,14 @@ public interface RomaClient {
     /**
      * Deletes ta stored value specified by the key
      * 
-     * @param key key to store value
+     * @param key
+     *            key to store value
      * @return true, if the value was deleted successfully
      */
     boolean delete(String key) throws ClientException;
 
     /**
-     * Increment the counter.  
+     * Increment the counter.
      * 
      * @param key
      * @param count
