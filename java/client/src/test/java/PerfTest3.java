@@ -7,16 +7,23 @@ import jp.co.rakuten.rit.roma.client.Node;
 import jp.co.rakuten.rit.roma.client.RomaClient;
 import jp.co.rakuten.rit.roma.client.RomaClientFactory;
 import jp.co.rakuten.rit.roma.client.commands.TimeoutException;
-import jp.co.rakuten.rit.roma.client.util.ListWrapper;
+import jp.co.rakuten.rit.roma.client.util.StringListWrapper;
 import junit.framework.TestCase;
 
-
-public class PerfTest2 extends TestCase {
+public class PerfTest3 extends TestCase {
     private static String NODE_ID = AllTests.NODE_ID;
+
+    private static String KEY_PREFIX1 = PerfTest3.class.getName() + "1";
+
+    private static String KEY_PREFIX2 = PerfTest3.class.getName() + "2";
+
+    private static String KEY_PREFIX3 = PerfTest3.class.getName() + "3";
 
     private static RomaClient CLIENT = null;
 
-    private static ListWrapper LISTUTIL = null;
+    private static StringListWrapper LISTUTIL2 = null;
+
+    //public static int BIG_LOOP_COUNT = 100;
 
     public static int SMALL_LOOP_COUNT = 1000;
 
@@ -28,7 +35,7 @@ public class PerfTest2 extends TestCase {
 
     public static long PERIOD_OF_TIMEOUT = 5000;
 
-    public PerfTest2() {
+    public PerfTest3() {
 	super();
     }
 
@@ -38,14 +45,14 @@ public class PerfTest2 extends TestCase {
 	List<Node> nodes = new ArrayList<Node>();
 	CLIENT.setNumOfThreads(NUM_OF_THREADS);
 	nodes.add(Node.create(NODE_ID));
-	LISTUTIL = new ListWrapper(CLIENT, 90);
+	LISTUTIL2 = new StringListWrapper(CLIENT, true, 15);
 	CLIENT.open(nodes);
 	CLIENT.setTimeout(PERIOD_OF_TIMEOUT);
 	//CLIENT.setNumOfThreads(100);
     }
 
     public void tearDown() throws Exception {
-	LISTUTIL = null;
+	LISTUTIL2 = null;
 	CLIENT.close();
 	CLIENT = null;
     }
@@ -58,7 +65,7 @@ public class PerfTest2 extends TestCase {
 	big_loop();
     }
 
-    public void testDeleteAndPrependLoop02() throws Exception {
+    public void XtestDeleteAndPrependLoop02() throws Exception {
 	Thread[] threads = new Thread[NUM_OF_THREADS];
 	for (int i = 0; i < threads.length; ++i) {
 	    threads[i] = new Thread() {
@@ -83,6 +90,7 @@ public class PerfTest2 extends TestCase {
 
     private void big_loop() throws Exception {
 	int count = 0;
+	//while (count < BIG_LOOP_COUNT) {
 	while (true) {
 	    small_loop(count);
 	    count++;
@@ -98,10 +106,14 @@ public class PerfTest2 extends TestCase {
 	long time0 = System.currentTimeMillis();
 	while (count < SMALL_LOOP_COUNT) {
 	    try {
+		int[] rand = new int[5];
+		for (int i = 0; i < rand.length; ++i) {
+		    rand[i] = (int) (Math.random() * 20000);
+		}
+		int user = (int) (Math.random() * 5000000);
+		int hotel = (int) (Math.random() * 20000);
 		long time = System.currentTimeMillis();
-		int keyID = (int) (Math.random() * 5000000);
-		int valueID = (int) (Math.random() * 20000);
-		small_loop0(keyID, valueID);
+		small_loop0(rand, user, hotel);
 		time = System.currentTimeMillis() - time;
 		if (time > PERIOD_OF_TIMEOUT) {
 		    count_threshold++;
@@ -143,10 +155,13 @@ public class PerfTest2 extends TestCase {
 	count_max = 0;
     }
 
-    private void small_loop0(int keyID, int valueID) throws Exception {
-	String key = "user:" + keyID;
-	String value = DUMMY_PREFIX + ":" + valueID;
-	LISTUTIL.deleteAndPrepend(key, value.getBytes());
+    private void small_loop0(int[] rand, int user, int hotel) throws Exception {
+	String userID = "user:" + user;
+	LISTUTIL2.get(userID, 0, 15);
+	for (int i = 0; i < rand.length; ++i) {
+	    CLIENT.get(new Integer(rand[i]).toString());
+	}
+	LISTUTIL2.deleteAndPrepend(userID, DUMMY_PREFIX + hotel);
     }
 
     private static final char A = 'b';
@@ -164,9 +179,9 @@ public class PerfTest2 extends TestCase {
     }
 
     public static void main(final String[] args) throws Exception {
-	PerfTest2 test = new PerfTest2();
+	PerfTest3 test = new PerfTest3();
 	test.setUp();
-	test.testDeleteAndPrependLoop02();
+	//test.testDeleteAndPrependLoop02();
 	//test.testDeleteAndPrependLoop01();
 	test.tearDown();
     }
