@@ -55,7 +55,6 @@ module Roma
         end
 
         data = Zlib::Inflate.inflate(zdata)
-# @log.debug("data = #{data}")
         if @storages[hname].rset(vn, key, d, s[3].to_i, s[4].to_i, data)
           send_data("STORED\r\n")
         else
@@ -264,16 +263,46 @@ module Roma
       def ev_prepend(s); set(:prepend,s); end
       def ev_fprepend(s); fset(:prepend,s); end
 
+
+      # "cas" means that "store this data but only if no one else has updated since I last fetched it."
+      # <command name> <key> <flags> <exptime> <bytes> <cas-id>[noreply]\r\n
+      # <data block>\r\n
       def ev_cas(s)
-        raise RuntimeError.new("unsupported")
+        key,hname = s[1].split("\e")
+        hname ||= @defhash
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+        v = read_bytes(s[4].to_i)
+        read_bytes(2)
+        vn = @rttable.get_vnode_id(d)
+        nodes = @rttable.search_nodes_for_write(vn)
+        if nodes[0] != @nid
+          @log.warn("forward cas key=#{key} vn=#{vn} to #{nodes[0]}")
+          res = send_cmd(nodes[0],"fcas #{s[1]} #{d} #{s[3]} #{v.length} #{s[5]}\r\n#{v}\r\n")
+          if res
+            return send_data("#{res}\r\n")
+          end
+          return send_data("SERVER_ERROR Message forward failed.\r\n")
+        end
+
+        store_cas(hname, vn, key, d, s[5].to_i, s[3].to_i, v, nodes[1..-1])
       end
 
       def ev_fcas(s)
-        raise RuntimeError.new("unsupported")
-      end
+        key,hname = s[1].split("\e")
+        hname ||= @defhash
+        d = s[2].to_i
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits if d == 0
+        v = read_bytes(s[4].to_i)
+        read_bytes(2)
+        vn = @rttable.get_vnode_id(d)
+        nodes = @rttable.search_nodes_for_write(vn)
+        if nodes.include?(@nid) == false
+          @log.error("fcas failed key = #{s[1]} vn = #{vn}")
+          return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
+        end
 
-      def ev_rcas(s)
-        raise RuntimeError.new("unsupported")
+        nodes.delete(@nid)
+        store_cas(hname, vn, key, d, s[5].to_i, s[3].to_i, v, nodes)
       end
 
       # incr <key> <value> [noreply]\r\n
@@ -362,6 +391,33 @@ module Roma
         end
       end
 
+      def store_cas(hname, vn, k, d, clk, expt, v, nodes)
+        if expt == 0
+          expt = 0x7fffffff
+        elsif expt < 2592000
+          expt += Time.now.to_i
+        end
+        unless @storages.key?(hname)
+          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          return
+        end
+
+        ret = @storages[hname].cas(vn, k, d, clk, expt ,v)
+        @stats.write_count += 1
+        case ret
+        when nil
+          @log.error("cas NOT_STORED:#{hname} #{vn} #{k} #{d} #{expt} #{clk}")
+          send_data("NOT_STORED\r\n")
+        when :not_found
+          send_data("NOT_FOUND\r\n")
+        when :exists
+          send_data("EXISTS\r\n")
+        else
+          redundant(nodes, hname, k, d, ret[2], expt, ret[4])
+          send_data("STORED\r\n")          
+        end
+      end
+
       def redundant(nodes, hname, k, d, clk, expt, v)
         if @rttable.min_version == nil || @rttable.min_version < 0x000306 # ver.0.3.6
           return redundant_older_than_000306(nodes, hname, k, d, clk, expt, v)
@@ -381,28 +437,22 @@ module Roma
       end
 
       def redundant_older_than_000306(nodes, hname, k, d, clk, expt, v)
-#        @log.debug("redundant_older_than_000306:called")
         nodes.each{ |nid|
           if @rttable.version_of_nodes[nid] >= 0x000306 &&
               @stats.size_of_zredundant > 0 && @stats.size_of_zredundant < v.length
 
-#            @log.debug("redundant_older_than_000306:rzset #{nid}")
             zv = Zlib::Deflate.deflate(v) unless zv
             res = send_cmd(nid,"rzset #{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}\r\n#{zv}\r\n")
             unless res
               Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('zredundant',[nid,hname,k,d,clk,expt,zv]))
               @log.warn("redundant_older_than_000306 failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length} -> #{nid}")
             end
-
           else
-   
-#            @log.debug("redundant_older_than_000306:rset #{nid}")
             res = send_cmd(nid,"rset #{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}\r\n#{v}\r\n")
             unless res
               Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('redundant',[nid,hname,k,d,clk,expt,v]))
               @log.warn("redundant_older_than_000306 failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
             end
-
           end
         }
       end

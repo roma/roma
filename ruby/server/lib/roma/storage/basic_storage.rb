@@ -121,6 +121,19 @@ module Roma
         unpack_header(buf)
       end
 
+      def cas(vn, k, d, clk, expt, v)
+        buf = @hdb[@hdiv[vn]].get(k)
+        return :not_found unless buf
+        t = Time.now.to_i
+        data = unpack_data(buf)
+        return :not_found if t > data[3]
+        return :exists if clk != data[2]
+        clk = (data[2] + 1) & 0xffffffff
+        ret = [vn, t, clk, expt, v]
+        return ret if @hdb[@hdiv[vn]].put(k, pack_data(*ret))
+        nil
+      end
+
       def rset(vn, k, d, clk, expt, v)
         buf = @hdb[@hdiv[vn]].get(k)
         t = Time.now.to_i
