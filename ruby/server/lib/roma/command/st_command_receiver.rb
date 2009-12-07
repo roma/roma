@@ -123,9 +123,9 @@ module Roma
             key,hname = kh.split("\e")
             hname ||= @defhash
             if @storages.key?(hname)
-              val = @storages[hname].get(kvn[key], key, 0)
+              vn, t, clk, expt, val = @storages[hname].get_raw(kvn[key], key, 0)
               @stats.read_count += 1
-              res[key] = val if val
+              res[key] = [clk, val] if val && Time.now.to_i <= expt
             end
           }
           nk.delete(@nid)
@@ -135,8 +135,9 @@ module Roma
           res.merge!(forward_gets(nid,keys))
         }
 
-        res.each_pair{|key,val|
-          send_data("VALUE #{key} 0 #{val.length}\r\n#{val}\r\n")
+        res.each_pair{|key,cv|
+          clk, val = cv
+          send_data("VALUE #{key} 0 #{val.length} #{clk}\r\n#{val}\r\n")
         }
         send_data("END\r\n")
       end
@@ -327,8 +328,8 @@ module Roma
         con.send("gets #{keys.join(' ')}\r\n")
         res = {}
         while((line = con.gets)!="END\r\n")
-          s = line.split(/ /)
-          res[s[1]] = con.read_bytes(s[3].to_i)
+          s = line.chomp.split(/ /)
+          res[s[1]] = [s[4], con.read_bytes(s[3].to_i)]
           con.read_bytes(2)
         end
         return_connection(nid, con)
