@@ -217,6 +217,13 @@ module Roma
         v
       end
 
+      def get_raw(vn, k, d)
+        buf = @hdb[@hdiv[vn]].get(k)
+        return nil unless buf
+
+        unpack_data(buf)
+      end
+
       def rdelete(vn, k, d, clk)
         buf = @hdb[@hdiv[vn]].get(k)
         t = Time.now.to_i
