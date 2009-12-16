@@ -22,6 +22,7 @@ class ListPluginTest < Test::Unit::TestCase
 
   def teardown
     stop_roma
+    Roma::Messaging::ConPool::instance.close_all
   end
 
   def test_error_case
@@ -112,7 +113,7 @@ class ListPluginTest < Test::Unit::TestCase
   def test_gets
     @rc.alist_clear("aa")
     
-    assert( @rc.alist_gets("aa")[0]==0 )
+    assert_nil( @rc.alist_gets("aa") )
     assert( @rc.alist_push("aa","11")=='STORED' )
     assert( @rc.alist_gets("aa") == [1,"11"] )
     assert( @rc.alist_push("aa","22")=='STORED' )

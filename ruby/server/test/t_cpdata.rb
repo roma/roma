@@ -95,6 +95,8 @@ class CopyDataTest < Test::Unit::TestCase
   def teardown
     stop_roma
     @th.kill
+    $gs.close
+    Roma::Messaging::ConPool::instance.close_all
   end
 
   def test_pushv

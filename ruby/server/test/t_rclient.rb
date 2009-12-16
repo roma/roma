@@ -18,6 +18,7 @@ class RClientTest < Test::Unit::TestCase
 
   def teardown
     stop_roma
+    Roma::Messaging::ConPool::instance.close_all
   end
 
   def test_set_get_delete
