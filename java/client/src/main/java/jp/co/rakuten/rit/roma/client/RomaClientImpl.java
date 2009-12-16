@@ -3,18 +3,21 @@ package jp.co.rakuten.rit.roma.client;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import jp.co.rakuten.rit.roma.client.command.CommandContext;
 import jp.co.rakuten.rit.roma.client.command.CommandException;
 import jp.co.rakuten.rit.roma.client.command.Command;
 import jp.co.rakuten.rit.roma.client.commands.CommandID;
+import jp.co.rakuten.rit.roma.client.commands.GetsOptCommand;
 import jp.co.rakuten.rit.roma.client.commands.TimeoutFilter;
 
 /**
- * ROMA client to ROMA, which is a cluster of ROMA instances.  
- * The basic usage is written on {@link jp.co.rakuten.rit.roma.client.RomaClientFactory}.    
+ * ROMA client to ROMA, which is a cluster of ROMA instances. The basic usage is
+ * written on {@link jp.co.rakuten.rit.roma.client.RomaClientFactory}.
  * 
  * @version 0.3.5
  */
@@ -44,7 +47,8 @@ public class RomaClientImpl extends AbstractRomaClient {
     static class ShutdownHookThread extends Thread {
 
         public void run() {
-            //System.out.println("Call Shutdown hook");
+            // System.out.println("Call Shutdown hook");
+            GetsOptCommand.shutdown();
             TimeoutFilter.shutdown();
         }
     }
@@ -136,7 +140,8 @@ public class RomaClientImpl extends AbstractRomaClient {
             context.put(CommandContext.CONNECTION_POOL, connPool);
             context.put(CommandContext.ROUTING_TABLE, routingTable);
             context.put(CommandContext.COMMAND_ID, CommandID.ROUTING_DUMP);
-            Command command = commandGenerator.getCommand(CommandID.ROUTING_DUMP);
+            Command command = commandGenerator
+                    .getCommand(CommandID.ROUTING_DUMP);
             boolean ret = command.execute(context);
             if (ret) {
                 return (List<Object>) context.get(CommandContext.RESULT);
@@ -162,7 +167,8 @@ public class RomaClientImpl extends AbstractRomaClient {
             context.put(CommandContext.CONNECTION_POOL, connPool);
             context.put(CommandContext.ROUTING_TABLE, routingTable);
             context.put(CommandContext.COMMAND_ID, CommandID.ROUTING_MKLHASH);
-            Command command = commandGenerator.getCommand(CommandID.ROUTING_MKLHASH);
+            Command command = commandGenerator
+                    .getCommand(CommandID.ROUTING_MKLHASH);
             boolean ret = exec(command, context);
             if (ret) {
                 String s = (String) context.get(CommandContext.RESULT);
@@ -260,20 +266,43 @@ public class RomaClientImpl extends AbstractRomaClient {
      * @see RomaClient#get(String)
      */
     public byte[] get(String key) throws ClientException {
-        return get(CommandID.GET, key);
+        List<String> keys = new ArrayList<String>();
+        keys.add(key);
+        return (byte[])gets(CommandID.GET, keys);
     }
 
-    protected byte[] get(int commandID, String key) throws ClientException {
+    @SuppressWarnings("unchecked")
+    public Map<String, byte[]> gets(List<String> keys) throws ClientException {
+        return gets(keys, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, byte[]> gets(List<String> keys, boolean useThreads)
+            throws ClientException {
+        if (useThreads) {
+            return (Map<String, byte[]>) gets(CommandID.GETS_OPT, keys);            
+        } else {
+            return (Map<String, byte[]>) gets(CommandID.GETS, keys);
+        }
+    }
+
+    protected Object gets(int commandID, List<String> keys)
+            throws ClientException {
+        if (keys.size() == 0) {
+            return new HashMap<String, byte[]>();
+        }
+
         CommandContext context = new CommandContext();
         try {
             context.put(CommandContext.CONNECTION_POOL, connPool);
             context.put(CommandContext.ROUTING_TABLE, routingTable);
-            context.put(CommandContext.KEY, key);
+            context.put(CommandContext.KEY, keys.get(0));
+            context.put(CommandContext.KEYS, keys);
             context.put(CommandContext.COMMAND_ID, commandID);
             Command command = commandGenerator.getCommand(commandID);
             boolean ret = exec(command, context);
             if (ret) {
-                return (byte[]) context.get(CommandContext.RESULT);
+                return context.get(CommandContext.RESULT);
             } else {
                 return null;
             }

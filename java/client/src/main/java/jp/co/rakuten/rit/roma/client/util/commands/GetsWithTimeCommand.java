@@ -29,7 +29,7 @@ public class GetsWithTimeCommand extends DefaultCommand {
             if (!range.equals(JoinCommand.NULL)) {
                 sb.append(ListCommandID.STR_WHITE_SPACE).append(range);
             }
-            sb.append(ListCommandID.STR_CRLR);
+            sb.append(ListCommandID.STR_CRLF);
             Connection conn = (Connection) context
                     .get(CommandContext.CONNECTION);
             conn.out.write(sb.toString().getBytes());

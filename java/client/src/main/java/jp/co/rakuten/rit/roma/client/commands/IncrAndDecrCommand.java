@@ -19,7 +19,7 @@ public class IncrAndDecrCommand extends DefaultCommand {
                 context.get(CommandContext.KEY))
                 .append(STR_WHITE_SPACE)
                 .append(context.get(CommandContext.VALUE))
-                .append(STR_CRLR);
+                .append(STR_CRLF);
         context.put(CommandContext.STRING_DATA, sb);
     }
 

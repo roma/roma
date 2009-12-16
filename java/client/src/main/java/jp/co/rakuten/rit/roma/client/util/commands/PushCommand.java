@@ -18,7 +18,7 @@ public class PushCommand extends UpdateCommand {
 		context.get(CommandContext.KEY)).append(
 		ListCommandID.STR_WHITE_SPACE).append(
 		((byte[]) context.get(CommandContext.VALUE)).length).append(
-		ListCommandID.STR_CRLR);
+		ListCommandID.STR_CRLF);
 	context.put(CommandContext.STRING_DATA, sb);
     }
 }

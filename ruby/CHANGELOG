@@ -1,0 +1,34 @@
+* supported a cas command. [junji torii] cee0f96
+* improved a gets result for a cas-id. [junji torii] 54e136b
+* get_raw method was added. [junji torii] e005407
+* improve a log level setting. [junji torii] ab97ead
+* supported a gets command in ruby client. [junji torii] b553b8b
+
+*0.8.1 (Nov 26 2009)*
+
+* update version. [junji torii] c9267c5
+* supported a gets command. [junji torii] 8301706
+* fixes the bugs of tribunus [Shumpei Akai] da31dca
+* added simple_bench.rb [junji torii] 130a5c9
+* Improve a command option. [junji torii] 74e3b66
+* Merge roma gem branch into master [byplayer] 9c5f023
+* fixed bug [junji torii] 9a10943
+* fixed bug [junji torii] c3ea85a
+* use FileUtils.rm_rf. [Kouhei Sutou] 141c525
+* added a set_gap_for_failover command. [junji torii] 364be47
+* added a debug plugin. [junji torii] 2908e4e
+* don't log to STDOUT. [Kouhei Sutou] 78fb6b2
+* Javaのソースコード：インデントを修正 [TAKANO Mitsuhiro] 74eed3d
+* add package dir and doc dir to .gitignore . [byplayer] 9d559ac
+* add gem package task . [byplayer] 4cb31b2
+* 少しRubyらしく書き換えた些細な修正と正規表現の誤りを修正 [TAKANO Mitsuhiro] 24c016d
+* ファイルごとにコーディングスタイルをあわせるなど [TAKANO Mitsuhiro] 9bfefdd
+* 不要な式展開を変数に置き換えた [TAKANO Mitsuhiro] 48c3f20
+* puts was replaced with logger. [junji torii] 45b03b2
+* use assert_raise for exception check. [Kouhei Sutou] a18cd0d
+* added a prototype of roma client proxy daemon. [junji torii] 14b68e8
+* remove needless test name display. [Kouhei Sutou] f234ee2
+* fixed bug in t_rclient.rb. [junji torii] 68880b5
+* support running test with Ruby not named as 'ruby'. [Kouhei Sutou] 6fd1ec2
+
+*0.8.0 (Oct 23 2009)* 

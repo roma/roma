@@ -26,12 +26,13 @@ public class TimeoutFilter extends AbstractCommandFilter {
 
     // The maximum time to wait (millis)
     public static long timeout = Long.parseLong(Config.DEFAULT_TIMEOUT_PERIOD);
-    public static int numOfThreads = Integer.parseInt(Config.DEFAULT_NUM_OF_THREADS);
+    public static int numOfThreads = Integer
+            .parseInt(Config.DEFAULT_NUM_OF_THREADS);
     private static ExecutorService executor;
 
     public static void shutdown() {
         if (executor != null) {
-            //executor.shutdown();
+            // executor.shutdown();
             executor.shutdownNow();
         }
         executor = null;
@@ -57,8 +58,10 @@ public class TimeoutFilter extends AbstractCommandFilter {
             Connection conn = null;
             try {
                 node = (Node) context.get(CommandContext.NODE);
-                if (commandID != CommandID.ROUTING_DUMP && commandID != CommandID.ROUTING_MKLHASH) {
-                    connPool = (ConnectionPool) context.get(CommandContext.CONNECTION_POOL);
+                if (commandID != CommandID.ROUTING_DUMP
+                        && commandID != CommandID.ROUTING_MKLHASH) {
+                    connPool = (ConnectionPool) context
+                            .get(CommandContext.CONNECTION_POOL);
                     conn = connPool.get(node);
                     context.put(CommandContext.CONNECTION, conn);
                 } else { // routingdump, routingmkh
@@ -70,7 +73,8 @@ public class TimeoutFilter extends AbstractCommandFilter {
             } finally {
                 try {
                     if (conn != null) {
-                        if (commandID != CommandID.ROUTING_DUMP && commandID != CommandID.ROUTING_MKLHASH) {
+                        if (commandID != CommandID.ROUTING_DUMP
+                                && commandID != CommandID.ROUTING_MKLHASH) {
                             connPool.put(node, conn);
                             context.remove(CommandContext.CONNECTION);
                         } else {
@@ -89,13 +93,13 @@ public class TimeoutFilter extends AbstractCommandFilter {
             final CommandContext context) throws CommandException {
         int commandID = (Integer) context.get(CommandContext.COMMAND_ID);
         if (executor == null) {
-	    if (numOfThreads > 0) {
-		executor = Executors.newFixedThreadPool(numOfThreads);
-	    } else {
-		executor = Executors.newCachedThreadPool();
-	    }
+            if (numOfThreads > 0) {
+                executor = Executors.newFixedThreadPool(numOfThreads);
+            } else {
+                executor = Executors.newCachedThreadPool();
+            }
             // executor = Executors.newSingleThreadExecutor();
-            //executor = Executors.newCachedThreadPool();
+            // executor = Executors.newCachedThreadPool();
         }
 
         Callable<Boolean> task = new CallableImpl(command, context);
@@ -115,12 +119,14 @@ public class TimeoutFilter extends AbstractCommandFilter {
         // error handling
         if (t != null) {
             if (t instanceof java.util.concurrent.TimeoutException) {
-                ConnectionPool connPool =
-                        (ConnectionPool) context.get(CommandContext.CONNECTION_POOL);
-                Connection conn = (Connection) context.get(CommandContext.CONNECTION);
+                ConnectionPool connPool = (ConnectionPool) context
+                        .get(CommandContext.CONNECTION_POOL);
+                Connection conn = (Connection) context
+                        .get(CommandContext.CONNECTION);
                 future.cancel(true);
                 if (conn != null) {
-                    if (commandID != CommandID.ROUTING_DUMP && commandID != CommandID.ROUTING_MKLHASH) {
+                    if (commandID != CommandID.ROUTING_DUMP
+                            && commandID != CommandID.ROUTING_MKLHASH) {
                         Node node = (Node) context.get(CommandContext.NODE);
                         connPool.delete(node);
                         context.remove(CommandContext.CONNECTION);

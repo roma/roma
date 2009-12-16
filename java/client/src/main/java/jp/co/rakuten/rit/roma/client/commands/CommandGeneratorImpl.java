@@ -12,7 +12,8 @@ import jp.co.rakuten.rit.roma.client.command.CommandGenerator;
  */
 public class CommandGeneratorImpl implements CommandGenerator {
 
-    //protected HashMap<Integer, Command> commands = new HashMap<Integer, Command>();
+    // protected HashMap<Integer, Command> commands = new HashMap<Integer,
+    // Command>();
     protected Map<Integer, Command> commands = new ConcurrentHashMap<Integer, Command>();
 
     public CommandGeneratorImpl() throws BadCommandException {
@@ -23,24 +24,28 @@ public class CommandGeneratorImpl implements CommandGenerator {
     protected void init() throws BadCommandException {
         Exception ex = null;
         try {
-            createCommand(CommandID.GET, GetCommand.class, new Class[]{
-                        TimeoutFilter.class, FailOverFilter.class});
-            createCommand(CommandID.SET, SetCommand.class, new Class[]{
-                        TimeoutFilter.class, FailOverFilter.class});
-            createCommand(CommandID.APPEND, AppendCommand.class, new Class[]{
-                        TimeoutFilter.class, FailOverFilter.class});
-            createCommand(CommandID.PREPEND, PrependCommand.class, new Class[]{
-                        TimeoutFilter.class, FailOverFilter.class});
-            createCommand(CommandID.DELETE, DeleteCommand.class, new Class[]{
-                        TimeoutFilter.class, FailOverFilter.class});
-            createCommand(CommandID.INCREMENT, IncrCommand.class, new Class[]{
-                        TimeoutFilter.class, FailOverFilter.class});
-            createCommand(CommandID.DECREMENT, DecrCommand.class, new Class[]{
-                        TimeoutFilter.class, FailOverFilter.class});
+            createCommand(CommandID.GET, GetCommand.class, new Class[] {
+                    TimeoutFilter.class, FailOverFilter.class });
+            createCommand(CommandID.GETS, GetsCommand.class, new Class[] {
+                TimeoutFilter.class, FailOverFilter.class });
+            createCommand(CommandID.GETS_OPT, GetsOptCommand.class,
+                    new Class[] { TimeoutFilter.class, FailOverFilter.class });
+            createCommand(CommandID.SET, SetCommand.class, new Class[] {
+                    TimeoutFilter.class, FailOverFilter.class });
+            createCommand(CommandID.APPEND, AppendCommand.class, new Class[] {
+                    TimeoutFilter.class, FailOverFilter.class });
+            createCommand(CommandID.PREPEND, PrependCommand.class, new Class[] {
+                    TimeoutFilter.class, FailOverFilter.class });
+            createCommand(CommandID.DELETE, DeleteCommand.class, new Class[] {
+                    TimeoutFilter.class, FailOverFilter.class });
+            createCommand(CommandID.INCREMENT, IncrCommand.class, new Class[] {
+                    TimeoutFilter.class, FailOverFilter.class });
+            createCommand(CommandID.DECREMENT, DecrCommand.class, new Class[] {
+                    TimeoutFilter.class, FailOverFilter.class });
             createCommand(CommandID.ROUTING_DUMP, RoutingdumpCommand.class,
-                    new Class[]{TimeoutFilter.class});
+                    new Class[] { TimeoutFilter.class });
             createCommand(CommandID.ROUTING_MKLHASH, RoutingmhtCommand.class,
-                    new Class[]{TimeoutFilter.class});
+                    new Class[] { TimeoutFilter.class });
         } catch (InstantiationException e) {
             ex = e;
         } catch (IllegalAccessException e) {
@@ -55,7 +60,8 @@ public class CommandGeneratorImpl implements CommandGenerator {
     public Command getCommand(int commandID) {
         Command command = commands.get(new Integer(commandID));
         if (command == null) {
-            throw new NullPointerException("command is not defined: #" + commandID);
+            throw new NullPointerException("command is not defined: #"
+                    + commandID);
         }
         return command;
     }
@@ -73,7 +79,8 @@ public class CommandGeneratorImpl implements CommandGenerator {
             throws InstantiationException, IllegalAccessException {
         Command command = (Command) commandClass.newInstance();
         for (int i = 0; i < filterClasses.length; ++i) {
-            CommandFilter filter = (CommandFilter) filterClasses[i].newInstance();
+            CommandFilter filter = (CommandFilter) filterClasses[i]
+                    .newInstance();
             command = command.addFilter(filter);
         }
         commands.put(new Integer(commandID), command);

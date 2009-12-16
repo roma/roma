@@ -30,11 +30,11 @@ public class FailOverFilter extends AbstractCommandFilter {
     public boolean aroundExecute(Command command, CommandContext context)
             throws CommandException {
         RoutingTable routingTable = (RoutingTable) context.get(CommandContext.ROUTING_TABLE);
-        String key = (String) context.get(CommandContext.KEY);
         if (routingTable == null) {
             throw new CommandException(new BadRoutingTableFormatException(
                     "routing table is null."));
         }
+        String key = (String) context.get(CommandContext.KEY);
         BigInteger hash = routingTable.getHash(key);
         if (hash == null) {
             throw new CommandException(new BadRoutingTableFormatException(

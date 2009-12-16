@@ -7,24 +7,30 @@ public interface CommandID {
 
     // storage command
     int GET = 50;
+    
+    int GETS = 51;
+    
+    int GETS_OPT = 52;
+    
+    int SET = 54;
 
-    int SET = 51;
+    int APPEND = 55;
 
-    int APPEND = 52;
+    int PREPEND = 56;
 
-    int PREPEND = 53;
+    int DELETE = 57;
 
-    int DELETE = 54;
+    int INCREMENT = 58;
 
-    int INCREMENT = 55;
+    int DECREMENT = 59;
 
-    int DECREMENT = 56;
-
-    String STR_CRLR = "\r\n";
+    String STR_CRLF = "\r\n";
 
     String STR_WHITE_SPACE = " ";
 
     String STR_GET = "get";
+    
+    String STR_GETS = "gets";
 
     String STR_SET = "set";
 
