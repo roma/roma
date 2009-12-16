@@ -106,7 +106,8 @@ module Roma
 
       def oneline_receiver(con)
         ret = con.gets
-        ret.chomp if ret
+        raise "connection closed" if ret.nil?
+        ret.chomp 
       end
 
       def value_list_receiver(con)
