@@ -38,16 +38,16 @@ module RomaTestUtils
     end
     FileUtils.rm_rf("localhost_11211")
     FileUtils.rm_rf("localhost_11212")
-    sleep 1
+    sleep 0.1
 
     sh.system(ruby_path, mkroute_path,
               "localhost_11211","localhost_11212",
               "-d","3",
               "--enabled_repeathost")
-    sleep 1
+    sleep 0.1
     sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose")
     sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose")
-    sleep 2
+    sleep 0.5
   end
 
   def stop_roma
