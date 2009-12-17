@@ -132,7 +132,7 @@ module Roma
       def get_lost_vnodes
         ret=[]
         v_idx.each_pair{|vn,nids|
-          ret<<vn if nids.length == 0
+          ret << vn if nids.length == 0
         }
         ret
       end
@@ -167,6 +167,19 @@ module Roma
         l.to_a.sort{|a,b| a[0]<=>b[0]}
       end
 
+      def get_histgram
+        ret = {}
+        nodes.each{|nid|
+          ret[nid] = Array.new(rn,0)
+        }
+        v_idx.each_pair{|vn,nids|
+          nids.each_with_index{|nid,i|
+            ret[nid][i] += 1
+          }
+        }
+        ret
+      end
+
       private
 
       class RandomNodeListMaker
@@ -177,7 +190,7 @@ module Roma
           nodes.each{|nid|
             h,p=nid.split('_')
             if @host_idx.key?(h)
-              @host_idx[h]<<nid
+              @host_idx[h] << nid
             else
               @host_idx[h]=[nid]
             end
@@ -195,14 +208,12 @@ module Roma
             nid=nil
             nid=send(proc_other_one,hosts,ret)
             break unless nid
-            hosts<<nid.split('_')[0]
-            ret<<nid
+            hosts << nid.split('_')[0]
+            ret << nid
           }
           ret
         end
         
-        private
-
         # +exp_hosts+:: ignore
         # +exp_nodes+:: exceptional nodes(ex.['roma0_11211'])
         def get_other_one_repethost(exp_hosts,exp_nodes)
