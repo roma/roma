@@ -5,7 +5,6 @@ require 'optparse'
 require 'roma/config'
 require 'roma/version'
 require 'roma/stats'
-require 'roma/cron'
 require 'roma/command_plugin'
 require 'roma/async_process'
 require 'roma/write_behind'
@@ -19,7 +18,6 @@ require 'timeout'
 module Roma
   
   class Romad
-    include Cron
     include AsyncProcess
     include WriteBehindProcess
 
@@ -36,7 +34,6 @@ module Roma
       initialize_logger
       initialize_rttable
       initialize_storages
-      initialize_cron
       initialize_handler
       initialize_plugin
       initialize_wb_witer
@@ -66,7 +63,6 @@ module Roma
                                       @storages, @rttable)
 
             @log.info("Now accepting connections on address #{@stats.address}, port #{@stats.port}")
-            EventMachine.add_periodic_timer(60) { cron }
           end
         rescue =>e
           @log.error("#{e}\n#{$@}")

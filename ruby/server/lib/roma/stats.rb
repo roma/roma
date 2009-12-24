@@ -33,9 +33,6 @@ module Roma
     # compressed redundant param
     attr_accessor :size_of_zredundant
 
-    # batch schedule
-    attr_accessor :crontab
-
     # performance counter
     attr_accessor :write_count
     attr_accessor :read_count
@@ -62,17 +59,6 @@ module Roma
       @out_message_count = 0
       @redundant_count = 0
       @size_of_zredundant = 0
-    end
-
-    def load_crontab
-      return nil unless File::exist?("#{ap_str}.crontab")
-      buf=''
-      open("#{ap_str}.crontab",'r'){|io|
-        while((line=io.gets)!=nil)
-          buf << line
-        end
-      }
-      buf
     end
 
     def ap_str
