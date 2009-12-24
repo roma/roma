@@ -40,6 +40,29 @@ class RClientTest < Test::Unit::TestCase
    }
   end
 
+  def test_set_gets
+    keys = []
+    assert_equal(@rc.gets(["key-1","key-2"]).length,0)
+    10.times{|i|
+      assert_equal("STORED", @rc.set("key-#{i}", "value-#{i}"))
+      keys << "key-#{i}"
+    }
+    ret = @rc.gets(keys)
+    assert_equal(ret.length,10)
+    ret.each_pair{|k,v|
+      assert_equal(k[-1],v[-1])
+      assert_equal(k[0..3],"key-")
+      assert_equal(v[0..5],"value-")
+    }
+    keys << "key-99"
+    ret = @rc.gets(keys)
+    assert_equal(ret.length,10)
+
+    assert_equal("DELETED", @rc.delete("key-5"))
+    ret = @rc.gets(keys)
+    assert_equal(ret.length,9)
+  end
+
   def test_out
     # 本当に消す
     @rc.out("key-out")
