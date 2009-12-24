@@ -57,6 +57,19 @@ class TCStorageTest < Test::Unit::TestCase
     assert_nil( @st.get(0,'abc',0)) # 期限切れ
   end
 
+  def test_set_get_raw
+    n = 100
+    n.times{|i|
+      assert_equal('abc_data',@st.set(0,'abc',0,0xffffffff,'abc_data')[4])
+      vn, t, clk, expt, val = @st.get_raw(0,'abc',0)
+      assert_equal(vn,0)
+      assert(Time.now.to_i - t <= 1)
+      assert_equal(clk,i)
+      assert_equal(expt,0xffffffff)
+      assert_equal(val,'abc_data')
+    }
+  end
+
   # 期限切れデータの削除
   def test_exp_delete
     assert_nil( @st.delete(0,'abc',0)[4])
