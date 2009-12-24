@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 
-path =  File.dirname(File.expand_path($PROGRAM_NAME))
-$LOAD_PATH << path + "/../../../../lib"
-$LOAD_PATH << path  + "/../../../../../commons/lib"
+# path =  File.dirname(File.expand_path($PROGRAM_NAME))
+# $LOAD_PATH << path + "/../../../../lib"
+# $LOAD_PATH << path  + "/../../../../../commons/lib"
 
 require 'roma/commons'
 require 'roma/client/sender'
