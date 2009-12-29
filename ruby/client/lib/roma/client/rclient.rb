@@ -111,15 +111,18 @@ module Roma
         get(key)
       end
 
-      def set(key, val, expt = 0)
+      def set(key, val, expt = 0, raw = false)
+        val = Marshal.dump(val) unless raw
         sender(:oneline_receiver, key, val, "set %s 0 %d %d", expt.to_i, val.length)
       end
 
-      def add(key, val, expt = 0)
+      def add(key, val, expt = 0, raw = false)
+        val = Marshal.dump(val) unless raw
         sender(:oneline_receiver, key, val, "add %s 0 %d %d", expt.to_i, val.length)
       end
 
-      def replace(key, val, expt = 0)
+      def replace(key, val, expt = 0, raw = false)
+        val = Marshal.dump(val) unless raw
         sender(:oneline_receiver, key, val, "replace %s 0 %d %d", expt.to_i, val.length)
       end
 
@@ -143,11 +146,14 @@ module Roma
         sender(:oneline_receiver, key, nil, "out %s")
       end
 
-      def get(key)
-        sender(:value_list_receiver, key, nil, "get %s")[0]
+      def get(key, raw = false)
+        val = sender(:value_list_receiver, key, nil, "get %s")[0]
+        return nil if val.nil?
+        val = Marshal.load(val) unless raw
+        val
       end
 
-      def gets(keys)
+      def gets(keys, raw = false)
         kn = {}
         keys.each{|key|
           nid, d = @rttable.search_node(key)
@@ -159,6 +165,11 @@ module Roma
         kn.each_pair{|nid,ks|
           res.merge!(gets_sender(nid, ks))
         }
+        unless raw
+          res.each do |key, val|
+            res[key] = Marshal.load(val)
+          end
+        end
         res
       end
 
