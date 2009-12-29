@@ -93,10 +93,7 @@ module Roma
       end
 
       # Set value to ROMA .
-      # [key] key for store .
-      # [value] store value .
-      #
-      # [return] set status TODO: please write status list .
+      # please see set method .
       def []=(key, value)
         set(key, value)
       end
@@ -111,22 +108,109 @@ module Roma
         get(key)
       end
 
+      # Set value to ROMA .
+      #
+      # Both same same key exists or not exists in ROMA, this method set value .
+      #
+      # [key] key for store .
+      # [value] store value .
+      # [exp] expire seconds .
+      #
+      # [return] return follow set status .
+      # - If method is success, return STORED .
+      # - If method is not stored, return NOT_STORED .
+      # - If server error, return SERVER_ERROR .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def set(key, val, expt = 0)
         sender(:oneline_receiver, key, val, "set %s 0 %d %d", expt.to_i, val.length)
       end
 
+      # Add value to ROMA .
+      #
+      # If same key exists in ROMA, this method don't overwrite value
+      # and return NOT_STORED .
+      #
+      # [key] key for store .
+      # [value] store value .
+      # [exp] expire seconds .
+      #
+      # [return] return follow set status .
+      # - If method is success, return STORED .
+      # - If same key exists in ROMA, return NOT_STORED .
+      # - If server error, return SERVER_ERROR .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def add(key, val, expt = 0)
         sender(:oneline_receiver, key, val, "add %s 0 %d %d", expt.to_i, val.length)
       end
 
+      # Add value to ROMA .
+      #
+      # If same key exists in ROMA, this method overwrite value .
+      # If same key doesn't exist in ROMA this method don't store value and
+      # return NOT_STORE .
+      #
+      # [key] key for store .
+      # [value] store value .
+      # [exp] expire seconds .
+      #
+      # [return] return follow set status .
+      # - If method is success, return STORED .
+      # - If same key exists in ROMA, return NOT_STORED .
+      # - If server error, return SERVER_ERROR .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def replace(key, val, expt = 0)
         sender(:oneline_receiver, key, val, "replace %s 0 %d %d", expt.to_i, val.length)
       end
 
+      # Append value to exists string .
+      #
+      # If same key exists in ROMA, this method append value .
+      # If same key doesn't exist in ROMA this method don't store value and
+      # return NOT_STORE .
+      #
+      # [key] key for append .
+      # [value] append value .
+      # [exp] expire seconds .
+      #
+      # [return] return follow set status .
+      # - If method is success, return STORED .
+      # - If same key exists in ROMA, return NOT_STORED .
+      # - If server error, return SERVER_ERROR .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def append(key, val, expt = 0)
         sender(:oneline_receiver, key, val, "append %s 0 %d %d", expt.to_i, val.length)
       end
 
+      # Prepend value to exists string .
+      #
+      # If same key exists in ROMA, this method prepend value .
+      # If same key doesn't exist in ROMA this method don't store value and
+      # return NOT_STORE .
+      #
+      # [key] key for prepend .
+      # [value] prepend value .
+      # [exp] expire seconds .
+      #
+      # [return] return follow set status .
+      # - If method is success, return STORED .
+      # - If same key exists in ROMA, return NOT_STORED .
+      # - If server error, return SERVER_ERROR .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def prepend(key, val, expt = 0)
         sender(:oneline_receiver, key, val, "prepend %s 0 %d %d", expt.to_i, val.length)
       end
@@ -135,18 +219,67 @@ module Roma
         raise RuntimeError.new("Unsupported yet") # TODO
       end
 
+      # Delete value .
+      #
+      # [key] key for delete .
+      #
+      # [return] return follow set status .
+      # - If method is success, return DELETED .
+      # - If same key doesn't exist in ROMA, return NOT_FOUND .
+      # - If server error, return SERVER_ERROR .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def delete(key)
         sender(:oneline_receiver, key, nil, "delete %s")
       end
 
+      # Delete value completely .
+      #
+      # This method delete value completely. "completely" means
+      # Don't set delete flag in server, but delete value in storage .
+      # Delete method set delete flag, but delete value soon .
+      #
+      # [key] key for delete .
+      #
+      # [return] return follow set status .
+      # - If method is success, return DELETED .
+      # - If same key doesn't exist in ROMA, return NOT_FOUND .
+      # - If server error, return SERVER_ERROR .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def out(key)
         sender(:oneline_receiver, key, nil, "out %s")
       end
 
+      # get value
+      #
+      # [key] key for get .
+      #
+      # [return] return stored value in ROMA .
+      # If key doesn't exist in ROMA, this method return nil .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def get(key)
         sender(:value_list_receiver, key, nil, "get %s")[0]
       end
 
+      # get values .
+      #
+      # [keys] key array for get .
+      #
+      # [return] return key and sotored value hash .
+      # If all key doesn't exist in ROMA, return empty hash .
+      # If some key doesn't exist in ROMA, return exist key and sotred value hash .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def gets(keys)
         kn = {}
         keys.each{|key|
@@ -167,12 +300,34 @@ module Roma
         @sender.send_flush_all_command
       end
 
+      # increment value .
+      #
+      # [key] key for incremental .
+      # [val] incremental value .
+      #
+      # [return] Fixnum incrementaled value .
+      # If same key doesn't exist in ROMA, return NOT_FOUND .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def incr(key, val = 1)
         ret = sender(:oneline_receiver, key, nil, "incr %s %d", val.to_i)
         return ret if ret =~ /\D/
         ret.to_i
       end
 
+      # decrement value .
+      #
+      # [key] key for decremental .
+      # [val] decremental value .
+      #
+      # [return] Fixnum decrementaled value .
+      # If same key doesn't exist in ROMA, return NOT_FOUND .
+      #
+      # If socket error occured, throw Exception .
+      #
+      # If socket timeout occured, throw TimeoutError .
       def decr(key, val = 1)
         ret = sender(:oneline_receiver, key, nil, "decr %s %d", val.to_i)
         return ret if ret =~ /\D/
