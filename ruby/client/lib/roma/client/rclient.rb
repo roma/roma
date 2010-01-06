@@ -115,6 +115,7 @@ module Roma
       # [key] key for store .
       # [value] store value .
       # [exp] expire seconds .
+      # [raw] You set this value true, value isn't marshaled .
       #
       # [return] return follow set status .
       # - If method is success, return STORED .
@@ -124,7 +125,8 @@ module Roma
       # If socket error occured, throw Exception .
       #
       # If socket timeout occured, throw TimeoutError .
-      def set(key, val, expt = 0)
+      def set(key, val, expt = 0, raw = false)
+        val = Marshal.dump(val) unless raw
         sender(:oneline_receiver, key, val, "set %s 0 %d %d", expt.to_i, val.length)
       end
 
@@ -136,6 +138,7 @@ module Roma
       # [key] key for store .
       # [value] store value .
       # [exp] expire seconds .
+      # [raw] You set this value true, value isn't marshaled .
       #
       # [return] return follow set status .
       # - If method is success, return STORED .
@@ -145,7 +148,8 @@ module Roma
       # If socket error occured, throw Exception .
       #
       # If socket timeout occured, throw TimeoutError .
-      def add(key, val, expt = 0)
+      def add(key, val, expt = 0, raw = false)
+        val = Marshal.dump(val) unless raw
         sender(:oneline_receiver, key, val, "add %s 0 %d %d", expt.to_i, val.length)
       end
 
@@ -158,6 +162,7 @@ module Roma
       # [key] key for store .
       # [value] store value .
       # [exp] expire seconds .
+      # [raw] You set this value true, value isn't marshaled .
       #
       # [return] return follow set status .
       # - If method is success, return STORED .
@@ -167,7 +172,8 @@ module Roma
       # If socket error occured, throw Exception .
       #
       # If socket timeout occured, throw TimeoutError .
-      def replace(key, val, expt = 0)
+      def replace(key, val, expt = 0, raw = false)
+        val = Marshal.dump(val) unless raw
         sender(:oneline_receiver, key, val, "replace %s 0 %d %d", expt.to_i, val.length)
       end
 
@@ -258,6 +264,7 @@ module Roma
       # get value
       #
       # [key] key for get .
+      # [raw] If you set this value true, value isn't Marshal.load value .
       #
       # [return] return stored value in ROMA .
       # If key doesn't exist in ROMA, this method return nil .
@@ -265,13 +272,17 @@ module Roma
       # If socket error occured, throw Exception .
       #
       # If socket timeout occured, throw TimeoutError .
-      def get(key)
-        sender(:value_list_receiver, key, nil, "get %s")[0]
+      def get(key, raw = false)
+        val = sender(:value_list_receiver, key, nil, "get %s")[0]
+        return nil if val.nil?
+        val = Marshal.load(val) unless raw
+        val
       end
 
       # get values .
       #
       # [keys] key array for get .
+      # [raw] If you set this value true, value isn't Marshal.load value .
       #
       # [return] return key and sotored value hash .
       # If all key doesn't exist in ROMA, return empty hash .
@@ -280,7 +291,7 @@ module Roma
       # If socket error occured, throw Exception .
       #
       # If socket timeout occured, throw TimeoutError .
-      def gets(keys)
+      def gets(keys, raw = false)
         kn = {}
         keys.each{|key|
           nid, d = @rttable.search_node(key)
@@ -292,6 +303,11 @@ module Roma
         kn.each_pair{|nid,ks|
           res.merge!(gets_sender(nid, ks))
         }
+        unless raw
+          res.each do |key, val|
+            res[key] = Marshal.load(val)
+          end
+        end
         res
       end
 
