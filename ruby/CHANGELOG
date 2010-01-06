@@ -1,3 +1,7 @@
+*0.8.2 (Jan 6 2010)*
+
+* cron.rb removed. [junji torii] dce07ab
+* added a showbalance command. [junji torii] 0094287
 * supported a cas command. [junji torii] cee0f96
 * improved a gets result for a cas-id. [junji torii] 54e136b
 * get_raw method was added. [junji torii] e005407
