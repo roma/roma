@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension name="romaclient" version="0.8.0">
+  <summary>ROMA-Client, PHP Extension.</summary>
+  <description><?data
+This is ROMA-Client PHP extension module.
+  ?></description>
+
+  <maintainers>
+    <maintainer>
+      <user>rakuten</user>
+      <name>yosuke hara</name>
+      <email>yosuke.hara@mail.rakuten.co.jp</email>
+      <role>lead</role>
+    </maintainer>
+  </maintainers>
+
+  <license>PHP</license>
+
+  <channel>__uri</channel>
+
+  <release>
+    <version>0.8.0</version>
+    <date>2009-07-07</date>
+    <state>stable</state>
+    <notes><?data
+- Initial release.
+    ?></notes>
+  </release>
+
+  <!-- Dependecies. -->
+  <deps language="c" platform="unix">
+    <with testfile="include/roma/roma_client.h">
+      <header name="roma/roma_client.h"        />
+      <lib name="romaclient"/>
+    </with>
+  </deps>
+
+  <!-- functions. -->
+  <!-- 1. rmc_version -->
+  <function name="rmc_version" role="public">
+    <proto>int rmc_version()</proto>
+    <summary>ROMA-Client version.</summary>
+    <description><?data
+Output "ROMA-client version is 0.8.0." and linebreak.
+    ?></description>
+    <test>
+      <code><?data
+rmc_version();
+      ?></code>
+      <result mode="plain"><?data
+ROMA-Client version is 0.8.0.
+      ?></result>
+    </test>  
+  </function>
+
+  <!-- 2. rmc_connect -->
+  <function name="rmc_connect" role="public">
+    <proto>int rmc_connect(string str_hosts)</proto>
+    <summary>Connect ROMA-Server.</summary>
+    <description><?data
+Output "Connect ROMA-Server." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 3. rmc_disconnect -->
+  <function name="rmc_disconnect" role="public">
+    <proto>int rmc_disconnect()</proto>
+    <summary>Disconnect ROMA-Server.</summary>
+    <description><?data
+Output "Disconnect ROMA-Server." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 4. rmc_set -->
+  <function name="rmc_set" role="public">
+    <proto>int rmc_set(string key, string value, int exptime)</proto>
+    <summary>Set Value.</summary>
+    <description><?data
+Output "Set Value." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 5. rmc_get -->
+  <function name="rmc_get" role="public">
+    <proto>string rmc_get(string key)</proto>
+    <summary>Get Value.</summary>
+    <description><?data
+Output "Get Value." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 6. rmc_add -->
+  <function name="rmc_add" role="public">
+    <proto>int rmc_add(string key, string value, int exptime)</proto>
+    <summary>Add Value.</summary>
+    <description><?data
+Output "Add Value." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 7. rmc_replace -->
+  <function name="rmc_replace" role="public">
+    <proto>int rmc_replace(string key, string value, int exptime)</proto>
+    <summary>Replace Value.</summary>
+    <description><?data
+Output "Replace Value." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 8. rmc_append -->
+  <function name="rmc_append" role="public">
+    <proto>int rmc_append(string key, string value, int exptime)</proto>
+    <summary>Append Value.</summary>
+    <description><?data
+Output "Append Value." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 9. rmc_prepend -->
+  <function name="rmc_prepend" role="public">
+    <proto>int rmc_prepend(string key, string value, int exptime)</proto>
+    <summary>Prepend Value.</summary>
+    <description><?data
+Output "Prepend Value." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 10. rmc_cas -->
+  <function name="rmc_cas" role="public">
+    <proto>int rmc_cas(string key, string value, int exptime)</proto>
+    <summary>Cas Value.</summary>
+    <description><?data
+Output "Cas Value." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 11. rmc_delete -->
+  <function name="rmc_delete" role="public">
+    <proto>int rmc_delete(string key)</proto>
+    <summary>Delete Value.</summary>
+    <description><?data
+Output "Delete Value." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- ===== Plugin - ListCommand ===== -->
+  <!-- 12. char *rmc_alist_at(char *key, int index); -->
+  <function name="rmc_alist_at" role="public">
+    <proto>string rmc_alist_at(string key, int index)</proto>
+    <summary>roma-client alist at.</summary>
+    <description><?data
+Output "alist at." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 13. int rmc_alist_clear(char *key); -->
+  <function name="rmc_alist_clear" role="public">
+    <proto>int rmc_alist_clear(string key)</proto>
+    <summary>roma-client alist clear.</summary>
+    <description><?data
+Output "alist clear." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 14. int rmc_alist_delete(char *key, char *value); -->
+  <function name="rmc_alist_delete" role="public">
+    <proto>int rmc_alist_delete(string key, string value)</proto>
+    <summary>roma-client alist delete.</summary>
+    <description><?data
+Output "alist delete." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 15. int rmc_alist_delete_at(char *key, int index); -->
+  <function name="rmc_alist_delete_at" role="public">
+    <proto>int rmc_alist_delete_at(string key, int index)</proto>
+    <summary>roma-client alist delete at.</summary>
+    <description><?data
+Output "alist delete at." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 16. int rmc_alist_empty(char *key); -->
+  <function name="rmc_alist_empty" role="public">
+    <proto>int rmc_alist_empty(string key)</proto>
+    <summary>roma-client alist empty.</summary>
+    <description><?data
+Output "alist empty." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 17. char *rmc_alist_first(char *key); -->
+  <function name="rmc_alist_first" role="public">
+    <proto>string rmc_alist_first(string key)</proto>
+    <summary>roma-client alist first.</summary>
+    <description><?data
+Output "alist first." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 18. int rmc_alist_include(char *key, char *value); -->
+  <function name="rmc_alist_include" role="public">
+    <proto>int rmc_alist_include(string key, string value)</proto>
+    <summary>roma-client alist include.</summary>
+    <description><?data
+Output "alist include." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 19. int rmc_alist_index(char *key, char *value); -->
+  <function name="rmc_alist_index" role="public">
+    <proto>int rmc_alist_index(string key, string value)</proto>
+    <summary>roma-client alist index.</summary>
+    <description><?data
+Output "alist index." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 20. int rmc_alist_insert(char *key, int index, char *value); -->
+  <function name="rmc_alist_insert" role="public">
+    <proto>int rmc_alist_insert(string key, int index, string value)</proto>
+    <summary>roma-client alist insert.</summary>
+    <description><?data
+Output "alist insert." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 21. int rmc_alist_sized_insert(char *key, int size, char *value); -->
+  <function name="rmc_alist_sized_insert" role="public">
+    <proto>int rmc_alist_sized_insert(string key, int size, string value)</proto>
+    <summary>roma-client alist sized insert.</summary>
+    <description><?data
+Output "alist sized insert." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 22. char *rmc_alist_join(char *key, char *separator); -->
+  <function name="rmc_alist_join" role="public">
+    <proto>string rmc_alist_join(string key, string separator)</proto>
+    <summary>roma-client alist join.</summary>
+    <description><?data
+Output "alist join." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 23. char *rmc_alist_to_json(char * key); -->
+  <function name="rmc_alist_to_json" role="public">
+    <proto>string rmc_alist_to_json(string key)</proto>
+    <summary>roma-client alist to json.</summary>
+    <description><?data
+Output "alist to json." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 24. char *rmc_alist_last(char *key); -->
+  <function name="rmc_alist_last" role="public">
+    <proto>string rmc_alist_last(string key)</proto>
+    <summary>roma-client alist last.</summary>
+    <description><?data
+Output "alist last." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 25. int rmc_alist_length(char *key); -->
+  <function name="rmc_alist_length" role="public">
+    <proto>int rmc_alist_length(string key)</proto>
+    <summary>roma-client alist length.</summary>
+    <description><?data
+Output "alist length." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 26. char *rmc_alist_pop(char *key); -->
+  <function name="rmc_alist_pop" role="public">
+    <proto>string rmc_alist_pop(string key)</proto>
+    <summary>roma-client alist pop.</summary>
+    <description><?data
+Output "alist pop." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 27. int rmc_alist_push(char *key, char *value); -->
+  <function name="rmc_alist_push" role="public">
+    <proto>int rmc_alist_push(string key, string value)</proto>
+    <summary>roma-client alist push.</summary>
+    <description><?data
+Output "alist push." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 28. char *rmc_alist_shift(char *key); -->
+  <function name="rmc_alist_shift" role="public">
+    <proto>string rmc_alist_shift(string key)</proto>
+    <summary>roma-client alist shift.</summary>
+    <description><?data
+Output "alist shift." and linebreak.
+    ?></description>
+  </function>
+
+  <!-- 29. char *rmc_alist_tostr(char *key); -->
+  <function name="rmc_alist_to_str" role="public">
+    <proto>string rmc_alist_to_str(string key)</proto>
+    <summary>roma-client alist to str.</summary>
+    <description><?data
+Output "alist to str." and linebreak.
+    ?></description>
+  </function>
+
+</extension>
+
