@@ -98,27 +98,27 @@ class RClientTest < Test::Unit::TestCase
   def test_append
     assert_nil( @rc.get("append") )
     assert_equal("NOT_STORED", @rc.append("append","append"))
-    assert_equal("STORED", @rc.set("append","set"))
-    assert_equal("set", @rc.get("append"))
+    assert_equal("STORED", @rc.set("append","set",0,true))
+    assert_equal("set", @rc.get("append",true))
     assert_equal("STORED", @rc.append("append","append"))
-    assert_equal("setappend", @rc.get("append"))
+    assert_equal("setappend", @rc.get("append",true))
     assert_equal("DELETED", @rc.delete("append"))
   end
 
   def test_prepend
     assert_nil( @rc.get("prepend"))
     assert_equal("NOT_STORED", @rc.prepend("prepend","prepend"))
-    assert_equal("STORED", @rc.set("prepend","set"))
-    assert_equal("set", @rc.get("prepend"))
+    assert_equal("STORED", @rc.set("prepend","set",0,true))
+    assert_equal("set", @rc.get("prepend",true))
     assert_equal("STORED", @rc.prepend("prepend","prepend"))
-    assert_equal("prependset", @rc.get("prepend"))
+    assert_equal("prependset", @rc.get("prepend",true))
     assert_equal("DELETED", @rc.delete("prepend"))
   end
 
   def test_incr
     assert_nil( @rc.get("incr"))
     assert_equal("NOT_FOUND", @rc.incr("incr"))
-    assert_equal("STORED", @rc.set("incr","100"))
+    assert_equal("STORED", @rc.set("incr","100",0,true))
     assert_equal(101, @rc.incr("incr"))
     assert_equal(102, @rc.incr("incr"))
     assert_equal("DELETED", @rc.delete("incr"))
@@ -127,7 +127,7 @@ class RClientTest < Test::Unit::TestCase
   def test_decr
     assert_nil( @rc.get("decr") )
     assert_equal("NOT_FOUND", @rc.decr("decr"))
-    assert_equal("STORED", @rc.set("decr","100"))
+    assert_equal("STORED", @rc.set("decr","100",0,true))
     assert_equal(99, @rc.decr("decr"))
     assert_equal(98, @rc.decr("decr"))
     assert_equal("DELETED", @rc.delete("decr"))

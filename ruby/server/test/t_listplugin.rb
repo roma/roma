@@ -541,7 +541,7 @@ class ListPluginTest < Test::Unit::TestCase
     }
     push_a_vnode_stream(st, vn, nid)
     # 論クロックが大きいので上書きされる
-    assert_equal('val-aa', @rc.get("aa"))
+    assert_equal('val-aa', @rc.get("aa",true))
   end
 
   def create_storage_and_calc_vn(k)

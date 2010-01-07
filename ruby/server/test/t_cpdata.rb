@@ -164,7 +164,7 @@ class CopyDataTest < Test::Unit::TestCase
     push_a_vnode_stream('roma', 0, nid[0], keys)
 
     keys.each{|k|
-      assert_equal( "#{k}-stream", @rc.get(k))
+      assert_equal( "#{k}-stream", @rc.get(k,true))
 #      puts "#{k} #{@rc.get(k)}"
     }
   end
