@@ -312,9 +312,9 @@ module Roma
 
         @log.debug("#{__FILE__}:#{__LINE__}:n=#{n} pcount=#{pcount} scount=#{scount}")
 
-        if pcount > n*1.1
+        if pcount > n
           return :over
-        elsif pcount < n*0.9
+        elsif pcount < n
           return :less
         end
         :even
