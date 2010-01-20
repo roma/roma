@@ -75,30 +75,50 @@ module Roma
         hname ||= @defhash
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
         vn = @rttable.get_vnode_id(d)
+        nodes = @rttable.search_nodes(vn)
+
+        unless nodes.include?(@nid)
+          @log.warn("forward get #{s[1]}")
+          res = forward_get(nodes[0], s[1], d)
+          if res
+            send_data(res)
+          else
+            send_data("SERVER_ERROR Message forward failed.\r\n")
+          end
+          return
+        end
+
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
           return
         end
         data = @storages[hname].get(vn, key, 0)
         @stats.read_count += 1
-        if data
-          return send_data("VALUE #{s[1]} 0 #{data.length}\r\n#{data}\r\nEND\r\n")
-        end
+        send_data("VALUE #{s[1]} 0 #{data.length}\r\n#{data}\r\n") if data
+        send_data("END\r\n")
+      end
 
+      # fget <key>
+      def ev_fget(s)
+        key,hname = s[1].split("\e")
+        hname ||= @defhash
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+        vn = @rttable.get_vnode_id(d)
         nodes = @rttable.search_nodes(vn)
-        if nodes.include?(@nid)
-          return send_data("END\r\n")
+
+        unless nodes.include?(@nid)
+          @log.error("fget failed key=#{s[1]} vn=#{vn}")
+          return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
 
-        nodes.delete(@nid)
-        if nodes.length != 0
-          @log.warn("forward get #{s[1]}")
-          res = forward_get(nodes[0], s[1], d)
-          if res
-            return send_data(res)
-          end
+        unless @storages.key?(hname)
+          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          return
         end
-        send_data("SERVER_ERROR Message forward failed.\r\n")
+        data = @storages[hname].get(vn, key, 0)
+        @stats.read_count += 1
+        send_data("VALUE #{s[1]} 0 #{data.length}\r\n#{data}\r\n") if data
+        send_data("END\r\n")
       end
 
       # gets <key>*\r\n
@@ -337,9 +357,9 @@ module Roma
 
       def forward_get(nid, k, d)
         con = get_connection(nid)
-        con.send("get #{k}\r\n")
+        con.send("fget #{k}\r\n")
         res = con.gets
-        return res if res == "END\r\n"
+        return res if res == "END\r\n" || res =~ /$SERVER_ERROR/
         s = res.split(/ /)
         res << con.read_bytes(s[3].to_i + 2)
         res << con.gets

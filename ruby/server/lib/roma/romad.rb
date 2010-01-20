@@ -432,7 +432,7 @@ module Roma
       return if @stats.run_acquire_vnodes || @stats.run_recover || @stats.run_sync_routing
 
       nodes = @rttable.nodes
-      return if nodes.length <= 1
+      return if nodes.length == 1 && nodes[0] == @stats.ap_str
 
       @stats.run_sync_routing = true
 
