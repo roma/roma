@@ -45,7 +45,7 @@ module Roma
         end
       end
 
-      # recover [-r]
+      # recover [-r|-s]
       def ev_recover(s)
         option = s[1] if s.length == 2
         if @rttable.can_i_recover?

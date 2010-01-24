@@ -211,7 +211,7 @@ module Roma
       @stats.run_recover = true
       Thread::new{
         begin
-          if args != nil
+          if args == nil || args.length == 0
             acquired_recover_process
           elsif args[0] == '-s'
             recover_process
