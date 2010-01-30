@@ -1,8 +1,12 @@
 #!/usr/bin/env ruby
+require 'pathname'
 
-path =  File.dirname(File.expand_path($PROGRAM_NAME))
-$LOAD_PATH << path + "/../lib"
-$LOAD_PATH << path  + "/../../commons/lib"
-$LOAD_PATH << path  + "/../../client/lib"
+base_path = Pathname(__FILE__).dirname.parent.parent.expand_path
+$LOAD_PATH.unshift("#{base_path}/server/lib")
+$LOAD_PATH.unshift("#{base_path}/commons/lib")
+
+client_base_path = Pathname(__FILE__).dirname.parent.parent.parent.parent.expand_path
+$LOAD_PATH.unshift("#{client_base_path}/roma-ruby-client/ruby/client/lib")
 
 require 'roma/tools/simple_bench'
+
