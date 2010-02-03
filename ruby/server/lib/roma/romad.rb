@@ -1,6 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
-#
 require 'optparse'
 require 'roma/config'
 require 'roma/version'
@@ -548,35 +546,6 @@ module Roma
       @log.info("Romad has stopped: #{@stats.ap_str}")
     end
 
-  end
+  end # class Romad
 
-  def self.daemon
-    p = Process.fork {
-      pid=Process.setsid
-      Signal.trap(:INT){
-        exit! 0
-      }
-      Signal.trap(:TERM){
-        exit! 0       
-      }
-      Signal.trap(:HUP){
-        exit! 0
-      }
-      File.open("/dev/null","r+"){|f|
-        STDIN.reopen f
-        STDOUT.reopen f
-        STDERR.reopen f
-      }
-      yield
-    }
-    $stderr.puts p
-    exit! 0
-  end
-end
-
-$roma = Roma::Romad.new(ARGV)
-if $roma.daemon?
-  Roma::daemon{ $roma.start }
-else
-  $roma.start
-end
+end # module Roma
