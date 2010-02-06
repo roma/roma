@@ -10,6 +10,8 @@ require 'roma/logging/rlogger'
 require 'roma/command/receiver'
 require 'roma/messaging/con_pool'
 require 'roma/event/con_pool'
+require 'roma/routing/rttable'
+require 'roma/routing/cb_rttable'
 require 'roma/routing/routing_data'
 require 'timeout'
 
@@ -242,7 +244,11 @@ module Roma
         raise "#{fname} not found." unless File::exist?(fname)
         rd = Roma::Routing::RoutingData::load(fname)
         raise "It failed in loading the routing table data." unless rd
-        @rttable = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
+        if Config.const_defined? :RTTABLE_CLASS
+          @rttable = Config::RTTABLE_CLASS.new(rd,fname)
+        else
+          @rttable = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
+        end
       end
       
       if Roma::Config.const_defined?(:ROUTING_FAIL_CNT_THRESHOLD)
