@@ -1,5 +1,3 @@
-require 'roma/routing/rttable'
-require 'roma/routing/cb_rttable'
 require 'roma/storage/rh_storage'
 
 module Roma
@@ -35,7 +33,7 @@ module Roma
     DATACOPY_STREAM_COPY_WAIT_PARAM = 0.0001
 
     # plugin setting
-    PLUGIN_FILES = []
+    PLUGIN_FILES = ['plugin_alist.rb']
 
     # write-behind setting
     WRITEBEHIND_PATH = './wb'
