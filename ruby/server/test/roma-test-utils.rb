@@ -3,6 +3,8 @@ require 'shell'
 require 'pathname'
 require 'fileutils'
 require 'rbconfig'
+require 'roma/config'
+require 'roma/messaging/con_pool'
 
 module RomaTestUtils
   module_function
@@ -36,8 +38,8 @@ module RomaTestUtils
     sh.transact do
       Dir.glob("localhost_1121?.*").each{|f| rm f }
     end
-    FileUtils.rm_rf("localhost_11211")
-    FileUtils.rm_rf("localhost_11212")
+    FileUtils.rm_rf("#{Roma::Config::STORAGE_PATH}/localhost_11211")
+    FileUtils.rm_rf("#{Roma::Config::STORAGE_PATH}/localhost_11212")
     sleep 0.1
 
     sh.system(ruby_path, mkroute_path,
@@ -47,7 +49,7 @@ module RomaTestUtils
     sleep 0.1
     sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose")
     sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose")
-    sleep 0.5
+    sleep 0.8
   end
 
   def stop_roma
@@ -59,6 +61,7 @@ module RomaTestUtils
       conn.gets
       conn.close
     end
+    Roma::Client::ConPool.instance.close_all
   rescue =>e
     puts "#{e} #{$@}"
   end
