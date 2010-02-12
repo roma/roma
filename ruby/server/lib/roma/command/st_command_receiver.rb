@@ -1,6 +1,5 @@
 require 'zlib'
 require 'digest/sha1'
-require "roma/config"
 require 'roma/async_process'
 
 module Roma
