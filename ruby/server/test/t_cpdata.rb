@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 require 'roma/client/rclient'
+require 'roma/messaging/con_pool'
 
 $dat = {}
 
