@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 require 'roma/client/rclient'
+require 'roma/messaging/con_pool'
+require 'roma/config'
 
 Roma::Client::RomaClient.class_eval{
   def init_sync_routing_proc
@@ -229,6 +231,10 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_createhash2
+    #
+    # for file storage
+    #
+    return if Roma::Config::STORAGE_CLASS.to_s != "Roma::Storage::TCStorage"
     # test ハッシュを追加し終了する
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
     con.write("hashlist\r\n")
@@ -252,14 +258,13 @@ class RClientTest < Test::Unit::TestCase
 
 
     # 再起動
-    ruby_path = File.join(RbConfig::CONFIG["bindir"],
-                          RbConfig::CONFIG["ruby_install_name"])
-    path =  File.dirname(File.expand_path($PROGRAM_NAME))
     sh = Shell.new
-    sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11211","-d","--verbose")
-    sh.system(ruby_path,"#{path}/../bin/romad","localhost","-p","11212","-d","--verbose")
+    sleep 0.5
+    sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose")
+    sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose")
     sleep 2
     Roma::Messaging::ConPool.instance.close_all
+    Roma::Client::ConPool.instance.close_all
 
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
     @rc.default_hash_name='test'
@@ -267,22 +272,8 @@ class RClientTest < Test::Unit::TestCase
     con.write("hashlist\r\n")
     ret = con.gets
 
-    #
-    # for file storage
-    #
-
     # 停止前のデータが残っていることを確認
-    #assert_equal("hname=test", @rc.get("roma"))
-
-    # test ハッシュを削除
-    #con.write("deletehash test\r\n")
-    #ret = con.gets
-    #assert_equal("{\"localhost_11212\"=>\"DELETED\", \"localhost_11211\"=>\"DELETED\"}", ret.chomp )
-    
-    # デフォルトハッシュに残ったテストデータを削除
-    #@rc.default_hash_name='roma'
-    #assert_equal('DELETED', @rc.delete("roma"))
-
+    assert_equal("hname=test", @rc.get("roma"))
   end
   
   def test_createhash3
