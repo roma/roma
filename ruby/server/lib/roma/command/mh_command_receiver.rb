@@ -48,7 +48,7 @@ module Roma
           return "SERVER_ERROR #{hname} already exists."
         end
         st = Roma::Config::STORAGE_CLASS.new
-        st.storage_path = "#{@stats.ap_str}/#{hname}"
+        st.storage_path = "#{Roma::Config::STORAGE_PATH}/#{@stats.ap_str}/#{hname}"
         st.vn_list = @rttable.vnodes
         st.divnum = Roma::Config::STORAGE_DIVNUM
         st.option = Roma::Config::STORAGE_OPTION
@@ -91,7 +91,7 @@ module Roma
         st = @storages[hname]
         @storages.delete(hname)
         st.closedb
-        rm_rf("#{@stats.ap_str}/#{hname}")
+        rm_rf("#{Roma::Config::STORAGE_PATH}/#{@stats.ap_str}/#{hname}")
         @log.info("deletehash #{hname}")
         return "DELETED"
       rescue =>e
