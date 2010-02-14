@@ -57,6 +57,72 @@ module Roma
         true
       end
 
+      def self.decode_binary(bin)
+        magic, ver, dgst_bits, div_bits, rn, nodeslen = bin.unpack('a2nCCCn')
+        raise 'Illegal format error' if magic != 'RT'
+        raise 'Unsupported version error' if ver != 1
+
+        rd = RoutingData.new(dgst_bits, div_bits, rn)
+        
+        bin = bin[9..-1]
+        nodeslen.times{|i|
+          len, = bin.unpack('n')
+          bin = bin[2..-1]
+          nid, = bin.unpack("a#{len}")
+          bin = bin[len..-1]
+          rd.nodes << nid 
+        }
+        (2**div_bits).times{|i|
+          vn=i<<(dgst_bits-div_bits)
+          v_clk,len = bin.unpack('Nc')
+          rd.v_clk[vn] = v_clk
+          bin = bin[5..-1]
+          len.times{|i|
+            idx, = bin.unpack('n')
+            rd.v_idx[vn] = [] unless rd.v_idx[vn]
+            rd.v_idx[vn] << rd.nodes[idx]
+            bin = bin[2..-1]
+          }
+        }
+        rd
+      end
+
+      # 2 bytes('RT'):magic code
+      # unsigned short:format version
+      # unsigned char:dgst_bits
+      # unsigned char:div_bits
+      # unsigned char:rn
+      # unsigned short:number of nodes
+      # while number of nodes
+      #  unsigned short:length of node-id string
+      #  node-id string
+      # while umber of vnodes
+      #  unsigned int32:v_clk
+      #  unsigned char:number of nodes
+      #  while umber of nodes
+      #   unsigned short:index of nodes
+      def dump_binary
+        format_version = 1
+        # 9 bytes
+        ret = ['RT',format_version,dgst_bits,div_bits,rn,nodes.length].pack('a2nCCCn')
+        rev_hash = {}
+        nodes.each_with_index{|nid,idx|
+          rev_hash[nid] = idx
+          # 2 + nid.length bytes
+          ret += [nid.length,nid].pack('na*')
+        }
+        (2**div_bits).times{|i|
+          vn=i<<(dgst_bits-div_bits)
+          # 5 bytes
+          ret += [v_clk[vn],v_idx[vn].length].pack('Nc')
+          v_idx[vn].each{|nid|
+            # 2 bytes
+            ret += [rev_hash[nid]].pack('n')
+          }
+        }
+        ret
+      end
+
       def each_log_all(fname)
         loglist=get_file_list(fname)
         loglist.each{|i,f|

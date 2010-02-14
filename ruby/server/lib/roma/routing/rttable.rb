@@ -122,6 +122,10 @@ module Roma
                        @rd.nodes,@rd.v_idx])
       end
 
+      def dump_binary
+        @rd.dump_binary
+      end
+
       def proc_failed(nid)
         t = Time.now
         if t - @fail_time > @fail_cnt_gap

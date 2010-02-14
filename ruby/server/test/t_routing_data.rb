@@ -97,4 +97,60 @@ class RoutingDataTest < Test::Unit::TestCase
     assert( (c1-c2).abs < rd.v_idx.length/10 )
   end
 
+  def test_dump_binary
+    rd=Roma::Routing::RoutingData.create(32,9,2,['roma0_3300','roma1_3300'])
+    # set to a bummy clock 
+    (2**rd.div_bits).times{|i|
+      vn=i<<(rd.dgst_bits-rd.div_bits)
+      rd.v_clk[vn] = i
+    }
+
+    bin = rd.dump_binary
+#    puts bin.length
+
+    magic, ver, dgst_bits, div_bits, rn, nodeslen = bin.unpack('a2nCCCn')
+    assert_equal('RT', magic)
+    assert_equal(1, ver)
+    assert_equal(rd.dgst_bits, dgst_bits)
+    assert_equal(rd.div_bits, div_bits)
+    assert_equal(rd.rn, rn)
+    assert_equal(rd.nodes.length, nodeslen)
+    bin = bin[9..-1]
+    nodeslen.times{|i|
+      len, = bin.unpack('n')
+      bin = bin[2..-1]
+      nid, = bin.unpack("a#{len}")
+      bin = bin[len..-1]
+      assert_equal(rd.nodes[i], nid)
+    }
+    (2**div_bits).times{|i|
+      vn=i<<(dgst_bits-div_bits)
+      v_clk,len = bin.unpack('Nc')
+      assert_equal(i, rd.v_clk[vn])
+      assert_equal(rd.v_idx[vn].length, len)
+#      puts "#{i} #{vn} #{v_clk} #{len}"
+      bin = bin[5..-1]
+      len.times{|i|
+        idx, = bin.unpack('n')
+        assert_equal(rd.nodes[idx], rd.v_idx[vn][i])
+        bin = bin[2..-1]
+#        puts rd.nodes[idx]
+      }
+    }
+    assert_equal(0, bin.length)
+  end
+
+  def test_dump_binary2
+    rd=Roma::Routing::RoutingData.create(32,9,2,['roma0_3300','roma1_3300'])
+    # set to a bummy clock 
+    (2**rd.div_bits).times{|i|
+      vn=i<<(rd.dgst_bits-rd.div_bits)
+      rd.v_clk[vn] = i
+    }
+
+    bin = rd.dump_binary
+    bin2 = Roma::Routing::RoutingData.decode_binary(bin).dump_binary
+
+    assert_equal(bin, bin2)
+  end
 end
