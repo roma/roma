@@ -289,6 +289,23 @@ class RClientTest < Test::Unit::TestCase
     ret = con.gets
     assert_equal("{\"localhost_11212\"=>\"SERVER_ERROR the hash name of 'roma' can't delete.\", \"localhost_11211\"=>\"SERVER_ERROR the hash name of 'roma' can't delete.\"}", ret.chomp )
   end
+
+  def test_routingdump_bin
+    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    con.write("routingdump bin\r\n")
+    len = con.gets
+    bin = con.read(len.to_i)
+    con.gets
+    con.close
+
+    magic, ver, dgst_bits, div_bits, rn, nodeslen = bin.unpack('a2nCCCn')
+    assert_equal('RT', magic)
+    assert_equal(1, ver)
+    assert_equal(32, dgst_bits)
+    assert_equal(3, div_bits)
+    assert_equal(2, rn)
+    assert_equal(2, nodeslen)
+  end
 end
 
 class RClientTestForceForward < RClientTest
