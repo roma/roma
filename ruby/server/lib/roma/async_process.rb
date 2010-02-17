@@ -198,6 +198,21 @@ module Roma
       true
     end
 
+    def asyncev_rdelete(args)
+      nid,hname,k,clk = args
+      @log.debug("asyncev_rdelete #{args.inspect}")
+      unless @rttable.nodes.include?(nid)
+        @log.warn("async rdelete failed:#{nid} dose not found in routing table.#{k}\e#{hname} #{clk}")
+        return true # no retry
+      end
+      res = async_send_cmd(nid,"rdelete #{k}\e#{hname} #{clk}\r\n",10)
+      unless res
+        @log.warn("async redundant failed:#{k}\e#{hname} #{clk} -> #{nid}")
+        return false # retry
+      end
+      true      
+    end
+
     def asyncev_reqpushv(args)
       vn, nid, p = args
       @log.debug("asyncev_reqpushv #{args.inspect}")

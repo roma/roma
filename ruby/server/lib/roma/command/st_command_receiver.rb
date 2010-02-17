@@ -189,7 +189,11 @@ module Roma
         return send_data("NOT_FOUND\r\n") if res == :deletemark
 
         nodes[1..-1].each{ |nid|
-          send_cmd(nid,"rdelete #{s[1]} #{res[2]}\r\n")
+          res2 = send_cmd(nid,"rdelete #{s[1]} #{res[2]}\r\n")
+          unless res2
+            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('rdelete',[nid,hname,s[1],res[2]]))
+            @log.warn("rdelete failed:#{s[1]}\e#{hname} #{d} #{res[2]} -> #{nid}")
+          end
         }
         return send_data("NOT_FOUND\r\n") unless res[4]
         send_data("DELETED\r\n")
@@ -217,7 +221,11 @@ module Roma
 
         nodes.delete(@nid)
         nodes.each{ |nid|
-          send_cmd(nid,"rdelete #{s[1]} #{res[2]}\r\n")
+          res2 = send_cmd(nid,"rdelete #{s[1]} #{res[2]}\r\n")
+          unless res2
+            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('rdelete',[nid,hname,s[1],res[2]]))
+            @log.warn("rdelete failed:#{s[1]}\e#{hname} #{d} #{res[2]} -> #{nid}")
+          end
         }
         return send_data("NOT_FOUND\r\n") unless res[4]
         send_data("DELETED\r\n")
