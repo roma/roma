@@ -446,10 +446,6 @@ module Roma
       end
 
       def redundant(nodes, hname, k, d, clk, expt, v)
-        if @rttable.min_version == nil || @rttable.min_version < 0x000306 # ver.0.3.6
-          return redundant_older_than_000306(nodes, hname, k, d, clk, expt, v)
-        end
-
         if @stats.size_of_zredundant > 0 && @stats.size_of_zredundant < v.length 
           return zredundant(nodes, hname, k, d, clk, expt, v)
         end
@@ -459,27 +455,6 @@ module Roma
           unless res
             Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('redundant',[nid,hname,k,d,clk,expt,v]))
             @log.warn("redundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
-          end
-        }
-      end
-
-      def redundant_older_than_000306(nodes, hname, k, d, clk, expt, v)
-        nodes.each{ |nid|
-          if @rttable.version_of_nodes[nid] >= 0x000306 &&
-              @stats.size_of_zredundant > 0 && @stats.size_of_zredundant < v.length
-
-            zv = Zlib::Deflate.deflate(v) unless zv
-            res = send_cmd(nid,"rzset #{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}\r\n#{zv}\r\n")
-            unless res
-              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('zredundant',[nid,hname,k,d,clk,expt,zv]))
-              @log.warn("redundant_older_than_000306 failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length} -> #{nid}")
-            end
-          else
-            res = send_cmd(nid,"rset #{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}\r\n#{v}\r\n")
-            unless res
-              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('redundant',[nid,hname,k,d,clk,expt,v]))
-              @log.warn("redundant_older_than_000306 failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
-            end
           end
         }
       end
