@@ -34,7 +34,7 @@ module Roma
         send_data("CREATED\r\n")
       end
 
-      # routingdump [yaml|json|yamlbytes]\r\n
+      # routingdump [yaml|json|yamlbytes|bin]\r\n
       def ev_routingdump(s)
         if s.length == 1
           dmp = @rttable.dump
@@ -48,6 +48,11 @@ module Roma
         elsif s[1] == 'yamlbytes'
           dmp = @rttable.dump_yaml
           send_data("#{dmp.length + 7}\r\nEND\r\n")
+        elsif s[1] == 'bin'
+          dmp = @rttable.dump_binary
+          send_data("#{dmp.length}\r\n#{dmp}\r\nEND\r\n")
+        else
+          send_data("CLIENT_ERROR\r\n")
         end
       end
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require 'optparse'
-require 'roma/config'
 require 'roma/version'
 require 'roma/stats'
 require 'roma/command_plugin'
@@ -10,7 +9,7 @@ require 'roma/logging/rlogger'
 require 'roma/command/receiver'
 require 'roma/messaging/con_pool'
 require 'roma/event/con_pool'
-require 'roma/routing/routing_data'
+require 'roma/routing/cb_rttable'
 require 'timeout'
 
 module Roma
@@ -27,8 +26,8 @@ module Roma
 
     def initialize(argv = nil)
       @stats = Roma::Stats.instance
-      initialize_stats
       options(argv)
+      initialize_stats
       initialize_logger
       initialize_rttable
       initialize_storages
@@ -77,8 +76,11 @@ module Roma
     private
 
     def initialize_stats
-      if Roma::Config.const_defined?(:REDUNDANT_ZREDUNDANT_SIZE)
-        @stats.size_of_zredundant = Roma::Config::REDUNDANT_ZREDUNDANT_SIZE
+      if Config.const_defined?(:REDUNDANT_ZREDUNDANT_SIZE)
+        @stats.size_of_zredundant = Config::REDUNDANT_ZREDUNDANT_SIZE
+      end
+      if Config.const_defined?(:DATACOPY_STREAM_COPY_WAIT_PARAM)
+        @stats.stream_copy_wait_param = Config::DATACOPY_STREAM_COPY_WAIT_PARAM
       end
     end
 
@@ -152,7 +154,6 @@ module Roma
 
       opts.on("-j","--join [address:port]") { |v| @stats.join_ap = v }
 
-      @stats.port = Roma::Config::DEFAULT_PORT.to_s
       opts.on("-p", "--port [PORT]") { |v| @stats.port = v }
 
       @stats.start_with_failover = false
@@ -165,7 +166,6 @@ module Roma
         puts "romad.rb #{Roma::VERSION}"; exit
       }
       
-      @stats.name = Roma::Config::DEFAULT_NAME
       opts.on("-n", "--name [name]") { |v| @stats.name = v }
 
       @stats.enabled_repetition_host_in_routing = false
@@ -173,9 +173,20 @@ module Roma
         @stats.enabled_repetition_host_in_routing = true
       }
 
+      opts.on("--config [file path of the config.rb]"){ |v| @stats.config_path = File.expand_path(v) }
+
       opts.parse!(argv)
       raise OptionParser::ParseError.new if argv.length < 1
       @stats.address = argv[0]
+
+      @stats.config_path = 'roma/config' unless @stats.config_path
+
+      unless require @stats.config_path
+        raise "config.rb has already been load outside the romad.rb."
+      end
+
+      @stats.name = Config::DEFAULT_NAME unless @stats.name
+      @stats.port = Config::DEFAULT_PORT.to_s unless @stats.port
 
       unless @stats.port =~ /^\d+$/
         raise OptionParser::ParseError.new('Port number is not numeric.')
@@ -242,7 +253,11 @@ module Roma
         raise "#{fname} not found." unless File::exist?(fname)
         rd = Roma::Routing::RoutingData::load(fname)
         raise "It failed in loading the routing table data." unless rd
-        @rttable = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
+        if Config.const_defined? :RTTABLE_CLASS
+          @rttable = Config::RTTABLE_CLASS.new(rd,fname)
+        else
+          @rttable = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
+        end
       end
       
       if Roma::Config.const_defined?(:ROUTING_FAIL_CNT_THRESHOLD)
@@ -306,8 +321,21 @@ module Roma
     end
 
     def get_routedump(nid)
-      con = Roma::Messaging::ConPool.instance.get_connection(nid)
-      con.write("routingdump\r\n")
+      rcv = receive_routing_dump(nid, "routingdump bin\r\n")
+      unless rcv
+        rcv = receive_routing_dump(nid, "routingdump\r\n")
+        rd = Marshal.load(rcv)
+      else
+        rd = Routing::RoutingData.decode_binary(rcv)
+      end
+      rd
+    rescue
+      nil
+    end
+
+    def receive_routing_dump(nid, cmd)
+      con = Messaging::ConPool.instance.get_connection(nid)
+      con.write(cmd)
       len = con.gets
       if len.to_i <= 0
         con.close
@@ -320,11 +348,10 @@ module Roma
       end
       con.read(2)
       con.gets
-      rd = Marshal.load(rcv)
-      Roma::Messaging::ConPool.instance.return_connection(nid,con)
-      rd
+      Messaging::ConPool.instance.return_connection(nid,con)
+      rcv
     rescue
-      nil
+      nil      
     end
 
     def acquire_vnodes

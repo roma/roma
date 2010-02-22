@@ -1,10 +1,12 @@
 require 'singleton'
-require 'roma/config'
 
 module Roma
 
   class Stats
     include Singleton
+
+    # environment options
+    attr_accessor :config_path
 
     # command options
     attr_accessor :address, :port
@@ -42,6 +44,7 @@ module Roma
     attr_accessor :redundant_count
 
     def initialize
+      @config_path = nil
       @run_acquire_vnodes = false
       @run_recover = false
       @run_sync_routing = false
@@ -49,8 +52,7 @@ module Roma
       @run_storage_clean_up = false
       @run_receive_a_vnode = false
       @run_release = false
-      @stream_copy_wait_param = 
-        Roma::Config::DATACOPY_STREAM_COPY_WAIT_PARAM
+      @stream_copy_wait_param = 0.0001
       @enabled_vnodes_balance = nil
       @write_count = 0
       @read_count = 0
@@ -67,6 +69,7 @@ module Roma
 
     def get_stat
       ret = {}
+      ret['stats.config_path'] = @config_path
       ret['stats.address'] = @address
       ret['stats.port'] = @port
       ret['stats.daemon'] = @daemon

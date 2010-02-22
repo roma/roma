@@ -4,6 +4,7 @@
 require 'roma/client/rclient'
 require 'roma/plugin/plugin_alist'
 require 'roma/storage/tc_storage'
+require 'roma/messaging/con_pool'
 
 Roma::Client::RomaClient.class_eval{
   def init_sync_routing_proc
