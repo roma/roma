@@ -33,7 +33,7 @@ module Roma
     DATACOPY_STREAM_COPY_WAIT_PARAM = 0.0001
 
     # plugin setting
-    PLUGIN_FILES = ['plugin_alist.rb']
+    PLUGIN_FILES = ['plugin_storage.rb']
 
     # write-behind setting
     WRITEBEHIND_PATH = './wb'

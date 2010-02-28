@@ -3,9 +3,10 @@ require 'digest/sha1'
 require 'roma/async_process'
 
 module Roma
-  module Command
+  module CommandPlugin
 
-    module StorageCommandReceiver
+    module PluginStorage
+      include ::Roma::CommandPlugin
 
       # "set" means "store this data".
       # <command name> <key> <flags> <exptime> <bytes> [noreply]\r\n
@@ -246,24 +247,6 @@ module Roma
         else
           send_data("NOT_FOUND\r\n")
         end
-      end
-
-      # out <key> <vn>
-      def ev_out(s)
-        key,hname = s[1].split("\e")
-        hname ||= @defhash
-        if s.length >= 3
-          vn = s[2].to_i
-        else
-          d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
-          vn = @rttable.get_vnode_id(d)
-        end
-        res = @storages[hname].out(vn, key, 0)
-        @stats.out_message_count += 1
-        unless res
-          return send_data("NOT_DELETED\r\n")
-        end
-        send_data("DELETED\r\n")
       end
 
       # "add" means that "add a new data to a store"
@@ -560,7 +543,7 @@ module Roma
         store_incr_decr(fnc, hname, vn, key, d, v, nodes)
       end
 
-    end # module StorageCommandReceiver
+    end # module PluginStorage
 
-  end # module Command
+  end # module CommandPlugin
 end # module Roma

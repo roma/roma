@@ -4,7 +4,6 @@ require 'roma/event/handler'
 require 'roma/messaging/con_pool'
 require 'roma/command/bg_command_receiver'
 require 'roma/command/rt_command_receiver'
-require 'roma/command/st_command_receiver'
 require 'roma/command/util_command_receiver'
 require 'roma/command/mh_command_receiver'
 
@@ -15,7 +14,6 @@ module Roma
 
       include BackgroundCommandReceiver
       include RoutingCommandReceiver
-      include StorageCommandReceiver
       include UtilCommandReceiver
       include MultiHashCommandReceiver
 
@@ -240,6 +238,24 @@ module Roma
           return send_data("CLIENT_ERROR no match log-level string\r\n")
         end
         send_data("STORED\r\n")
+      end
+
+      # out <key> <vn>
+      def ev_out(s)
+        key,hname = s[1].split("\e")
+        hname ||= @defhash
+        if s.length >= 3
+          vn = s[2].to_i
+        else
+          d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+          vn = @rttable.get_vnode_id(d)
+        end
+        res = @storages[hname].out(vn, key, 0)
+        @stats.out_message_count += 1
+        unless res
+          return send_data("NOT_DELETED\r\n")
+        end
+        send_data("DELETED\r\n")
       end
 
       private 
