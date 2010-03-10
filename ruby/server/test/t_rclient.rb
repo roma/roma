@@ -42,6 +42,26 @@ class RClientTest < Test::Unit::TestCase
    }
   end
 
+  def test_cas
+    @rc.set("cnt", 1)
+    res = @rc.cas("cnt"){|v|
+      assert_equal(1, v)
+      v += 1
+    }
+    assert_equal("STORED", res)
+    assert_equal(2, @rc.get("cnt"))
+
+    res = @rc.cas("cnt"){|v|
+      res2 = @rc.cas("cnt"){|v2|
+        v += 2
+      }
+      assert_equal("STORED", res2)
+      v += 1
+    }
+    assert_equal("EXISTS", res)
+    assert_equal(4, @rc.get("cnt"))
+  end
+
   def test_set_gets
     keys = []
     assert_equal(@rc.gets(["key-1","key-2"]).length,0)
