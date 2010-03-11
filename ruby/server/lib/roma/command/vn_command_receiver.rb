@@ -50,7 +50,8 @@ module Roma
           vlen, =  vlen_bin.unpack('N')
           if vlen != 0
             v = read_bytes(vlen, 100)
-            
+
+            createhash(s[1]) unless @storages[s[1]]
             if @storages[s[1]].load_stream_dump(vn, last, clk, expt, k, v)
               count += 1
 #              @log.debug("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was stored.")
@@ -59,6 +60,7 @@ module Roma
 #              @log.warn("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was rejected.")
             end
           else
+            createhash(s[1]) unless @storages[s[1]]
             if @storages[s[1]].load_stream_dump(vn, last, clk, expt, k, nil)
 #              @log.debug("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was stored.")
               count += 1

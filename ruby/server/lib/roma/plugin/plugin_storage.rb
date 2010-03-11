@@ -170,7 +170,7 @@ module Roma
         vn = @rttable.get_vnode_id(d)
         nodes = @rttable.search_nodes_for_write(vn)
         if nodes[0] != @nid
-          cmd = "fdelete #{s[1]}"
+          cmd = "fdelete #{key}\e#{hname}"
           s[2..-1].each{|c| cmd << " #{c}"}
           cmd << "\r\n"
           @log.warn("forward delete #{s[1]}")
@@ -190,7 +190,7 @@ module Roma
         return send_data("NOT_FOUND\r\n") if res == :deletemark
 
         nodes[1..-1].each{ |nid|
-          res2 = send_cmd(nid,"rdelete #{s[1]} #{res[2]}\r\n")
+          res2 = send_cmd(nid,"rdelete #{key}\e#{hname} #{res[2]}\r\n")
           unless res2
             Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('rdelete',[nid,hname,s[1],res[2]]))
             @log.warn("rdelete failed:#{s[1]}\e#{hname} #{d} #{res[2]} -> #{nid}")
@@ -222,7 +222,7 @@ module Roma
 
         nodes.delete(@nid)
         nodes.each{ |nid|
-          res2 = send_cmd(nid,"rdelete #{s[1]} #{res[2]}\r\n")
+          res2 = send_cmd(nid,"rdelete #{key}\e#{hname} #{res[2]}\r\n")
           unless res2
             Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('rdelete',[nid,hname,s[1],res[2]]))
             @log.warn("rdelete failed:#{s[1]}\e#{hname} #{d} #{res[2]} -> #{nid}")
@@ -287,7 +287,7 @@ module Roma
         nodes = @rttable.search_nodes_for_write(vn)
         if nodes[0] != @nid
           @log.warn("forward cas key=#{key} vn=#{vn} to #{nodes[0]}")
-          res = send_cmd(nodes[0],"fcas #{s[1]} #{d} #{s[3]} #{v.length} #{s[5]}\r\n#{v}\r\n")
+          res = send_cmd(nodes[0],"fcas #{key}\e#{hname} #{d} #{s[3]} #{v.length} #{s[5]}\r\n#{v}\r\n")
           if res
             return send_data("#{res}\r\n")
           end
@@ -464,7 +464,7 @@ module Roma
         nodes = @rttable.search_nodes_for_write(vn)
         if nodes[0] != @nid
           @log.warn("forward #{fnc} key=#{key} vn=#{vn} to #{nodes[0]}")
-          res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[3]} #{v.length}\r\n#{v}\r\n")
+          res = send_cmd(nodes[0],"f#{fnc} #{key}\e#{hname} #{d} #{s[3]} #{v.length}\r\n#{v}\r\n")
           if res
             return send_data("#{res}\r\n")
           end
@@ -516,7 +516,7 @@ module Roma
         nodes = @rttable.search_nodes_for_write(vn)
         if nodes[0] != @nid
           @log.debug("forward #{fnc} key=#{s[1]} vn=#{vn} to #{nodes[0]}")
-          res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[2]}\r\n")
+          res = send_cmd(nodes[0],"f#{fnc} #{key}\e#{hname} #{d} #{s[2]}\r\n")
           if res
             return send_data("#{res}\r\n")
           end
