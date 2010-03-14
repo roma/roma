@@ -16,9 +16,14 @@ module Roma
 
   class RecoverLost
     
-    def initialize(pname, pushv_cmd, argv)
-      if argv.length < 3
+    def initialize(pname, pushv_cmd, argv, alldata = false)
+      if alldata == false && argv.length < 4
         puts "usage:#{pname} address port storage-path [yyyymmddhhmmss]"
+        exit
+      end
+
+      if alldata && argv.length != 3
+        puts "usage:#{pname} address port storage-path"
         exit
       end
 
@@ -39,14 +44,19 @@ module Roma
       @pushv_cmd = pushv_cmd
       @nodeid = "#{@addr}_#{@port}"
       @stream_copy_wait_param = 0.0001
+      @alldata = alldata
     end
 
     def suite
       @rd = get_routing_data(@nodeid)
-      @lost_vnodes = get_lost_vnodes(@rd,@ymdhms)
-      puts "#{@lost_vnodes.length} vnodes where data was lost."
+      unless @alldata
+        @lost_vnodes = get_lost_vnodes(@rd,@ymdhms)
+        puts "#{@lost_vnodes.length} vnodes where data was lost."
 
-      exit if @lost_vnodes.length == 0
+        exit if @lost_vnodes.length == 0
+      else
+        @lost_vnodes = @rd.v_idx.keys
+      end
 
       each_hash(@strgpath){|hname,dir|
         puts "#{hname} #{dir}"
@@ -121,20 +131,23 @@ module Roma
     end
 
     def start_recover(hname)
-      @lost_vnodes.each{|vn|
+      @lost_vnodes.each_with_index{|vn, idx|
         nodes = @rd.v_idx[vn]
         if nodes == nil || nodes.length == 0
-          nid = @rd.nodes[rand(@rd.nodes.length)]
-          puts "#{vn} assign to #{nid}"
+          nids = []
+          nids[0] = @rd.nodes[rand(@rd.nodes.length)]
+          puts "#{idx}/#{@lost_vnodes.length} #{vn} assign to #{nids.inspect}"
         else
-          nid = nodes[0]
-          puts "#{vn} was auto assirned at #{nid}"
+          nids = nodes
+          puts "#{idx}/#{@lost_vnodes.length} #{vn} was auto assirned at #{nids.inspect}"
         end
 
-        if push_a_vnode_stream(hname, vn, nid)!="STORED"
-          STDERR.puts "push_a_vnode_stream aborted in #{vn}"
-          exit
-        end
+        nids.each{|nid|
+          if push_a_vnode_stream(hname, vn, nid)!="STORED"
+            STDERR.puts "push_a_vnode_stream aborted in #{vn}"
+            exit
+          end
+        }
 
         if nodes == nil || nodes.length == 0
           cmd = "setroute #{vn} #{@rd.v_clk[vn]} #{nid}\r\n"
@@ -144,26 +157,9 @@ module Roma
       }
     end
 
-    def push_a_vnode(hname, vn, nid)
-      dmp = @storage.dump(vn)
-      return true unless dmp
-      con = Roma::Messaging::ConPool.instance.get_connection(nid) unless con
-      con.write("pushv #{hname} #{vn}\r\n")
-      res = con.gets
-      con.write("#{dmp.length}\r\n#{dmp}\r\nEND\r\n")
-      res = con.gets
-      con.close
-      res.chomp! if res
-      res
-    rescue =>e
-      STDERR.puts "#{e}\n#{$@}"
-      nil
-    end
-
     def push_a_vnode_stream(hname, vn, nid)
       con = Roma::Messaging::ConPool.instance.get_connection(nid)
 
-#      con.write("spushv #{hname} #{vn}\r\n")
       con.write("#{@pushv_cmd} #{hname} #{vn}\r\n")
 
       res = con.gets # READY\r\n or error string
@@ -173,7 +169,7 @@ module Roma
       end
 
       @storage.each_vn_dump(vn){|data|
-        con.write(data)
+        con.write(clk_to_zero(data))
         sleep @stream_copy_wait_param
       }
       con.write("\0"*20) # end of steram
@@ -185,6 +181,17 @@ module Roma
     rescue =>e
       STDERR.puts "#{e}\n#{$@}"
       nil
+    end
+
+    def clk_to_zero(data)
+      vn, last, clk, expt, klen = data.unpack('NNNNN')
+      k, vlen = data[20..-1].unpack("a#{klen}N")
+      if vlen != 0
+        v, = data[(20+klen+4)..-1].unpack("a#{vlen}")
+        [vn, last, 0, expt, klen, k, vlen, v].pack("NNNNNa#{klen}Na#{vlen}")
+      else
+        [vn, last, 0, expt, klen, k, 0].pack("NNNNNa#{klen}N")
+      end
     end
 
     def broadcast_cmd(cmd,without_nids=nil)
