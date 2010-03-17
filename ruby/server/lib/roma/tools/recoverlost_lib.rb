@@ -66,6 +66,18 @@ module Roma
       }
     end
 
+    def suite_with_keys(keys)
+      @rd = get_routing_data(@nodeid)
+      @lost_vnodes = @rd.v_idx.keys
+
+      each_hash(@strgpath){|hname,dir|
+        puts "#{hname} #{dir}"
+        @storage = open_storage(dir,@lost_vnodes)
+        start_recover_width_keys(hname, keys)
+        @storage.closedb
+      }
+    end
+
     def each_hash(path)
       Dir::glob("#{path}/*").each{|dir|
         next unless File::directory?(dir)
@@ -139,7 +151,7 @@ module Roma
           puts "#{idx}/#{@lost_vnodes.length} #{vn} assign to #{nids.inspect}"
         else
           nids = nodes
-          puts "#{idx}/#{@lost_vnodes.length} #{vn} was auto assirned at #{nids.inspect}"
+          puts "#{idx}/#{@lost_vnodes.length} #{vn} was auto assigned at #{nids.inspect}"
         end
 
         nids.each{|nid|
@@ -172,6 +184,57 @@ module Roma
         con.write(clk_to_zero(data))
         sleep @stream_copy_wait_param
       }
+      con.write("\0"*20) # end of steram
+
+      res = con.gets # STORED\r\n or error string
+      Roma::Messaging::ConPool.instance.return_connection(nid,con)
+      res.chomp! if res
+      res
+    rescue =>e
+      STDERR.puts "#{e}\n#{$@}"
+      nil
+    end
+
+    def start_recover_width_keys(hname,keys)
+      keys.each{|key|
+        data = @storage.get_raw2(key)
+        if data
+          puts "hit => #{key}"
+          d = Digest::SHA1.hexdigest(key).hex % (2**@rd.dgst_bits)
+          vn = d & @rd.search_mask
+          nodes = @rd.v_idx[vn]
+          nodes.each{|nid|
+            print "#{nid}=>"
+            res = upload_data(hname, vn, nid, key, data)
+            puts res
+          }
+        end
+      }
+    end
+
+    def upload_data(hname, vn, nid, k, data)
+      con = Roma::Messaging::ConPool.instance.get_connection(nid)
+
+      cmd = "#{@pushv_cmd} #{hname} #{vn}\r\n"
+      con.write(cmd)
+# puts "new vn = #{vn}"
+      res = con.gets # READY\r\n or error string
+      if res != "READY\r\n"
+        con.close
+        return res.chomp
+      end
+
+      vn_old, last, clk, expt, val = data
+# puts "old vn = #{vn_old}"
+      if val
+        wd = [vn, last, 0, expt, k.length, k, val.length, val].pack("NNNNNa#{k.length}Na#{val.length}")
+      else
+        wd = [vn, last, 0, expt, k.length, k, 0].pack("NNNNNa#{k.length}N")
+      end
+       
+      con.write(wd)
+      sleep @stream_copy_wait_param
+  
       con.write("\0"*20) # end of steram
 
       res = con.gets # STORED\r\n or error string

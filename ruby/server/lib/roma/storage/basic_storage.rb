@@ -13,9 +13,9 @@ module Roma
 
       attr_writer :vn_list
       attr_writer :storage_path
-      attr_writer :divnum
       attr_writer :option
 
+      attr_accessor :divnum
       attr_accessor :each_vn_dump_sleep
       attr_accessor :each_vn_dump_sleep_count
       attr_accessor :each_clean_up_sleep
@@ -235,6 +235,14 @@ module Roma
         return nil unless buf
 
         unpack_data(buf)
+      end
+
+      def get_raw2(k)
+        @hdb.each{|hdb|
+          buf = hdb.get(k)
+          return unpack_data(buf) if buf
+        }
+        nil
       end
 
       def rdelete(vn, k, d, clk)
@@ -488,7 +496,6 @@ module Roma
           end
         }
       end
-      private :each_hdb_dump
 
       # Create vnode dump.
       def get_vnode_hash(vn)
