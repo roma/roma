@@ -16,8 +16,14 @@ module Roma
         STDERR.puts "### #{hname} #{dir}"
         st = open_storage(dir)
 
+        c = 0
+        n = st.true_length
+        m = n / 100
+        m = 1 if m < 1
         st.divnum.times{|i|
           st.each_hdb_dump(i){|data|
+            c += 1
+            STDERR.print "#{c}/#{n}\r" if c % m == 0
             vn, last, clk, expt, klen = data.unpack('NNNNN')
             key, = data[20..-1].unpack("a#{klen}")
             STDOUT.puts key
@@ -26,6 +32,7 @@ module Roma
         }
 
         st.closedb
+        STDERR.puts "\ndone"
       }
     end
 
