@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+require 'pathname'
+
+base_path = Pathname(__FILE__).dirname.parent.parent.expand_path
+$LOAD_PATH.unshift("#{base_path}/server/lib")
+$LOAD_PATH.unshift("#{base_path}/commons/lib")
+
+require 'roma/tools/key_access'
