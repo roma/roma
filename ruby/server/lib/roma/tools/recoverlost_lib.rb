@@ -74,6 +74,7 @@ module Roma
         puts "#{hname} #{dir}"
         @storage = open_storage(dir,@lost_vnodes)
         start_recover_width_keys(hname, keys)
+#        start_recover_width_keys2(hname, keys)
         @storage.closedb
       }
     end
@@ -182,6 +183,67 @@ module Roma
 
       @storage.each_vn_dump(vn){|data|
         con.write(clk_to_zero(data))
+        sleep @stream_copy_wait_param
+      }
+      con.write("\0"*20) # end of steram
+
+      res = con.gets # STORED\r\n or error string
+      Roma::Messaging::ConPool.instance.return_connection(nid,con)
+      res.chomp! if res
+      res
+    rescue =>e
+      STDERR.puts "#{e}\n#{$@}"
+      nil
+    end
+
+    def make_node_hash(keys)
+      res = {}
+      @rd.nodes.each{|nid| res[nid] = [] }
+      keys.each{|key|
+        d = Digest::SHA1.hexdigest(key).hex % (2**@rd.dgst_bits)
+        @rd.v_idx[d & @rd.search_mask].each{|nid| res[nid] << key }
+      }
+      res
+    end
+
+    def start_recover_width_keys2(hname,keys)
+      node_hash = make_node_hash(keys)
+      node_hash.each{|nid,ks|
+        puts nid
+        upload_data2(hname, nid, ks)
+      }
+    end
+
+    def upload_data2(hname, nid, keys)
+      con = Roma::Messaging::ConPool.instance.get_connection(nid)
+
+      cmd = "#{@pushv_cmd} #{hname} 0\r\n"
+      con.write(cmd)
+      res = con.gets # READY\r\n or error string
+      if res != "READY\r\n"
+        con.close
+        return res.chomp
+      end
+
+      n = keys.length
+      m = n / 100
+      m = 1 if m < 1
+      keys.each_with_index{|k,i|
+        print "#{i}/#{n}\r" if i%m == 0
+        data = @storage.get_raw2(k)
+        next unless data
+        d = Digest::SHA1.hexdigest(k).hex % (2**@rd.dgst_bits)
+        vn = d & @rd.search_mask
+
+        vn_old, last, clk, expt, val = data
+        # puts "old vn = #{vn_old}"
+        if val
+          wd = [vn, last, 0, expt, k.length, k, val.length, val].pack("NNNNNa#{k.length}Na#{val.length}")
+        else
+          wd = [vn, last, 0, expt, k.length, k, 0].pack("NNNNNa#{k.length}N")
+        end
+       
+        con.write(wd)
         sleep @stream_copy_wait_param
       }
       con.write("\0"*20) # end of steram
