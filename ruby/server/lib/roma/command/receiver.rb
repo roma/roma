@@ -59,7 +59,7 @@ module Roma
 
       # version
       def ev_version(s)
-        send_data("VERSION #{Roma::VERSION}\r\n")
+        send_data("VERSION ROMA-#{Roma::VERSION}\r\n")
       end
 
       # quit
