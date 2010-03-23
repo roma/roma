@@ -700,7 +700,7 @@ module Roma
           @stats.out_count += 1
 #          @log.debug("#{__method__}:key=#{key} vn=#{vn}")
           nodes = @rttable.search_nodes_for_write(vn)
-          next if(nodes.length <= 1)
+          next if(nodes == nil || nodes.length <= 1)
           nodes[1..-1].each{|nid|
             res = async_send_cmd(nid,"out #{key}\e#{hname} #{vn}\r\n")
             unless res
