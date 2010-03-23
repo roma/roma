@@ -43,6 +43,7 @@ module Roma
       @async_thread = Thread.new{
         async_process_loop
       }
+      @async_thread[:name] = __method__
     rescue =>e
       @log.error("#{e}\n#{$@}")
     end
@@ -65,11 +66,12 @@ module Roma
             msg.callback.call(msg,true) if msg.callback
           else
             if msg.retry?
-              Thread.new{
+              t = Thread.new{
                 msg.wait
                 msg.incr_count
                 @@async_queue.push(msg)
               }
+              t[:name] = __method__
             else
               @log.error("async process retry out:#{msg.inspect}")
               msg.callback.call(msg,false) if msg.callback
@@ -85,9 +87,10 @@ module Roma
     def asyncev_broadcast_cmd(args)
       @log.debug("asyncev_broadcast_cmd #{args.inspect}")
       cmd, nids, tout = args
-      Thread::new{
+      t = Thread::new{
         async_broadcast_cmd("#{cmd}\r\n", nids, tout)
       }
+      t[:name] = __method__
       true
     end
 
@@ -108,6 +111,7 @@ module Roma
           @stats.join_ap = nil
         end
       }
+      t[:name] = __method__
       true
     end
 
@@ -115,7 +119,7 @@ module Roma
       @log.debug("asyncev_start_dumpfile_process #{args.inspect}")
       key, path, cmd = args
       path = Roma::Config::STORAGE_DUMP_PATH + '/' + path
-      Thread.new{
+      t = Thread.new{
         begin
           except_vnh = {}
           @rttable.each_vnode{|vn,nids|
@@ -138,6 +142,7 @@ module Roma
           @log.error("#{e}\n#{$@}")
         end
       }
+      t[:name] = __method__
       true
     end
 
@@ -216,15 +221,16 @@ module Roma
     def asyncev_reqpushv(args)
       vn, nid, p = args
       @log.debug("asyncev_reqpushv #{args.inspect}")
-      Thread::new{
+      t = Thread::new{
         sync_a_vnode(vn.to_i, nid, p == 'true')
       }
+      t[:name] = __method__
     end
 
     def asyncev_start_recover_process(args)
       @log.debug("asyncev_start_recover_process #{args.inspect}")
       @stats.run_recover = true
-      Thread::new{
+      t = Thread::new{
         begin
           if args == nil || args.length == 0
             acquired_recover_process
@@ -240,12 +246,13 @@ module Roma
         end
         @stats.run_recover = false
       }
+      t[:name] = __method__
     end
 
     def asyncev_start_release_process(args)
       @log.debug("asyncev_start_release_process #{args}")
       @stats.run_release = true
-      Thread::new{
+      t = Thread::new{
         begin
           release_process
         rescue => e
@@ -253,15 +260,17 @@ module Roma
         end
         @stats.run_relase = false
       }
+      t[:name] = __method__
     end
 
     def asyncev_start_sync_process(args)
       @log.debug("asyncev_start_sync_process")
       @stats.run_recover = true
-      Thread::new{
+      t = Thread::new{
         sync_process(args)
         @stats.run_recover = false
       }
+      t[:name] = __method__
     end
 
     def sync_process(st)
@@ -658,7 +667,7 @@ module Roma
         return
       end
       @stats.run_storage_clean_up = true
-      Thread::new{
+      t = Thread::new{
         begin
           storage_clean_up_process
         rescue =>e
@@ -667,6 +676,7 @@ module Roma
           @stats.run_storage_clean_up = false
         end
       }
+      t[:name] = __method__
     end
 
     def storage_clean_up_process

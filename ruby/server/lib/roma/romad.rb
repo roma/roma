@@ -363,18 +363,20 @@ module Roma
     end
 
     def timer
-      Thread.new do
+      t = Thread.new do
         loop do
           sleep 1
           timer_event_1sec
         end
       end
-      Thread.new do
+      t[:name] = 'timer_1sec'
+      t = Thread.new do
         loop do
           sleep 10
           timer_event_10sec
         end
       end
+      t[:name] = 'timer_10sec'
     end
 
     def timer_event_1sec
@@ -467,7 +469,7 @@ module Roma
         EventMachine::stop_event_loop
         return
       end
-      Thread.new{
+      t = Thread.new{
         begin
           ret = routing_hash_comparison(nodes[idx-1])
           if ret == :inconsistent
@@ -488,6 +490,7 @@ module Roma
         end
         @stats.run_sync_routing = false
       }
+      t[:name] = 'sync_routing'
     end    
 
     def routing_hash_comparison(nid,id='0')

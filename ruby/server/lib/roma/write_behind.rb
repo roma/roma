@@ -134,6 +134,7 @@ module Roma
       @wb_thread = Thread.new{
         wb_process_loop
       }
+      @wb_thread[:name] = 'write_behind'
     rescue =>e
       @log.error("#{e}\n#{$@}")
     end
