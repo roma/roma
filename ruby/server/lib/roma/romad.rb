@@ -568,6 +568,7 @@ end
 $roma = Roma::Romad.new(ARGV)
 if $roma.daemon?
   Roma::daemon{ $roma.start }
+  $stderr = Roma::Logging::StderrWrapper.new
 else
   $roma.start
 end
