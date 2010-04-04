@@ -606,8 +606,16 @@ module Roma
  
     def push_a_vnode_stream(hname, vn, nid)
       @stats.run_iterate_storage = true
-      @log.info("push_a_vnode_stream:hname=#{hname} vn=#{vn} nid=#{nid}")
+      @log.info("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
       con = Roma::Messaging::ConPool.instance.get_connection(nid)
+
+      @do_push_a_vnode_stream = true
+      
+      while(@stats.run_storage_clean_up)
+        @log.info("#{__method__}:stop_clean_up")
+        @storages.each_value{|st| st.stop_clean_up}
+        sleep 0.5
+      end
 
       con.write("spushv #{hname} #{vn}\r\n")
 
@@ -618,6 +626,13 @@ module Roma
       end
 
       @storages[hname].each_vn_dump(vn){|data|
+
+        unless @do_push_a_vnode_stream
+          con.close
+          @log.error("#{__method__}:canceled in hname=#{hname} vn=#{vn} nid=#{nid}")
+          return "CANCELED"
+        end
+
         @stats.run_iterate_storage = true
         con.write(data)
         sleep @stats.stream_copy_wait_param
