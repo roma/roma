@@ -10,7 +10,7 @@ module Roma
         cmd = s[1..-1].join(' ')
         @log.debug("eval(#{cmd})")
         send_data("#{eval(cmd)}\r\n")
-      rescue =>e
+      rescue Exception =>e
         send_data("#{e}\r\n")
       end
 

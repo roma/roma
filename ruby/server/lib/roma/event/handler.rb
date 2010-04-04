@@ -48,7 +48,7 @@ module Roma
       def receive_data(data)
         @rbuf << data
         @fiber.resume
-      rescue =>e
+      rescue Exception =>e
         @log.error("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
       end
 
@@ -57,7 +57,7 @@ module Roma
         @fiber.resume
         EventMachine::stop_event_loop if @stop_event_loop
         @log.info("Disconnected from #{@addr[1]}:#{@addr[0]}")
-      rescue =>e
+      rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
       end
 
@@ -104,7 +104,7 @@ module Roma
             close_connection_after_writing
           end
         end
-      rescue =>e
+      rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e} #{$@}")
         close_connection
       end
