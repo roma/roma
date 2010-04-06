@@ -11,6 +11,7 @@ module Roma
 
     class Handler < EventMachine::Connection
       @@ev_list={}
+      def self.ev_list; @@ev_list; end
 
       attr :stop_event_loop
       attr :connected

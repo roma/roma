@@ -56,6 +56,7 @@ module Roma
       start_wb_process
       timer
 
+      Command::Receiver::mk_starting_evlist
       @eventloop = true
       while(@eventloop)
         @eventloop = false
@@ -365,6 +366,7 @@ module Roma
         if nodes_check(nodes)
           @log.info("all nodes started")
           @rttable.enabled_failover = true
+          Command::Receiver::mk_evlist
         end
       else
         version_check
