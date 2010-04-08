@@ -32,6 +32,9 @@ module Roma
             end
           }
         end
+        @th1 = 100
+        @close_rate = 70
+        @th2 = 200
 
         @storages = storages
         @rttable = rttable
@@ -41,7 +44,8 @@ module Roma
 
       def post_init
         @addr = Socket.unpack_sockaddr_in(get_peername)
-        @log.info("Connected from #{@addr[1]}:#{@addr[0]}")
+        @log.info("Connected from #{@addr[1]}:#{@addr[0]}. I have #{EM.connection_count} connections.")
+
         @connected = true
         @fiber = Fiber.new { dispatcher }
       end
@@ -104,6 +108,17 @@ module Roma
             send_data("ERROR\r\n")
             close_connection_after_writing
           end
+
+          if EM.connection_count > @th2
+            send_data("ERROR\r\n")
+            close_connection_after_writing
+            @log.warn("Connection count > #{@th2}:connection closed")
+          elsif EM.connection_count > @th1 && rand(100) < @close_rate
+            send_data("ERROR\r\n")
+            close_connection_after_writing
+            @log.warn("Connection count > #{@th1}:connection closed")
+          end
+
         end
       rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e} #{$@}")
