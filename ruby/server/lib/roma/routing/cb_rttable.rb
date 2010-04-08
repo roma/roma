@@ -176,8 +176,8 @@ module Roma
       end
 
       def enabled_failover=(b)
-        @enabled_failover=b
         @fail_cnt.clear
+        @enabled_failover=b
       end
 
       def enabled_failover
