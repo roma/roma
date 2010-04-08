@@ -251,16 +251,23 @@ module Roma
         con = get_connection(nid)
         con.send("get #{k}\r\n")
         res = con.gets
-        return res if res == "END\r\n"
-        s = res.split(/ /)
-        res << con.read_bytes(s[3].to_i + 2)
-        res << con.gets
+        if res == "END\r\n"
+          # value dose not found
+        elsif res == "ERROR\r\n"
+          con.close_connection
+          return nil
+        else
+          s = res.split(/ /)
+          res << con.read_bytes(s[3].to_i + 2)
+          res << con.gets
+        end
         return_connection(nid, con)
         @rttable.proc_succeed(nid)
         res
       rescue => e
-        @rttable.proc_failed(nid)
-        @log.error("forward get failed:nid=#{nid} key=#{key}")
+        @rttable.proc_failed(nid) if e.message != "no connection"
+        @log.error("#{e.inspect}/#{$@}")
+        @log.error("forward get failed:nid=#{nid} key=#{k}")
         nil
       end
 
