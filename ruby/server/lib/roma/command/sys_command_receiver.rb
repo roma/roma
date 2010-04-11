@@ -67,6 +67,7 @@ module Roma
         }
         send_stat_result(nil,$roma.wb_get_stat,regexp)
         send_stat_result(nil,@rttable.get_stat(@stats.ap_str),regexp)
+        send_stat_result(nil,conn_get_stat,regexp)
         send_data("END\r\n")
       end
 
@@ -222,6 +223,32 @@ module Roma
         Command::Receiver::mk_evlist
         @rttable.enabled_failover = true
         send_data("STARTED\r\n")
+      end
+
+      def ev_set_continuous_limit(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
+        end
+
+        res = broadcast_cmd("rset_continuous_limit #{s[1]}\r\n")
+
+        if Event::Handler.set_ccl(s[1])
+          res[@stats.ap_str] = "STORED"
+        else
+          res[@stats.ap_str] = "NOT_STORED"
+        end
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_continuous_limit(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
+        end
+        if Event::Handler.set_ccl(s[1])
+          send_data("STORED\r\n")
+        else
+          send_data("NOT_STORED\r\n")
+        end
       end
 
       private 

@@ -13,6 +13,27 @@ module Roma
       @@ev_list={}
       def self.ev_list; @@ev_list; end
 
+      @@ccl_start = 200
+      @@ccl_rate = 30
+      @@ccl_full = 300
+
+      def self.get_ccl
+        "#{@@ccl_start}:#{@@ccl_rate}:#{@@ccl_full}"
+      end
+
+      def self.set_ccl(ccl)
+        if ccl =~ /^(\d+):(\d+):(\d+)$/
+          s,r,f = $1.to_i,$2.to_i,$3.to_i
+          return false if(s < 0 || f < 0 || r < 0 || r > 100 || s > f)
+          @@ccl_start = s
+          @@ccl_rate = r
+          @@ccl_full = f
+          return true
+        else
+          return false
+        end
+      end
+
       attr :stop_event_loop
       attr :connected
       attr :fiber
@@ -109,16 +130,13 @@ module Roma
             close_connection_after_writing
           end
 
-          if EM.connection_count > @th2
+          d = EM.connection_count - @@ccl_start
+          if d > 0 &&
+              rand(100) < @@ccl_rate + (100 - @@ccl_rate) * d / (@@ccl_full - @@ccl_start)
             send_data("ERROR\r\n")
             close_connection_after_writing
-            @log.warn("Connection count > #{@th2}:connection closed")
-          elsif EM.connection_count > @th1 && rand(100) < @close_rate
-            send_data("ERROR\r\n")
-            close_connection_after_writing
-            @log.warn("Connection count > #{@th1}:connection closed")
+            @log.warn("Connection count > #{@@ccl_start}:closed")
           end
-
         end
       rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e} #{$@}")
@@ -169,7 +187,14 @@ module Roma
         @connected = false
         Socket::for_fd(detach)
       end
-    end
 
-  end
-end
+      def conn_get_stat
+        ret = {}
+        ret["connection.continuous_limit"] = Handler.get_ccl
+        ret
+      end
+
+    end # class Handler < EventMachine::Connection
+
+  end # module Event
+end # module Roma

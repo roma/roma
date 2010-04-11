@@ -56,7 +56,6 @@ module Roma
       start_wb_process
       timer
 
-      Command::Receiver::mk_starting_evlist
       @eventloop = true
       while(@eventloop)
         @eventloop = false
@@ -112,18 +111,30 @@ module Roma
     end
 
     def initialize_handler
-      return if @stats.verbose==false
-
-      Roma::Event::Handler.class_eval{
-        alias gets2 gets
-        undef gets
-        
-        def gets
-          ret = gets2
-          @log.info("command log:#{ret.chomp}") if ret
-          ret
+      if @stats.verbose
+        Event::Handler.class_eval{
+          alias gets2 gets
+          undef gets
+          
+          def gets
+            ret = gets2
+            @log.info("command log:#{ret.chomp}") if ret
+            ret
+          end
+        }
+      end
+      
+      if Config.const_defined?(:CONNECTION_CONTINUOUS_LIMIT)
+        unless Event::Handler.set_ccl(Config::CONNECTION_CONTINUOUS_LIMIT)
+          raise "config parse error : Config::CONNECTION_CONTINUOUS_LIMIT"
         end
-      }
+      end
+
+      if @stats.join_ap
+        Command::Receiver::mk_evlist
+      else
+        Command::Receiver::mk_starting_evlist
+      end
     end
 
     def initialize_logger
