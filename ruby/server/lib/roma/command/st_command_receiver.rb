@@ -70,8 +70,6 @@ module Roma
 
       # get <key>*\r\n
       def ev_get(s)
-        # forward test
-        #return send_data(forward_get('roma0_11212',s[1],0)) if @nid=='roma0_11211'
         key,hname = s[1].split("\e")
         hname ||= @defhash
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
@@ -115,10 +113,10 @@ module Roma
           cmd << "\r\n"
           @log.warn("forward delete #{s[1]}")
           res = send_cmd(nodes[0], cmd)
-          if res
-            return send_data("#{res}\r\n")
+          if res == nil || res.start_with?("ERROR")
+            return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
-          return send_data("SERVER_ERROR Message forward failed.\r\n")
+          return send_data("#{res}\r\n")
         end
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
@@ -253,7 +251,8 @@ module Roma
         res = con.gets
         if res == "END\r\n"
           # value dose not found
-        elsif res == "ERROR\r\n"
+        elsif res.start_with?("ERROR")
+          @rttable.proc_succeed(nid)
           con.close_connection
           return nil
         else
@@ -293,46 +292,15 @@ module Roma
       end
 
       def redundant(nodes, hname, k, d, clk, expt, v)
-        if @rttable.min_version == nil || @rttable.min_version < 0x000306 # ver.0.3.6
-          return redundant_older_than_000306(nodes, hname, k, d, clk, expt, v)
-        end
-
         if @stats.size_of_zredundant > 0 && @stats.size_of_zredundant < v.length 
           return zredundant(nodes, hname, k, d, clk, expt, v)
         end
 
         nodes.each{ |nid|
           res = send_cmd(nid,"rset #{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}\r\n#{v}\r\n")
-          unless res
+          if res == nil || res.start_with?("ERROR")
             Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('redundant',[nid,hname,k,d,clk,expt,v]))
             @log.warn("redundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
-          end
-        }
-      end
-
-      def redundant_older_than_000306(nodes, hname, k, d, clk, expt, v)
-#        @log.debug("redundant_older_than_000306:called")
-        nodes.each{ |nid|
-          if @rttable.version_of_nodes[nid] >= 0x000306 &&
-              @stats.size_of_zredundant > 0 && @stats.size_of_zredundant < v.length
-
-#            @log.debug("redundant_older_than_000306:rzset #{nid}")
-            zv = Zlib::Deflate.deflate(v) unless zv
-            res = send_cmd(nid,"rzset #{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}\r\n#{zv}\r\n")
-            unless res
-              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('zredundant',[nid,hname,k,d,clk,expt,zv]))
-              @log.warn("redundant_older_than_000306 failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length} -> #{nid}")
-            end
-
-          else
-   
-#            @log.debug("redundant_older_than_000306:rset #{nid}")
-            res = send_cmd(nid,"rset #{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}\r\n#{v}\r\n")
-            unless res
-              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('redundant',[nid,hname,k,d,clk,expt,v]))
-              @log.warn("redundant_older_than_000306 failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
-            end
-
           end
         }
       end
@@ -342,7 +310,7 @@ module Roma
 
         nodes.each{ |nid|
           res = send_cmd(nid,"rzset #{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}\r\n#{zv}\r\n")
-          unless res
+          if res == nil || res.start_with?("ERROR")
             Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('zredundant',[nid,hname,k,d,clk,expt,zv]))
             @log.warn("zredundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length} -> #{nid}")
           end
@@ -360,10 +328,10 @@ module Roma
         if nodes[0] != @nid
           @log.warn("forward #{fnc} key=#{key} vn=#{vn} to #{nodes[0]}")
           res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[3]} #{v.length}\r\n#{v}\r\n")
-          if res
-            return send_data("#{res}\r\n")
+          if res == nil || res.start_with?("ERROR")
+            return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
-          return send_data("SERVER_ERROR Message forward failed.\r\n")
+          return send_data("#{res}\r\n")
         end
 
         store(fnc, hname, vn, key, d, s[3].to_i, v, nodes[1..-1])
@@ -412,10 +380,10 @@ module Roma
         if nodes[0] != @nid
           @log.debug("forward #{fnc} key=#{s[1]} vn=#{vn} to #{nodes[0]}")
           res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[2]}\r\n")
-          if res
-            return send_data("#{res}\r\n")
+          if res == nil || res.start_with?("ERROR")
+            return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
-          return send_data("SERVER_ERROR Message forward failed.\r\n")
+          return send_data("#{res}\r\n")
         end
 
         store_incr_decr(fnc, hname, vn, key, d, v, nodes[1..-1])
