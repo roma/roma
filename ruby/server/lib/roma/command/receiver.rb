@@ -30,6 +30,13 @@ module Roma
 
       def self.mk_starting_evlist
         Event::Handler.ev_list.clear
+        each_system_commands{|m|
+          Event::Handler.ev_list[m.to_s[3..-1]] = m
+          Event::Handler.system_commands[m.to_s[3..-1]] = nil
+        }
+      end
+
+      def self.each_system_commands
         methods = RoutingCommandReceiver::public_instance_methods
         methods << BackgroundCommandReceiver::public_instance_methods
         methods << SystemCommandReceiver::public_instance_methods
@@ -37,11 +44,8 @@ module Roma
         if Receiver::public_instance_methods.include?(:ev_eval)
           methods << :ev_eval
         end
-
         methods.flatten.each{|m|
-          if m.to_s.start_with?('ev_')
-            Event::Handler.ev_list[m.to_s[3..-1]] = m
-          end
+           yield m if m.to_s.start_with?('ev_')
         }
       end
 

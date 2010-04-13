@@ -12,6 +12,8 @@ module Roma
     class Handler < EventMachine::Connection
       @@ev_list={}
       def self.ev_list; @@ev_list; end
+      @@system_commands={}
+      def self.system_commands; @@system_commands; end
 
       @@ccl_start = 200
       @@ccl_rate = 30
@@ -120,10 +122,12 @@ module Roma
           if s[0] && @@ev_list.key?(s[0].downcase)
             send(@@ev_list[s[0].downcase],s)
             @lastcmd=s
+            next if @@system_commands.key?(s[0].downcase)
           elsif s.length==0
             next
           elsif s[0]=='!!'
             send(@@ev_list[@lastcmd[0].downcase],@lastcmd)
+            next if @@system_commands.key?(@lastcmd[0].downcase)
           else
             @log.warn("command error:#{s}")
             send_data("ERROR\r\n")
@@ -191,6 +195,9 @@ module Roma
       def conn_get_stat
         ret = {}
         ret["connection.continuous_limit"] = Handler.get_ccl
+        ret["connection.accepted_count"] = EM.connection_count
+        ret["connection.pool_maxlength"] = Messaging::ConPool.instance.maxlength
+        ret["connection.EMpool_maxlength"] = Event::EMConPool::instance.maxlength
         ret
       end
 

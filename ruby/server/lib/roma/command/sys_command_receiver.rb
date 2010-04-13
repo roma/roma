@@ -218,6 +218,60 @@ module Roma
         send_data("DELETED\r\n")
       end
 
+      # rset <key> <hash value> <timelimit> <length>
+      # "set" means "store this data".
+      # <command name> <key> <digest> <exptime> <bytes> [noreply]\r\n
+      # <data block>\r\n
+      def ev_rset(s)
+        key,hname = s[1].split("\e")
+        hname ||= @defhash
+        d = s[2].to_i
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits if d == 0
+        data = read_bytes(s[5].to_i)
+        read_bytes(2)
+        vn = @rttable.get_vnode_id(d)
+        unless @storages.key?(hname)
+          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          return
+        end
+        if @storages[hname].rset(vn, key, d, s[3].to_i, s[4].to_i, data)
+          send_data("STORED\r\n")
+        else
+          @log.error("rset NOT_STORED:#{@storages[hname].error_message} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
+          send_data("NOT_STORED\r\n")
+        end
+        @stats.redundant_count += 1
+      end
+
+      # <command name> <key> <digest> <exptime> <bytes> [noreply]\r\n
+      # <compressed data block>\r\n
+      def ev_rzset(s)
+        key,hname = s[1].split("\e")
+        hname ||= @defhash
+        d = s[2].to_i
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits if d == 0
+        zdata = read_bytes(s[5].to_i)
+        read_bytes(2)
+        vn = @rttable.get_vnode_id(d)
+        unless @storages.key?(hname)
+          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          return
+        end
+
+        data = Zlib::Inflate.inflate(zdata)
+# @log.debug("data = #{data}")
+        if @storages[hname].rset(vn, key, d, s[3].to_i, s[4].to_i, data)
+          send_data("STORED\r\n")
+        else
+          @log.error("rzset NOT_STORED:#{@storages[hname].error_message} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
+          send_data("NOT_STORED\r\n")
+        end
+        @stats.redundant_count += 1
+      rescue Zlib::DataError => e
+        @log.error("rzset NOT_STORED:#{e} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
+        send_data("NOT_STORED\r\n")
+      end
+
       def ev_forcedly_start(s)
         @log.info("ROMA forcedly start.")
         Command::Receiver::mk_evlist

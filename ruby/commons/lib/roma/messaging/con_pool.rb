@@ -18,13 +18,19 @@ module Roma
 
       def get_connection(ap)
         ret = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
-        ret = create_connection(ap) unless ret
+        return create_connection(ap) unless ret
         ret
       rescue
         nil
       end
 
       def return_connection(ap, con)
+        if select([con],nil,nil,0.0001)
+          con.gets
+          con.close
+          return
+        end
+
         if @pool.key?(ap) && @pool[ap].length > 0
           if @pool[ap].length > @maxlength
             con.close

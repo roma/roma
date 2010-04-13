@@ -301,10 +301,12 @@ module Roma
         begin
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           con.write("join #{@stats.ap_str}\r\n")
-          con.gets
+          if con.gets != "ADDED\r\n"
+            raise "Hotscale initialize failed.\n#{nid} is busy."
+          end
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
         rescue =>e
-          raise "Hotscale initialize failed.\n#{nid} unreachabled."
+          raise "Hotscale initialize failed.\n#{nid} unreachable connection."
         end
       }
       @rttable.add_node(@stats.ap_str)
@@ -410,7 +412,7 @@ module Roma
     end
 
     def node_check(nid)
-      name = async_send_cmd(nid,"whoami\r\n",1)
+      name = async_send_cmd(nid,"whoami\r\n",2)
       return false unless name
       if name != @stats.name
         @log.error("#{nid} has diffarent name.")
@@ -423,7 +425,7 @@ module Roma
     def version_check
       nodes=@rttable.nodes
       nodes.each{|nid|
-        vs = async_send_cmd(nid,"version\r\n",1)
+        vs = async_send_cmd(nid,"version\r\n",2)
         next unless vs
         if /VERSION\s(\d+)\.(\d+)\.(\d+)/ =~ vs
           ver = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
@@ -456,10 +458,14 @@ module Roma
             begin
               con = Roma::Messaging::ConPool.instance.get_connection(nodes[idx-1])
               con.write("create_nodes_from_v_idx\r\n")
-              con.gets
-              Roma::Messaging::ConPool.instance.return_connection(nodes[idx-1], con)
+              if con.gets == "CREATED\r\n"
+                Roma::Messaging::ConPool.instance.return_connection(nodes[idx-1], con)
+              else
+                @log.error("get busy result in create_nodes_from_v_idx command from #{nodes[idx-1]}.")
+                con.close
+              end
             rescue =>e
-              @log.error("create_nodes_from_v_idx command unreachabled to the #{nodes[idx-1]}.")
+              @log.error("create_nodes_from_v_idx command unreachable to the #{nodes[idx-1]}.")
             end
           end
         rescue =>e
@@ -473,7 +479,7 @@ module Roma
       return :skip if @stats.run_acquire_vnodes || @stats.run_recover
       
       h = async_send_cmd(nid,"mklhash #{id}\r\n")
-      if h && @rttable.mtree.get(id) != h
+      if h && h.start_with?("ERROR") == false && @rttable.mtree.get(id) != h
         if (id.length - 1) == @rttable.div_bits
           sync_routing(nid,id)
         else
@@ -490,7 +496,7 @@ module Roma
       @log.warn("vn=#{vn} inconsistent")
       
       res = async_send_cmd(nid,"getroute #{vn}\r\n")
-      return unless res
+      return if res == nil || res.start_with?("ERROR")
       clk,*nids = res.split(' ')
       clk = @rttable.set_route(vn, clk.to_i, nids)
       
@@ -507,12 +513,22 @@ module Roma
       if tout
         timeout(tout){
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
+          unless con
+            @rttable.proc_failed(nid) if @rttable
+            @log.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
+            return nil
+          end
           con.write(cmd)
           res = con.gets
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
         }
       else
         con = Roma::Messaging::ConPool.instance.get_connection(nid)
+        unless con
+          @rttable.proc_failed(nid) if @rttable
+          @log.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
+          return nil
+        end
         con.write(cmd)
         res = con.gets
         Roma::Messaging::ConPool.instance.return_connection(nid, con)
@@ -526,6 +542,7 @@ module Roma
       res
     rescue => e
       @rttable.proc_failed(nid) if @rttable
+      @log.error("#{__FILE__}:#{__LINE__}:#{e} #{$@}")
       @log.error("#{__FILE__}:#{__LINE__}:Send command failed that node-id is #{nid},command is #{cmd}.")
       nil
     end

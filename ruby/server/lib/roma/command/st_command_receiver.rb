@@ -14,60 +14,6 @@ module Roma
       def ev_set(s); set(:set,s); end
       def ev_fset(s); fset(:set,s); end
 
-      # rset <key> <hash value> <timelimit> <length>
-      # "set" means "store this data".
-      # <command name> <key> <digest> <exptime> <bytes> [noreply]\r\n
-      # <data block>\r\n
-      def ev_rset(s)
-        key,hname = s[1].split("\e")
-        hname ||= @defhash
-        d = s[2].to_i
-        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits if d == 0
-        data = read_bytes(s[5].to_i)
-        read_bytes(2)
-        vn = @rttable.get_vnode_id(d)
-        unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
-          return
-        end
-        if @storages[hname].rset(vn, key, d, s[3].to_i, s[4].to_i, data)
-          send_data("STORED\r\n")
-        else
-          @log.error("rset NOT_STORED:#{@storages[hname].error_message} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
-          send_data("NOT_STORED\r\n")
-        end
-        @stats.redundant_count += 1
-      end
-
-      # <command name> <key> <digest> <exptime> <bytes> [noreply]\r\n
-      # <compressed data block>\r\n
-      def ev_rzset(s)
-        key,hname = s[1].split("\e")
-        hname ||= @defhash
-        d = s[2].to_i
-        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits if d == 0
-        zdata = read_bytes(s[5].to_i)
-        read_bytes(2)
-        vn = @rttable.get_vnode_id(d)
-        unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
-          return
-        end
-
-        data = Zlib::Inflate.inflate(zdata)
-# @log.debug("data = #{data}")
-        if @storages[hname].rset(vn, key, d, s[3].to_i, s[4].to_i, data)
-          send_data("STORED\r\n")
-        else
-          @log.error("rzset NOT_STORED:#{@storages[hname].error_message} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
-          send_data("NOT_STORED\r\n")
-        end
-        @stats.redundant_count += 1
-      rescue Zlib::DataError => e
-        @log.error("rzset NOT_STORED:#{e} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
-        send_data("NOT_STORED\r\n")
-      end
-
       # get <key>*\r\n
       def ev_get(s)
         key,hname = s[1].split("\e")
@@ -249,7 +195,11 @@ module Roma
         con = get_connection(nid)
         con.send("get #{k}\r\n")
         res = con.gets
-        if res == "END\r\n"
+        if res == nil
+          @rttable.proc_failed(nid)
+          @log.error("forward get failed:nid=#{nid} key=#{k}")
+          return nil
+        elsif res == "END\r\n"
           # value dose not found
         elsif res.start_with?("ERROR")
           @rttable.proc_succeed(nid)
