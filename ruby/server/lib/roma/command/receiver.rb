@@ -50,6 +50,9 @@ module Roma
       end
 
       def self.mk_evlist
+        each_system_commands{|m|
+          Event::Handler.system_commands[m.to_s[3..-1]] = nil
+        }
         Receiver::public_instance_methods.each{|m|
           if m.to_s.start_with?('ev_')
             Event::Handler.ev_list[m.to_s[3..-1]] = m
