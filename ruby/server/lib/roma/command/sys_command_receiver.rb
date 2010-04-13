@@ -189,6 +189,9 @@ module Roma
       def ev_restart(s)
         res = broadcast_cmd("rrestart\r\n")
         $roma.eventloop = true
+        @rttable.enabled_failover = false
+        Messaging::ConPool.instance.close_all
+        Event::EMConPool::instance.close_all
         EventMachine::stop_event_loop
         res[@stats.ap_str] = "RESTARTED"
         send_data("#{res}\r\n")
@@ -196,6 +199,9 @@ module Roma
 
       def ev_rrestart(s)
         $roma.eventloop = true
+        @rttable.enabled_failover = false
+        Messaging::ConPool.instance.close_all
+        Event::EMConPool::instance.close_all
         EventMachine::stop_event_loop
         send_data("RESTARTED\r\n")
       end
