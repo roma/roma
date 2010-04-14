@@ -9,14 +9,14 @@ module Roma
         con = get_connection(nid)
         con.send(cmd)
         res = con.gets
-        if res
-          res.chomp!
+        if res == nil
+          @rttable.proc_failed(nid)
+          return nil
+        elsif res.start_with?("ERROR") == false
           @rttable.proc_succeed(nid)
           return_connection(nid, con)
-        else
-          @rttable.proc_failed(nid)
         end
-        res
+        res.chomp
       rescue => e
         @rttable.proc_failed(nid)
         @log.error("#{e}\n#{$@}")
