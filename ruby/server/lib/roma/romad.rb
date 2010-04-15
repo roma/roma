@@ -509,7 +509,7 @@ module Roma
     end
 
     def async_send_cmd(nid, cmd, tout=nil)
-      res = nil
+      con = res = nil
       if tout
         timeout(tout){
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
@@ -520,7 +520,6 @@ module Roma
           end
           con.write(cmd)
           res = con.gets
-          Roma::Messaging::ConPool.instance.return_connection(nid, con)
         }
       else
         con = Roma::Messaging::ConPool.instance.get_connection(nid)
@@ -531,15 +530,15 @@ module Roma
         end
         con.write(cmd)
         res = con.gets
+      end
+      if res == nil
+        @rttable.proc_failed(nid) if @rttable
+        return nil
+      elsif res.start_with?("ERROR") == false
+        @rttable.proc_succeed(nid) if @rttable
         Roma::Messaging::ConPool.instance.return_connection(nid, con)
       end
-      if res
-        res.chomp!
-        @rttable.proc_succeed(nid) if @rttable
-      else
-        @rttable.proc_failed(nid) if @rttable
-      end
-      res
+      res.chomp
     rescue => e
       @rttable.proc_failed(nid) if @rttable
       @log.error("#{__FILE__}:#{__LINE__}:#{e} #{$@}")

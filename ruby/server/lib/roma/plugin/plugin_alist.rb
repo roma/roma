@@ -1312,12 +1312,12 @@ module Roma
         buf = con.gets
         if buf == nil
           @rttable.proc_failed(nid)
-          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{e} #{$@}")
+          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
           return send_data("SERVER_ERROR Message forward failed.\r\n")
         elsif buf.start_with?("ERROR")
           @rttable.proc_succeed(nid)
           con.close_connection
-          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{e} #{$@}")
+          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
           return send_data("SERVER_ERROR Message forward failed.\r\n")
         elsif buf.start_with?("VALUE") == false
           return_connection(nid, con)
