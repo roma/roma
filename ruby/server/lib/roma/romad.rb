@@ -448,7 +448,7 @@ module Roma
       nodes.each{|nid|
         vs = async_send_cmd(nid,"version\r\n",1)
         next unless vs
-        if /VERSION\s(\d+)\.(\d+)\.(\d+)/ =~ vs
+        if /VERSION\s(?:ROMA-)?(\d+)\.(\d+)\.(\d+)/ =~ vs
           ver = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
           @rttable.set_version(nid, ver)
         end
