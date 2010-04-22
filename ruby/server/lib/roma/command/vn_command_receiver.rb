@@ -94,14 +94,6 @@ module Roma
           return
         end
 
-        if @stats.run_storage_clean_up 
-          @log.warn("reqpushv rejected:#{s}") 
-          @storages.each_value{|st| st.stop_clean_up} 
-          @log.info("stop a storage clean up process") 
-          send_data("REJECTED\r\n") 
-          return 
-        end 
-
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('reqpushv',[s[1],s[2],s[3]]))
         send_data("PUSHED\r\n")
       rescue =>e

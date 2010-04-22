@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 require 'thread'
 require 'digest/sha1'
@@ -101,7 +102,7 @@ module Roma
         return true
       end
       @stats.run_acquire_vnodes = true
-      Thread::new{
+      t = Thread::new{
         begin
           acquire_vnodes_process
         rescue =>e
@@ -630,7 +631,14 @@ module Roma
  
     def push_a_vnode_stream(hname, vn, nid)
       @stats.run_iterate_storage = true
-      @log.info("push_a_vnode_stream:hname=#{hname} vn=#{vn} nid=#{nid}")
+      @log.info("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
+
+      while(@stats.run_storage_clean_up)
+        @log.info("#{__method__}:stop clean up storage process")
+        @storages.each_value{|st| st.stop_clean_up}
+        sleep 0.1
+      end
+
       con = Roma::Messaging::ConPool.instance.get_connection(nid)
 
       con.write("spushv #{hname} #{vn}\r\n")
