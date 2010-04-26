@@ -68,7 +68,7 @@ module Roma
             @log.info("Now accepting connections on address #{@stats.address}, port #{@stats.port}")
             EventMachine.add_periodic_timer(60) { cron }
           end
-        rescue =>e
+        rescue Exception => e
           @log.error("#{e}\n#{$@}")
           retry
         end
@@ -330,7 +330,7 @@ module Roma
       rd = Marshal.load(rcv)
       Roma::Messaging::ConPool.instance.return_connection(nid,con)
       rd
-    rescue
+    rescue Exception
       nil
     end
 
@@ -400,7 +400,7 @@ module Roma
       end
 
       @stats.clear_counters
-    rescue =>e
+    rescue Exception =>e
       @log.error("#{e}\n#{$@}")
     end
 
@@ -464,11 +464,11 @@ module Roma
                 @log.error("get busy result in create_nodes_from_v_idx command from #{nodes[idx-1]}.")
                 con.close
               end
-            rescue =>e
+            rescue Exception =>e
               @log.error("create_nodes_from_v_idx command unreachable to the #{nodes[idx-1]}.")
             end
           end
-        rescue =>e
+        rescue Exception =>e
           @log.error("#{e}\n#{$@}")
         end
         @stats.run_sync_routing = false
@@ -539,7 +539,7 @@ module Roma
         Roma::Messaging::ConPool.instance.return_connection(nid, con)
       end
       res.chomp
-    rescue => e
+    rescue Exception => e
       @rttable.proc_failed(nid) if @rttable
       @log.error("#{__FILE__}:#{__LINE__}:#{e} #{$@}")
       @log.error("#{__FILE__}:#{__LINE__}:Send command failed that node-id is #{nid},command is #{cmd}.")
@@ -553,7 +553,7 @@ module Roma
         res[nid] = async_send_cmd(nid,cmd,tout) unless without_nids.include?(nid)
       }
       res
-    rescue => e
+    rescue Exception => e
       @log.error("#{e}\n#{$@}")
       nil
     end
