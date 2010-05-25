@@ -95,7 +95,7 @@ module Roma
     def get_lost_vnodes(rd,ymdhms)
       ret = rd.get_lost_vnodes
       if ymdhms
-        ret |= get_history_of_lost(rd.nodes[0],ymdhms)
+        ret |= get_history_of_lost(@nodeid,ymdhms)
       end
       ret
     end
