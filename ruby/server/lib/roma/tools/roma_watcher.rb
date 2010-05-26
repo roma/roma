@@ -58,7 +58,7 @@ module Roma
         @log = Logger.new @conf['log']['path'], @conf['log']['rotate']
         @nodelist_inf = {}
         @errors = {}
-        @mailer = Mailer.new @conf['mail']['from'], @conf['mail']['to']
+        @mailer = Mailer.new @conf['mail']['from'], @conf['mail']['to'], @conf['mail']['mailder']
       end
 
       def watch
