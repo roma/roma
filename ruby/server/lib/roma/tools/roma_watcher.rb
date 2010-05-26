@@ -95,8 +95,11 @@ module Roma
         rescue Exception => e
           emsg = "Catch an error when checking a node #{node}: #{e.inspect}"
           @log.error emsg
-          sleep @conf['retry']['period'].to_i
-          retry if (cnt ||= 0; cnt += 1) < @conf['retry']['count'].to_i
+          if (cnt ||= 0; cnt += 1) < @conf['retry']['count'].to_i
+            @log.info "retry: #{cnt} times"
+            sleep @conf['retry']['period'].to_i
+            retry
+          end
           @errors[node] = emsg
           nil
         end
