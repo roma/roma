@@ -16,3 +16,4 @@ retry:
 mail:
   from: roma@roma.jp
   to: roma@roma.jp
+  mailder: /usr/bin/sendmail
