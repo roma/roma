@@ -93,7 +93,7 @@ module Roma
             line.split(' ')
           }
         rescue Exception => e
-          emsg = "Catch an error when checking a node #{node}: #{e.inspect}"
+          emsg = "Catch an error when checking a node #{node}: #{e.to_s}"
           @log.error emsg
           if (cnt ||= 0; cnt += 1) < @conf['retry']['count'].to_i
             @log.info "retry: #{cnt} times"
