@@ -83,16 +83,16 @@ module Roma
         sock = nil
         begin
           timeout(@conf['timeout'].to_i) {
-            sock = open_sock host, port
-            sock.puts Message::COMMAND_NODELIST
-            line = sock.gets.chomp!
-            sock.puts Message::COMMAND_QUIT
-            close_sock sock
+            line = nil
+            TCPSocket.open(host, port) do |sock|
+              sock.puts Message::COMMAND_NODELIST
+              line = sock.gets.chomp!
+              sock.puts Message::COMMAND_QUIT
+            end
             @log.debug "end watching a node: #{node}"
             line.split(' ')
           }
         rescue Exception => e
-          close_sock = sock
           emsg = "Catch an error when checking a node #{node}: #{e.inspect}"
           @log.error emsg
           sleep @conf['retry']['period'].to_i
@@ -131,20 +131,6 @@ module Roma
         end
         @log.debug "end checking a splitbrain"
       end
-
-      def open_sock host, port
-        TCPSocket.open host, port
-      end
-      private :open_sock
-
-      def close_sock sock
-        begin
-          sock.close if sock
-        rescue => e
-        end
-      end
-      private :close_sock
-
     end
   end # Watch
 end # Roma
