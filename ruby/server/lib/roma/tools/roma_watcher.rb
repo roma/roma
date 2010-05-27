@@ -128,7 +128,7 @@ module Roma
         if all_ring.size != 1
           emsg = ""
           all_ring.each { |ring|
-            emsg += "#{ring.to_s}\r\n"
+            emsg += "#{ring.join(',')}\r\n"
           }
           @mailer.send_mail(@subject_prefix + Message::ERROR_SPLIT_BRAIN, emsg)
         end
