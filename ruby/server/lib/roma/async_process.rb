@@ -182,7 +182,7 @@ module Roma
         return true # no retry
       end
       res = async_send_cmd(nid,"rset #{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}\r\n#{v}\r\n",10)
-      unless res
+      if res == nil || res.start_with?("ERROR")
         @log.warn("async redundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
         return false # retry
       end
@@ -197,7 +197,7 @@ module Roma
         return true # no retry
       end
       res = async_send_cmd(nid,"rzset #{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}\r\n#{zv}\r\n",10)
-      unless res
+      if res == nil || res.start_with?("ERROR")
         @log.warn("async zredundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
         return false # retry
       end
@@ -379,9 +379,13 @@ module Roma
     def req_push_a_vnode(vn, src_nid, is_primary)
       con = Roma::Messaging::ConPool.instance.get_connection(src_nid)
       con.write("reqpushv #{vn} #{@stats.ap_str} #{is_primary}\r\n")
-      res = con.gets # receive 'PUSHED\r\n' | 'REJECTED\r\n'
+      res = con.gets # receive 'PUSHED\r\n' | 'REJECTED\r\n' | 'ERROR\r\n'
       if res == "REJECTED\r\n"
         @log.warn("req_push_a_vnode:request was rejected from #{src_nid}.")
+        Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
+        return :rejected
+      elsif res.start_with?("ERROR")
+        @log.warn("req_push_a_vnode:#{src_nid} busy.")
         return :rejected
       end
       Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
@@ -641,6 +645,14 @@ module Roma
 
       con = Roma::Messaging::ConPool.instance.get_connection(nid)
 
+      @do_push_a_vnode_stream = true
+      
+      while(@stats.run_storage_clean_up)
+        @log.info("#{__method__}:stop_clean_up")
+        @storages.each_value{|st| st.stop_clean_up}
+        sleep 0.5
+      end
+
       con.write("spushv #{hname} #{vn}\r\n")
 
       res = con.gets # READY\r\n or error string
@@ -650,6 +662,13 @@ module Roma
       end
 
       @storages[hname].each_vn_dump(vn){|data|
+
+        unless @do_push_a_vnode_stream
+          con.close
+          @log.error("#{__method__}:canceled in hname=#{hname} vn=#{vn} nid=#{nid}")
+          return "CANCELED"
+        end
+
         @stats.run_iterate_storage = true
         con.write(data)
         sleep @stats.stream_copy_wait_param

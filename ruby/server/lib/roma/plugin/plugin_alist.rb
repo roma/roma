@@ -1309,26 +1309,42 @@ module Roma
         con = get_connection(nid)
         con.send(buf)
 
+        buf = con.gets
+        if buf == nil
+          @rttable.proc_failed(nid)
+          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
+          return send_data("SERVER_ERROR Message forward failed.\r\n")
+        elsif buf.start_with?("ERROR")
+          @rttable.proc_succeed(nid)
+          con.close_connection
+          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
+          return send_data("SERVER_ERROR Message forward failed.\r\n")
+        elsif buf.start_with?("VALUE") == false
+          return_connection(nid, con)
+          @rttable.proc_succeed(nid)
+          return send_data(buf)
+        end
+        
         res = ''
-        while (buf = con.gets)!="END\r\n"
+        begin
           res << buf
           s = buf.split(/ /)
           if s[0] != 'VALUE'
+            return_connection(nid, con)
+            @rttable.proc_succeed(nid)
             return send_data(buf)
           end
-          res << con.read_bytes(s[3].to_i + 2)
-        end
+          res << con.read_bytes(s[3].to_i + 2)          
+        end while (buf = con.gets)!="END\r\n"
+
         res << "END\r\n"
 
         return_connection(nid, con)
         @rttable.proc_succeed(nid)
-        if res
-          send_data(res)
-        else
-          send_data("SERVER_ERROR Message forward failed.\r\n")
-        end
+
+        send_data(res)
       rescue => e
-        @rttable.proc_failed(nid)
+        @rttable.proc_failed(nid) if e.message != "no connection"
         @log.error("forward get failed:nid=#{nid} rs=#{rs} #{e} #{$@}")
         send_data("SERVER_ERROR Message forward failed.\r\n")
       end
@@ -1348,8 +1364,10 @@ module Roma
         end
 
         res = send_cmd(nid, buf)
-        return send_data("#{res}\r\n") if res
-        return send_data("SERVER_ERROR Message forward failed.\r\n")
+        if res == nil || res.start_with?("ERROR")
+          return send_data("SERVER_ERROR Message forward failed.\r\n")
+        end
+        send_data("#{res}\r\n")
       end
 
     end #  PluginAshiatoList

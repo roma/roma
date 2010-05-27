@@ -9,22 +9,35 @@ module Roma
       include Singleton
 
       attr_accessor :maxlength
+      attr_accessor :refresh_rate
 
-      def initialize(maxlength = 10)
+      def initialize(maxlength = 10, refresh_rate = 0.0001)
         @pool = {}
         @maxlength = maxlength
+        @refresh_rate = refresh_rate
         @lock = Mutex.new
       end
 
       def get_connection(ap)
         ret = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
-        ret = create_connection(ap) unless ret
+        return create_connection(ap) unless ret
         ret
       rescue
         nil
       end
 
       def return_connection(ap, con)
+        if rand < @refresh_rate
+          con.close
+          return
+        end
+
+        if select([con],nil,nil,0.0001)
+          con.gets
+          con.close
+          return
+        end
+
         if @pool.key?(ap) && @pool[ap].length > 0
           if @pool[ap].length > @maxlength
             con.close

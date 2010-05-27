@@ -76,10 +76,12 @@ module Roma
       include Singleton
       attr :pool
       attr_accessor :maxlength
+      attr_accessor :refresh_rate
 
       def initialize
         @pool = {}
         @maxlength = 10
+        @refresh_rate = 0.0001
         @lock = Mutex.new
       end
 
@@ -91,6 +93,12 @@ module Roma
 
       def return_connection(ap, con)
         return if con.connected == false
+
+        if rand < @refresh_rate
+          con.close_connection
+          return
+        end
+
         if @pool.key?(ap) && @pool[ap].length > 0
           if @pool[ap].length > @maxlength
             con.close_connection

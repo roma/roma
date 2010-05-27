@@ -19,6 +19,11 @@ module Roma
     # routing setting
     RTTABLE_PATH = '.'
 
+    # connection setting
+    # like a MaxStartups spec in the sshd_config
+    # 'start:rate:full'
+    CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
+
     # storage setting
     STORAGE_CLASS = Roma::Storage::RubyHashStorage
     STORAGE_DIVNUM = 10
