@@ -57,6 +57,7 @@ module Roma
         @log = Logger.new @conf['log']['path'], @conf['log']['rotate']
         @nodelist_inf = {}
         @errors = {}
+        @subject_prefix = @conf['mail']['subject_prefix']
         @mailer = Mailer.new @conf['mail']['from'], @conf['mail']['to'], @conf['mail']['mailder']
       end
 
@@ -112,7 +113,7 @@ module Roma
       def check_vital
         @log.debug "start checking the vital"
         @errors.each { |node, emsg|
-          @mailer.send_mail(Message::ERROR_NODE_DOWN, emsg)
+          @mailer.send_mail(@subject_prefix + Message::ERROR_NODE_DOWN, emsg)
         }
         @log.debug "end checking the vital"
       end
@@ -129,7 +130,7 @@ module Roma
           all_ring.each { |ring|
             emsg += "#{ring.to_s}\r\n"
           }
-          @mailer.send_mail(Message::ERROR_SPLIT_BRAIN, emsg)
+          @mailer.send_mail(@subject_prefix + Message::ERROR_SPLIT_BRAIN, emsg)
         end
         @log.debug "end checking a splitbrain"
       end
