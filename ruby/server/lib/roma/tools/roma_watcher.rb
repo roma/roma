@@ -3,7 +3,6 @@
 
 require 'kconv'
 require 'logger'
-require 'rubygems'
 require 'socket'
 require 'timeout'
 require 'yaml'
