@@ -61,6 +61,13 @@ module Roma
 
             @log.info("Now accepting connections on address #{@stats.address}, port #{@stats.port}")
           end
+        rescue Interrupt => e
+          if daemon?
+            @log.error("#{e.inspect}\n#{$@}")
+            retry
+          else
+            $stderr.puts "#{e.inspect}"
+          end
         rescue Exception => e
           @log.error("#{e}\n#{$@}")
           retry
@@ -103,6 +110,10 @@ module Roma
             include plugin
           end
           @log.info("#{plugin.to_s} included")
+      end
+
+      if @stats.disabled_cmd_protect
+        Command::Receiver::mk_evlist
       end
     end
 
@@ -181,8 +192,13 @@ module Roma
       opts.on("-n", "--name [name]") { |v| @stats.name = v }
 
       @stats.enabled_repetition_host_in_routing = false
-      opts.on(nil,"--enabled_repeathost"){ |v|
+      opts.on(nil,"--enabled_repeathost", "Allow redundancy to same host"){
         @stats.enabled_repetition_host_in_routing = true
+      }
+
+      @stats.disabled_cmd_protect = false
+      opts.on(nil,"--disabled_cmd_protect", "Command protection disable while starting"){
+        @stats.disabled_cmd_protect = true
       }
 
       opts.on("--config [file path of the config.rb]"){ |v| @stats.config_path = File.expand_path(v) }

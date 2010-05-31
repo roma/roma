@@ -47,8 +47,8 @@ module RomaTestUtils
               "-d","3",
               "--enabled_repeathost")
     sleep 0.1
-    sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose")
-    sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose")
+    sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose","--disabled_cmd_protect")
+    sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose","--disabled_cmd_protect")
     sleep 0.8
   end
 
