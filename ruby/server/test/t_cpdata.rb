@@ -243,8 +243,13 @@ class CopyDataTest < Test::Unit::TestCase
   def reqpushv(hname,vn,is_primary=false)
     $dat.delete(vn)
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
-    con.write("reqpushv #{vn} localhost_11213 #{is_primary}\r\n")
-    res = con.gets
+    res = nil
+    10.times{
+      con.write("reqpushv #{vn} localhost_11213 #{is_primary}\r\n")
+      res = con.gets
+      break if res == "PUSHED\r\n"
+      sleep 0.5
+    }
     assert_equal( "PUSHED\r\n", res )
     con.close
 
