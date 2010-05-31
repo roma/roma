@@ -20,6 +20,10 @@ module RomaTestUtils
     server_base_dir + "bin"
   end
 
+  def server_test_dir
+    server_base_dir + "test"
+  end
+
   def mkroute_path
     (server_bin_dir + "mkroute").to_s
   end
@@ -47,8 +51,10 @@ module RomaTestUtils
               "-d","3",
               "--enabled_repeathost")
     sleep 0.1
-    sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose","--disabled_cmd_protect")
-    sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose","--disabled_cmd_protect")
+    sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose",
+              "--disabled_cmd_protect","--config","#{server_test_dir}/config4test.rb")
+    sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose",
+              "--disabled_cmd_protect","--config","#{server_test_dir}/config4test.rb")
     sleep 0.8
   end
 
