@@ -238,6 +238,7 @@ module Roma
           if res == nil || res.start_with?("ERROR")
             return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
+          return send_data("#{res}\r\n")
         end
 
         store_cas(hname, vn, key, d, s[5].to_i, s[3].to_i, v, nodes[1..-1])
