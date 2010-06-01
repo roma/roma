@@ -1,8 +1,8 @@
 /*
- * ROMA client
  * File:   roma_common.c
- * Author: yosuke hara
+ * Author: yosuke
  *
+ * Created on 2009/09/03
  */
 
 #include <stdio.h>

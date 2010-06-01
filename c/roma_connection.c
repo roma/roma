@@ -1,8 +1,8 @@
 /*
- * ROMA client
  * File:   roma_connection.c
  * Author: yosuke hara
  *
+ * Created on 2009/06/25
  */
 
 #include <stdio.h>
@@ -46,7 +46,7 @@ static int _rmc_get_connection(char *host, int port)
 
     int s = socket(AF_INET, SOCK_STREAM, 0);
     if(s < 0){
-      return -1;
+        return -1;
     }
 
     int flag = fcntl(s, F_GETFL, 0);
@@ -95,7 +95,7 @@ static int _rmc_get_connection(char *host, int port)
  * @param[in] str_romahosts
  * @return [OK|NG]
  */
-    int connect_roma_server(const int hosts, const char **str_romahosts)
+int connect_roma_server(const int hosts, const char **str_romahosts)
 {
     if (hosts == 0) return (EXIT_FAILURE);
 

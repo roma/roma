@@ -1,8 +1,8 @@
 /* 
- * ROMA client
  * File:   roma_sender.c
  * Author: yosuke hara
  *
+ * Created on 2009/06/29
  */
 
 #include <stdlib.h>
@@ -63,8 +63,7 @@ int rmc_create_routing_table(rmc_routing_data *rd)
         rd->fail_count[i].node = nodes[i];
         rd->fail_count[i].count = 0;
     }
-    */
-
+    
     printf("             rn:%d\n",  rd->rn);
     printf("      dgst_bits:%d\n",  rd->dgst_bits);
     printf("       div_bits:%d\n",  rd->div_bits);
@@ -76,6 +75,7 @@ int rmc_create_routing_table(rmc_routing_data *rd)
     for (i =  0; i < rd->number_of_nodes; i++)
     printf("            [%s]\n", rd->nodes[i].node);
     printf("-----\n");
+     */
 }
 
 /**
@@ -105,7 +105,7 @@ int rmc_check_routing_data(char *routing_dump_yaml)
     }
     yaml_parser_delete(&parser);
 
-    printf("%s (%d events)\n", (error ? "FAILURE" : "SUCCESS"), count);
+    //printf("%s (%d events)\n", (error ? "FAILURE" : "SUCCESS"), count);
     return 0;
 }
 
@@ -142,7 +142,7 @@ rmc_routing_data rmc_generate_routing_data(const char *routing_dump_yaml, const 
     {
         if (!yaml_parser_parse(&parser, &event)){
             yaml_parser_delete(&parser);
-            free(token);
+            //free(token);
             return (rd);
         }
         done = (event.type == YAML_STREAM_END_EVENT);
@@ -246,7 +246,7 @@ rmc_routing_data rmc_generate_routing_data(const char *routing_dump_yaml, const 
     }
     
     yaml_parser_delete(&parser);
-    free(token);
+    //free(token);
     return (rd);
 };
 

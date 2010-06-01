@@ -1,7 +1,8 @@
 /* 
- * ROMA client.
  * File:   main.c
- * Author: yosuke hara
+ * Author: yosuke
+ *
+ * Created on 2009/06/26
  */
 
 #include <stdio.h>
@@ -187,11 +188,12 @@ int main(int argc, char **argv)
         str_hosts[i] = argv[i+1];
     }
 
-    rmc_connect(hosts, str_hosts);
-    //test_simple();
+    int ret = rmc_connect(hosts, str_hosts);
+    if (ret == EXIT_FAILURE) return (EXIT_FAILURE);
+    
+    test_simple();
     test_complex();
     //test_serialize();
     rmc_disconnect();
-
     return (EXIT_SUCCESS);
 }

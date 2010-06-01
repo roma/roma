@@ -1,5 +1,4 @@
 /*
- * ROMA client
  * File:   roma_sender.c
  * Author: yosuke hara
  *
@@ -82,6 +81,7 @@ static int _rmc_check_recv(int conn)
 {
     fd_set fdset;
     FD_ZERO(&fdset);
+    //FD_SET(0, &fdset);
     FD_SET(conn, &fdset);
 
     struct timeval timeout;
@@ -89,6 +89,7 @@ static int _rmc_check_recv(int conn)
     timeout.tv_usec = 0;
 
     int ret = select(conn+1, &fdset, NULL, NULL, &timeout);
+    //int ret = select(1, &fdset, NULL, NULL, &timeout);
     return (ret);
 }
 
@@ -101,6 +102,7 @@ static int _rmc_check_send(int conn)
 {
     fd_set fdset;
     FD_ZERO(&fdset);
+    //FD_SET(0, &fdset);
     FD_SET(conn, &fdset);
 
     struct timeval timeout;
@@ -108,6 +110,7 @@ static int _rmc_check_send(int conn)
     timeout.tv_usec = 0;
 
     int ret = select(conn+1, NULL, &fdset, NULL, &timeout);
+    //int ret = select(1, NULL, &fdset, NULL, &timeout);
     return (ret);
 }
 
@@ -746,11 +749,11 @@ rmc_routing_data rmc_send_routedump_as_yaml(const int connection, const int node
     int bytes = _rmc_send_routedump_as_yamlbytes(connection);
 
     // get yaml => make routing data.
-    rmc_routing_data rd;
-    char *buf = (char *)malloc(bytes+1);
+    char *buf = (char *)calloc(bytes+1, sizeof(char));    
     int ret_bytes = _rmc_recv_yaml(connection, buf, bytes);
     if (ret_bytes != bytes)
     {
+        rmc_routing_data rd;
         rd.dgst_bits = 0;
         rd.div_bits = 0;
         rd.hbits = 0;
@@ -777,11 +780,10 @@ rmc_routing_data rmc_send_routedump_as_yaml(const int connection, const int node
     memcpy(result, &buf[startp], bodylen);
     result[bodylen] = '\0';
 
-    //rmc_routing_data rd = rmc_generate_routing_data(result, nodes);
-    rd = rmc_generate_routing_data(result, nodes);
+    rmc_routing_data rd2 = rmc_generate_routing_data(result, nodes);
     free(buf);
-    free(result);
-    return (rd);
+    //free(result);
+    return (rd2);
 }
 
 /**
