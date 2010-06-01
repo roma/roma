@@ -289,8 +289,7 @@ static rmc_value_info _rmc_get_command(
 
     // check receive.
     int ret_recv, recvbytes = 0, cnt = 0;
-    char *buf = (char *)calloc(DEF_BUFSIZE_1K, sizeof(char));
-    
+    char buf[DEF_BUFSIZE_1K];
     // check receive#1 for header.
     if (_rmc_check_recv(connection) != 1)
     {
@@ -342,7 +341,6 @@ static rmc_value_info _rmc_get_command(
         char *str_line = rmc_strpbrk(rmc_strpbrk(buf, RMC_CRLF, 2), RMC_CRLF, 2);
         bufsize = _rmc_get_body_length(str_line);
     }
-    free(buf);
 
     // check receive#2 for body.
     if (_rmc_check_recv(connection) != 1)
