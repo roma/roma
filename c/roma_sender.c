@@ -305,6 +305,7 @@ static rmc_value_info _rmc_get_command(
         ret_recv = recv(connection, buf + recvbytes, 1, 0);
         if (ret_recv < 1)
             break;
+	*(buf + recvbytes + 1) = '\0'; // because rmc_index_of_string() use the strstr()
 
         if (rmc_index_of_string(buf, RMC_STATUS_SERVER_ERROR     ) > -1 ||
             rmc_index_of_string(buf, RMC_STATUS_NOT_STORED_CRLF  ) > -1 ||
