@@ -144,7 +144,7 @@ int rmc_get_connection(char *host_and_port)
     {
         int check = 0;
 
-        char str[strlen(host_and_port)];
+        char str[strlen(host_and_port) + 1];
         strcpy(str, host_and_port);
         static char *delimiter = "_";
         char *token = strtok(str, delimiter);
@@ -179,6 +179,7 @@ int disconnect_roma_server()
     int i;
     for (i = 0; i < rmc_number_of_hosts; i++)
     {
+        free(rmc_romahosts[i].ip_address);
         close(rmc_romahosts[i].connection);
     }
     
