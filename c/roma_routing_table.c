@@ -125,7 +125,7 @@ rmc_routing_data rmc_generate_routing_data(const char *routing_dump_yaml, const 
     yaml_event_t event;
     int done = 0;
 
-    char *token = (char *)calloc(strlen(routing_dump_yaml), sizeof(char));
+    char *token = (char *)calloc(strlen(routing_dump_yaml)+1, sizeof(char));
     strcpy(token, routing_dump_yaml);
 
     assert(yaml_parser_initialize(&parser));
@@ -142,7 +142,7 @@ rmc_routing_data rmc_generate_routing_data(const char *routing_dump_yaml, const 
     {
         if (!yaml_parser_parse(&parser, &event)){
             yaml_parser_delete(&parser);
-            //free(token);
+            free(token);
             return (rd);
         }
         done = (event.type == YAML_STREAM_END_EVENT);
@@ -246,7 +246,7 @@ rmc_routing_data rmc_generate_routing_data(const char *routing_dump_yaml, const 
     }
     
     yaml_parser_delete(&parser);
-    //free(token);
+    free(token);
     return (rd);
 };
 

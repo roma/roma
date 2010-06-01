@@ -41,7 +41,7 @@ static int _rmc_create_routing_table(const int number_of_nodes, const char **nod
     }
     _rd.number_of_nodes = number_of_nodes;
     rmc_create_routing_table(&_rd);
- 
+
     return (EXIT_SUCCESS);
 }
 
@@ -80,7 +80,20 @@ int rmc_disconnect()
 {  
    if (_daemon_host == NULL)
    {
+        int i,j;
+        for(i = 0;i < _rd.number_of_nodes;i++)
+	  free(_rd.nodes[i].node);
+	
         free(_rd.nodes);
+
+	int vnodes = 1 << _rd.div_bits;
+	for(i = 0;i < vnodes;i++)
+	{
+	  for(j = 0;j < _rd.number_of_nodes;j++)
+	    free(_rd.v_idx[i].nodes[j].node);
+	  free(_rd.v_idx[i].nodes);
+	}
+
         free(_rd.v_idx);
    } else {
         free(_daemon_host);

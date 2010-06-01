@@ -781,7 +781,7 @@ rmc_routing_data rmc_send_routedump_as_yaml(const int connection, const int node
 
     rmc_routing_data rd2 = rmc_generate_routing_data(result, nodes);
     free(buf);
-    //free(result);
+    free(result);
     return (rd2);
 }
 
