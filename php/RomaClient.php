@@ -2,11 +2,10 @@
 /**
  * ROMA-Client for PHP5.
  *
- * @author  yosuke hara
+ * @version 2009-07-09
+ * @author  yosuke.hara@mail.rakuten.co.jp
  */
 extension_loaded('romaclient') || dl('romaclient.so');
-
-class RomaConnectException            extends RuntimeException{}
 
 class RomaClient {
     private static $romaclient = null;
@@ -21,35 +20,36 @@ class RomaClient {
     const CLEARED      =  3;
     const ALIST_TRUE   =  5;
     const ALIST_FALSE  =  6;
-
+    
     /**
      * constructor.
+     * 
      * @param hosts
      */
-    private function __construct($hosts) {
-        $result = rmc_connect($hosts);
-        if ($result == -1) {
-            throw new RomaConnectException();
-        }
-    }
-
+    private function __construct() {}
+    
     /**
      * get roma-client instance.
-     * @param hosts - ["127.0.0.1:11211", "127.0.0.1:11212"] |
-     *                ["-d", "127.0.0.1:12345"]
+     *
+     * @param hosts (array)
      */
     public static function getInstance($hosts) {
         $hosts_string = "";
-        foreach ($hosts as &$value) {
-          $hosts_string = $hosts_string.",".$value;
+        foreach ($hosts as &$value) {        
+            $hosts_string .= $value.",";
         }
         $hosts_string =
-            substr(0, strlen($hosts_string), $hosts_string);
+            substr($hosts_string, 0, strlen($hosts_string)-1);
 
-        RomaClient::$romaclient = new RomaClient($hosts_string);
+        //echo $hosts_string, "<br/>";
+
+        $result = rmc_connect($hosts_string);
+        if ($result == 1) return False;
+
+        RomaClient::$romaclient = new RomaClient();
         return RomaClient::$romaclient;
     }
-
+    
     /**
      * get value.
      * @param key
@@ -62,7 +62,7 @@ class RomaClient {
         }
         return $result;
     }
-
+    
     /**
      * set value.
      * @param key             (string)
@@ -72,9 +72,9 @@ class RomaClient {
      */
     public function set($key, $value, $exptime) {
         $result = rmc_set($key, $value, $exptime);
-		return ($result == RomaClient::STORED ? True : False);
+        return ($result == RomaClient::STORED ? True : False);
     }
-
+    
     /**
      * add value.
      * @param key             (string)
@@ -84,9 +84,9 @@ class RomaClient {
      */
     public function add($key, $value, $exptime) {
         $result = rmc_add($key, $value, $exptime);
-		return ($result == RomaClient::STORED ? True : False);
+        return ($result == RomaClient::STORED ? True : False);
     }
-
+    
     /**
      * replace value.
      * @param key             (string)
@@ -96,9 +96,9 @@ class RomaClient {
      */
     public function replace($key, $value, $exptime) {
         $result = rmc_replace($key, $value, $exptime);
-		return ($result == RomaClient::STORED ? True : False);
+        return ($result == RomaClient::STORED ? True : False);
     }
-
+    
     /**
      * append value.
      * @param key             (string)
@@ -108,9 +108,9 @@ class RomaClient {
      */
     public function append($key, $value, $exptime) {
         $result = rmc_append($key, $value, $exptime);
-		return ($result == RomaClient::STORED ? True : False);
+        return ($result == RomaClient::STORED ? True : False);
     }
-
+    
     /**
      * prepend value.
      * @param key             (string)
@@ -120,9 +120,9 @@ class RomaClient {
      */
     public function prepend($key, $value, $exptime) {
         $result = rmc_prepend($key, $value, $exptime);
-		return ($result == RomaClient::STORED ? True : False);
+        return ($result == RomaClient::STORED ? True : False);
     }
-
+    
     /**
      * delete value.
      * @param key             (string)
@@ -130,7 +130,7 @@ class RomaClient {
      */
     public function delete($key) {
         $result = rmc_delete($key);
-		return ($result == RomaClient::DELETED ? True : False);
+        return ($result == RomaClient::DELETED ? True : False);
     }
     
     //===== plugin - alist =====//
@@ -228,7 +228,7 @@ class RomaClient {
      */
     public function alist_insert($key, $index, $value) {
         $result = rmc_alist_insert($key, $index, $value);
-		return ($result == RomaClient::STORED ? True : False);
+        return ($result == RomaClient::STORED ? True : False);
     }
 
     /**
@@ -240,7 +240,7 @@ class RomaClient {
      */
     public function alist_sized_insert($key, $size, $value) {
         $result = rmc_alist_sized_insert($key, $size, $value);
-		return ($result == RomaClient::STORED ? True : False);
+        return ($result == RomaClient::STORED ? True : False);
     }
 
     /**
@@ -312,7 +312,7 @@ class RomaClient {
      */
     public function alist_push($key, $value) {
         $result = rmc_alist_push($key, $value);
-		return ($result == RomaClient::STORED ? True : False);
+        return ($result == RomaClient::STORED ? True : False);
     }
 
     /**
@@ -337,9 +337,10 @@ class RomaClient {
 
     /**
      * destructor.
+     * 
      */
     public function __destruct() {
         rmc_disconnect();
     }
 }
-?>
+?> 
