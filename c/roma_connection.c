@@ -132,6 +132,30 @@ int connect_roma_server(const int hosts, const char **str_romahosts)
 }
 
 /**
+ * select a alive node in rmc_romahosts structure by the random method.
+ * @return address and portnumber string (must be free after using)
+ */
+char * rmc_select_node_by_rand()
+{
+  int i, cnt, n;
+  int alive_hosts_index[rmc_number_of_hosts];
+
+  cnt = 0;
+  for (i = 0; i < rmc_number_of_hosts; i++){
+    if(rmc_romahosts[i].connection > 0){
+      alive_hosts_index[cnt ++] = i;
+    }
+  }
+  srand(time(NULL));
+  n = alive_hosts_index[rand() % cnt];
+
+  char *ret = malloc(strlen(rmc_romahosts[n].ip_address) + 10);
+  sprintf(ret,"%s_%d",rmc_romahosts[n].ip_address,rmc_romahosts[n].port);
+
+  return ret;
+}
+
+/**
  * roma-client - get connection.
  * @param[in] host and port.
  */
@@ -163,9 +187,9 @@ int rmc_get_connection(char *host_and_port)
         }
         if (con > 0) break;
     }
-    if (con == 0 && rmc_number_of_hosts > 0) {
-        con = rmc_romahosts[0].connection;
-    }
+    //if (con == 0 && rmc_number_of_hosts > 0) {
+    //    con = rmc_romahosts[0].connection;
+    //}
     return (con);
 }
 
@@ -180,7 +204,8 @@ int disconnect_roma_server()
     for (i = 0; i < rmc_number_of_hosts; i++)
     {
         free(rmc_romahosts[i].ip_address);
-        close(rmc_romahosts[i].connection);
+        if(rmc_romahosts[i].connection > 0)
+	  close(rmc_romahosts[i].connection);
     }
     
     free(rmc_romahosts);

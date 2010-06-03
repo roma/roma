@@ -125,6 +125,15 @@ int connect_roma_server(const int hosts, const char **str_romahosts);
 int disconnect_roma_server();
 
 // ========================================================
+// node management related.
+// ========================================================
+/**
+ * select a alive node in rmc_romahosts structure by the random method.
+ * @return address and portnumber string (must be free after using)
+ */
+  char * rmc_select_node_by_rand();
+
+// ========================================================
 // routing-table related.
 // ========================================================
 /**

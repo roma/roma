@@ -66,8 +66,14 @@ int rmc_connect(const int hosts, const char** str_hosts)
         return (EXIT_SUCCESS);
     }
     else {
+#ifdef USE_ROUTINGTABLE
         _daemon_host = NULL;
         ret = _rmc_create_routing_table(hosts, str_hosts);
+#else
+        _daemon_host = rmc_select_node_by_rand();
+        if(_daemon_host == NULL) return(EXIT_FAILURE);
+        //printf("_daemon_host = %s\n",_daemon_host);
+#endif
         return (EXIT_SUCCESS);
     }
 }
