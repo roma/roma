@@ -189,7 +189,8 @@ void test_complex() {
     if(valinfo1.value != NULL) free(valinfo1.value);
     valinfo1 = rmc_alist_tostr("test-cp-key-0022");
     if(valinfo1.value != NULL) free(valinfo1.value);
- }
+    rmc_alist_length("test-cp-key-0022");
+}
 
 int main(int argc, char **argv)
 {
@@ -218,5 +219,6 @@ int main(int argc, char **argv)
     }
     rmc_disconnect();
 
+    printf("done\n");
     return (EXIT_SUCCESS);
 }
