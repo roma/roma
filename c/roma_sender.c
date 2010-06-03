@@ -157,7 +157,8 @@ static char *_rmc_send_command(
         if (bufsize <= DEF_BUFSIZE_4K) break;
         if (bufsize <= recvbytes) break;
     }
-    //printf("_rmc_send_command-result:[%s]\n",buf);
+    buf[recvbytes] = '\0';
+    //printf("_rmc_send_command-result:[%s] len = %d,recvbytes = %d\n",buf,strlen(buf),recvbytes);
     return (buf);
 }
 
@@ -1071,7 +1072,7 @@ int rmc_send_alist_length(const int connection, const char *key)
     if (ret == 0)
     {
         int length = strlen(result)-2;
-        char ret_value[length];
+        char ret_value[length + 1];
         strncpy(ret_value, result, length);
         ret_value[length] = '\0';
         ret = atoi(ret_value);
