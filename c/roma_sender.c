@@ -11,7 +11,6 @@
 
 #define DEF_BUFSIZE_1K 1024
 #define DEF_BUFSIZE_4K 4096
-#define DEF_BUFSIZE_S 64
 
 #define RMC_CMD_MKLHASH            "mklhash 0\r\n"
 #define RMC_CMD_RTDUMP_YAML_BYTES  "routingdump yamlbytes\r\n"
@@ -131,7 +130,7 @@ static char *_rmc_send_command(
     if (_rmc_check_send(connection) != 1)
     {
         fprintf(stderr, "Error in rmc_check_send() %d - %s\n", connection, strerror(connection));
-        buf = RMC_SEND_ERROR;
+	strcpy(buf, RMC_SEND_ERROR);
         return (buf);
     }
     send(connection, command, length, 0);
@@ -140,7 +139,7 @@ static char *_rmc_send_command(
     if (_rmc_check_recv(connection) != 1)
     {
         fprintf(stderr, "Error in rmc_check_recv() %d - %s\n", connection, strerror(connection));
-        buf = RMC_RECV_ERROR;
+	strcpy(buf, RMC_RECV_ERROR);
         return (buf);
     }
 
@@ -458,7 +457,7 @@ static int _rmc_post_command(const int connection, const char *base_command, con
     char *command = _merge_chars_with_byte_array(base_command, valinfo);
     int command_bytes = strlen(base_command) + valinfo.length + RMC_CRLF_SIZE;
 
-    char *result = _rmc_send_command(connection, command, command_bytes, DEF_BUFSIZE_S);
+    char *result = _rmc_send_command(connection, command, command_bytes, DEF_BUFSIZE_1K);
     free(command);
 
     int ret_value = _get_status_code(result);
@@ -824,7 +823,7 @@ static int _rmc_alist_operate(
     char *ret_command = _merge_chars_with_byte_array(base_command, valinfo);
     int command_bytes = strlen(base_command) + valinfo.length + RMC_CRLF_SIZE;
 
-    char *result = _rmc_send_command(connection, ret_command, command_bytes, DEF_BUFSIZE_S);
+    char *result = _rmc_send_command(connection, ret_command, command_bytes, DEF_BUFSIZE_1K);
     free(ret_command);
 
     int ret_value = _get_status_code(result);
@@ -956,7 +955,7 @@ int rmc_send_alist_index(const int connection, const char *key, const rmc_value_
     char *command = _merge_chars_with_byte_array(base_command, valinfo);
     int command_bytes = strlen(base_command) + valinfo.length + RMC_CRLF_SIZE;
 
-    char *result = _rmc_send_command(connection, command, command_bytes, DEF_BUFSIZE_S);
+    char *result = _rmc_send_command(connection, command, command_bytes, DEF_BUFSIZE_1K);
     free(command);
 
     int ret = _get_status_code(result);
@@ -1066,7 +1065,7 @@ int rmc_send_alist_length(const int connection, const char *key)
     sprintf(command, RMC_CMD_ALIST_LENGTH, key);
 
     char *result =
-        _rmc_send_command(connection, command, strlen(command), DEF_BUFSIZE_S);
+        _rmc_send_command(connection, command, strlen(command), DEF_BUFSIZE_1K);
 
     int ret = _get_status_code(result);
     if (ret == 0)
