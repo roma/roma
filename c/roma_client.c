@@ -11,11 +11,10 @@
 
 #define RMC_COMMAND_TMP "send_%s_command"
 
-static char *_daemon_host;
-rmc_routing_data _rd;
-char *RMC_COMMAND_STR[8] =
+static char *_daemon_host = NULL;
+static rmc_routing_data _rd;
+static char *RMC_COMMAND_STR[8] =
     {"set", "add", "replace", "append", "prepend", "cas", "delete", "get"};
-
 
 /**
  * make routing table.
@@ -53,12 +52,16 @@ static int _rmc_create_routing_table(const int number_of_nodes, const char **nod
 int rmc_connect(const int hosts, const char** str_hosts)
 {
     int ret = 0;
+
+    memset(&_rd, 0, sizeof(rmc_routing_data));
+    if(_daemon_host) free(_daemon_host);
+
     ret = connect_roma_server(hosts, str_hosts);
     if(ret == EXIT_FAILURE)
     {
         return (ret);
     }
-    
+
     if (hosts == 1)
     {
         _daemon_host = (char *)calloc(strlen(str_hosts[0])+1, sizeof(char));
@@ -72,7 +75,7 @@ int rmc_connect(const int hosts, const char** str_hosts)
 #else
         _daemon_host = rmc_select_node_by_rand();
         if(_daemon_host == NULL) return(EXIT_FAILURE);
-        //printf("_daemon_host = %s\n",_daemon_host);
+        printf("_daemon_host = %s\n",_daemon_host);
 #endif
         return (EXIT_SUCCESS);
     }
@@ -84,27 +87,32 @@ int rmc_connect(const int hosts, const char** str_hosts)
  */
 int rmc_disconnect()
 {  
-   if (_daemon_host == NULL)
-   {
-        int i,j;
-        for(i = 0;i < _rd.number_of_nodes;i++)
-	  free(_rd.nodes[i].node);
-	
-        free(_rd.nodes);
+  if (_rd.dgst_bits != 0) {
+    int i,j;
 
-	int vnodes = 1 << _rd.div_bits;
-	for(i = 0;i < vnodes;i++)
-	{
-	  for(j = 0;j < _rd.number_of_nodes;j++)
-	    free(_rd.v_idx[i].nodes[j].node);
-	  free(_rd.v_idx[i].nodes);
-	}
+    for(i = 0;i < _rd.number_of_nodes;i++)
+      free(_rd.nodes[i].node);
 
-        free(_rd.v_idx);
-   } else {
-        free(_daemon_host);
-   }
-    disconnect_roma_server();
+    free(_rd.nodes);
+
+    int vnodes = 1 << _rd.div_bits;
+
+    for(i = 0;i < vnodes;i++) {
+
+      for(j = 0;j < _rd.number_of_nodes;j++)
+	free(_rd.v_idx[i].nodes[j].node);
+
+      free(_rd.v_idx[i].nodes);
+    }
+
+    free(_rd.v_idx);
+    memset(&_rd, 0, sizeof(rmc_routing_data));
+  } else {
+    if(_daemon_host) free(_daemon_host);
+    _daemon_host = NULL;
+  }
+
+  disconnect_roma_server();
 }
 
 /**
