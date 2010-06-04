@@ -28,7 +28,7 @@ void test_simple() {
     if(valinfo1.value != NULL) free(valinfo1.value);
 
     //printf("[%s]\n", valinfo1.value);
-
+    
     valinfo1.value = "test-cp-value-0001-test-cp-value-0001-test-cp-value-0001";
     valinfo1.length = strlen(valinfo1.value);
     rmc_set("test-cp-key-0001", valinfo1, 0);
@@ -199,26 +199,20 @@ int main(int argc, char **argv)
         printf("Usage : %s ${ip-address}_${port} ... \n", argv[0]);
         return (EXIT_FAILURE);
     }
-    int hosts = argc -1;
-    char *str_hosts[hosts];
 
-    int i;
-    for (i = 0; i < argc -1; i++)
-    {
-        str_hosts[i] = argv[i+1];
-    }
-
-    int ret = rmc_connect(hosts, str_hosts);
-    if (ret == EXIT_FAILURE) return (EXIT_FAILURE);
     int cnt = 0;
     while(1){
-      printf("cnt = %d\n",cnt++);
-      test_simple();
-      test_complex();
-      test_serialize();
+      int ret = rmc_connect(argc - 1, &(argv[1]));
+      if (ret == EXIT_SUCCESS){
+	printf("cnt = %d\n",cnt++);
+	test_simple();
+	test_complex();
+	test_serialize();
+      }else{
+	printf("rmc_connect() failed\n");
+      }
+      rmc_disconnect();
     }
-    rmc_disconnect();
 
-    printf("done\n");
     return (EXIT_SUCCESS);
 }

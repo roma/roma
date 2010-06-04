@@ -88,7 +88,7 @@ static int _rmc_check_recv(int conn)
     timeout.tv_usec = 0;
 
     int ret = select(conn+1, &fdset, NULL, NULL, &timeout);
-    //int ret = select(1, &fdset, NULL, NULL, &timeout);
+
     return (ret);
 }
 
@@ -101,7 +101,6 @@ static int _rmc_check_send(int conn)
 {
     fd_set fdset;
     FD_ZERO(&fdset);
-    //FD_SET(0, &fdset);
     FD_SET(conn, &fdset);
 
     struct timeval timeout;
@@ -962,10 +961,8 @@ int rmc_send_alist_index(const int connection, const char *key, const rmc_value_
     if (ret == 0)
     {
         int length = strlen(result)-2;
-        char ret_value[length+1];
-        strncpy(ret_value, result, length);
-        ret_value[length] = '\0';
-        ret = atoi(ret_value);
+	result[length] = '\0';
+	ret = atoi(result);
     }
     free(result);
     return (ret);
