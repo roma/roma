@@ -139,6 +139,7 @@ char * rmc_select_node_by_rand()
 {
   int i, cnt, n;
   int alive_hosts_index[rmc_number_of_hosts];
+  struct timeval now;
 
   cnt = 0;
   for (i = 0; i < rmc_number_of_hosts; i++){
@@ -146,7 +147,10 @@ char * rmc_select_node_by_rand()
       alive_hosts_index[cnt ++] = i;
     }
   }
-  srand(time(NULL));
+  if (gettimeofday(&now, NULL) == 0)
+    srand(now.tv_usec);
+  else
+    srand(time(NULL));
   n = alive_hosts_index[rand() % cnt];
 
   char *ret = malloc(strlen(rmc_romahosts[n].ip_address) + 10);
