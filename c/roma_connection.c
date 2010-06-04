@@ -19,8 +19,8 @@
 #include <errno.h>
 #include "roma_client_private.h"
 
-rmc_host_info *rmc_romahosts;
-int rmc_number_of_hosts;
+static rmc_host_info *rmc_romahosts = NULL;
+static int rmc_number_of_hosts = 0;
 
 /**
  * get connection.
@@ -53,7 +53,7 @@ static int _rmc_get_connection(char *host, int port)
     fcntl(s, F_SETFL, O_NONBLOCK|flag);
     int con = connect(s, (struct sockaddr *)&server, sizeof(server));
 
-    int valopt;
+    int valopt = 0;
     fd_set fdset;
     struct timeval tv;
     socklen_t lon;
@@ -66,25 +66,33 @@ static int _rmc_get_connection(char *host, int port)
             FD_SET(s, &fdset);
             if (select(s+1, NULL, &fdset, NULL, &tv) > 0) {
                 lon = sizeof(int);
-                getsockopt(s, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon);
+                if( getsockopt(s, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) {
+                    fprintf(stderr, "Error in getsockopt()\n");
+		    close(s);
+                    return -1;
+		}
                 if (valopt) {
                     fprintf(stderr, "Error in connection() %d - %s\n", valopt, strerror(valopt));
+		    close(s);
                     return -1;
                 }
             }
             else {
                 fprintf(stderr, "Timeout or error() %d - %s\n", valopt, strerror(valopt));
+		close(s);
                 return -1;
             }
          }
          else {
             fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno));
+	    close(s);
             return -1;
          }
     }
     flag = fcntl(s, F_GETFL, NULL);
     flag &= (~O_NONBLOCK);
     fcntl(s, F_SETFL, flag);
+
     return s;
 }
 
@@ -100,6 +108,7 @@ int connect_roma_server(const int hosts, const char **str_romahosts)
     if (hosts == 0) return (EXIT_FAILURE);
 
     rmc_number_of_hosts = hosts;
+    if(rmc_romahosts) free(rmc_romahosts);
     rmc_romahosts = (rmc_host_info *)calloc(hosts, sizeof(rmc_host_info));
 
     int i, errors = 0;
@@ -125,7 +134,6 @@ int connect_roma_server(const int hosts, const char **str_romahosts)
             _rmc_get_connection(rmc_romahosts[i].ip_address, rmc_romahosts[i].port);
         if (con == -1)
             errors++;
-
         rmc_romahosts[i].connection = con;
     }
     return (errors == hosts ? EXIT_FAILURE : EXIT_SUCCESS);
@@ -191,9 +199,7 @@ int rmc_get_connection(char *host_and_port)
         }
         if (con > 0) break;
     }
-    //if (con == 0 && rmc_number_of_hosts > 0) {
-    //    con = rmc_romahosts[0].connection;
-    //}
+
     return (con);
 }
 
@@ -204,6 +210,7 @@ int rmc_get_connection(char *host_and_port)
  */
 int disconnect_roma_server()
 {
+  if(rmc_romahosts) {
     int i;
     for (i = 0; i < rmc_number_of_hosts; i++)
     {
@@ -213,5 +220,8 @@ int disconnect_roma_server()
     }
     
     free(rmc_romahosts);
-    return (EXIT_SUCCESS);
+    rmc_romahosts = NULL;
+    rmc_number_of_hosts = 0;
+  }
+  return (EXIT_SUCCESS);
 }
