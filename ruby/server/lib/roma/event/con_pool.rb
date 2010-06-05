@@ -11,10 +11,12 @@ module Roma
       attr_writer :fiber
       attr_reader :connected
       attr_accessor :ap
+      attr_accessor :last_access
 
       def post_init
         @rbuf = ''
         @connected = true
+        @last_access = Time.now
       end
       
       def receive_data(data)
@@ -76,17 +78,22 @@ module Roma
       include Singleton
       attr :pool
       attr_accessor :maxlength
-      attr_accessor :refresh_rate
+      attr_accessor :expire_time
 
       def initialize
         @pool = {}
-        @maxlength = 10
-        @refresh_rate = 0.0001
+        @maxlength = 30
+        @expire_time = 30
         @lock = Mutex.new
       end
 
       def get_connection(ap)
         ret = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
+        if ret && ret.last_access < Time.now - @expire_time
+          ret.close_connection if ret.connected
+          ret = nil
+          Logging::RLogger.instance.info("EM connection expired at #{ap},remains #{@pool[ap].length}")
+        end
         ret = create_connection(ap) if ret == nil || ret.connected != true
         ret
       end
@@ -94,11 +101,7 @@ module Roma
       def return_connection(ap, con)
         return if con.connected == false
 
-        if rand < @refresh_rate
-          con.close_connection
-          return
-        end
-
+        con.last_access = Time.now
         if @pool.key?(ap) && @pool[ap].length > 0
           if @pool[ap].length > @maxlength
             con.close_connection

@@ -58,7 +58,22 @@ module Roma
             EventMachine.start_server('0.0.0.0', @stats.port, 
                                       Roma::Command::Receiver,
                                       @storages, @rttable)
-
+            EventMachine::add_periodic_timer( 10 ) {
+              org = Event::Handler::connections.length
+              dellist = []
+              Event::Handler::connections.each{|k,v|
+                if k.connected == false
+                  dellist << k
+                elsif k.last_access < Time.now - Event::Handler::connection_expire_time
+                  k.close_connection
+                  @log.info("connection expired from #{k.addr[1]}:#{k.addr[0]} lastcmd = #{k.lastcmd}")
+                end
+              }
+              dellist.each{|k| 
+                @log.info("delete connection lastcmd = #{k.lastcmd}")
+                Event::Handler::connections.delete(k)
+              }
+            }
             @log.info("Now accepting connections on address #{@stats.address}, port #{@stats.port}")
           end
         rescue Interrupt => e
@@ -430,6 +445,7 @@ module Roma
         nodes.delete(@stats.ap_str)
         if nodes_check(nodes)
           @log.info("all nodes started")
+          AsyncProcess::queue.clear
           @rttable.enabled_failover = true
           Command::Receiver::mk_evlist
         end

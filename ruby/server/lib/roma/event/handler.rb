@@ -36,8 +36,20 @@ module Roma
         end
       end
 
+      @@connections = {}
+      def self.connections; @@connections; end
+
+      @@connection_expire_time = 60
+      def self.connection_expire_time=(t)
+        @@connection_expire_time = t
+      end
+
+      def self.connection_expire_time
+        @@connection_expire_time
+      end
+
       attr :stop_event_loop
-      attr :connected
+      attr_reader :connected
       attr :fiber
       attr :rbuf
 
@@ -45,6 +57,8 @@ module Roma
       attr :rttable
       attr_accessor :timeout
       attr_reader :lastcmd
+      attr_reader :last_access
+      attr_reader :addr
 
       def initialize(storages, rttable)
         @rbuf=''
@@ -63,18 +77,21 @@ module Roma
         @rttable = rttable
         @timeout = 10
         @log = Roma::Logging::RLogger.instance
+        @last_access = Time.now
+        @@connections[self] = @last_access
       end
 
       def post_init
         @addr = Socket.unpack_sockaddr_in(get_peername)
         @log.info("Connected from #{@addr[1]}:#{@addr[0]}. I have #{EM.connection_count} connections.")
-
         @connected = true
+        @last_access = Time.now
         @fiber = Fiber.new { dispatcher }
       end
 
       def receive_data(data)
         @rbuf << data
+        @last_access = Time.now
         @fiber.resume
       rescue Exception =>e
         @log.error("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
@@ -84,6 +101,7 @@ module Roma
         @connected=false
         @fiber.resume
         EventMachine::stop_event_loop if @stop_event_loop
+        @@connections.delete(self)
         @log.info("Disconnected from #{@addr[1]}:#{@addr[0]}")
       rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
@@ -195,9 +213,12 @@ module Roma
       def conn_get_stat
         ret = {}
         ret["connection.continuous_limit"] = Handler.get_ccl
+        ret["connection.accepted_connection_expire_time"] = Handler.connection_expire_time
         ret["connection.accepted_count"] = EM.connection_count
         ret["connection.pool_maxlength"] = Messaging::ConPool.instance.maxlength
+        ret["connection.pool_expire_time"] = Messaging::ConPool.instance.expire_time
         ret["connection.EMpool_maxlength"] = Event::EMConPool::instance.maxlength
+        ret["connection.EMpool_expire_time"] = Event::EMConPool.instance.expire_time
         ret
       end
 
