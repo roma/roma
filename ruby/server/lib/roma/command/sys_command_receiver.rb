@@ -376,6 +376,64 @@ module Roma
         end
       end
 
+      # set_connection_pool_maxlength <length>
+      # set to max length of the connection pool
+      def ev_set_connection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_connection_pool_maxlength #{s[1]}\r\n")
+        Messaging::ConPool.instance.maxlength = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_maxlength <length>
+      def ev_rset_connection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        Messaging::ConPool.instance.maxlength = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_connection_pool_maxlength <length>
+      # set to max length of the connection pool
+      def ev_set_emconnection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_emconnection_pool_maxlength #{s[1]}\r\n")
+        Event::EMConPool.instance.maxlength = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_maxlength <length>
+      def ev_rset_emconnection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        Event::EMConPool.instance.maxlength = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
       private 
 
       def dcnice(p)
