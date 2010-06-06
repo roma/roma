@@ -4,6 +4,7 @@ require 'date'
 require 'logger'
 require 'roma/client/rclient'
 require 'roma/tools/multi_commander'
+require 'optparse'
 
 module Roma
   module Test
@@ -262,13 +263,65 @@ module Roma
         test_kill_join_recover
       end
     end
+
+    class Config
+      attr_reader :number_of_nodes
+      attr_reader :port
+      attr_reader :hostname
+      attr_reader :working_path
+
+      def initialize(argv)
+        opts = OptionParser.new
+        opts.banner="usage:#{File.basename($0)} [options]"
+        
+        opts.on_tail("-h", "--help", "show this message") {
+          puts opts; exit
+        }
+        @number_of_nodes = 3
+        opts.on("-n N", "number of nodes[default: 3]", Integer) { |v|
+          @number_of_nodes = v
+        }
+
+        @working_path = '.'
+        opts.on("-p PATH", "working path[default: .]", String) { |v|
+          @working_path = v
+        }
+
+        @hostname = 'localhost'
+        opts.on("--hname HOSTNAME", "hostname[default: localhost]", String) { |v|
+          @hostname = v
+        }
+
+        @port = 11211
+        opts.on("--port PORT_NUMBER", "port number[default: 11211]", Integer) { |v|
+          @port = v
+        }
+
+        opts.parse!(argv)
+      rescue OptionParser::ParseError => e
+        $stderr.puts e.message
+        $stderr.puts opts.help
+        exit 1
+      end
+    end
+
   end
 end
 
-procs = []
-procs << Roma::Test::RomaProc.new("localhost", 11211)
-procs << Roma::Test::RomaProc.new("localhost", 11212)
-procs << Roma::Test::RomaProc.new("localhost", 11213)
-s = Roma::Test::Scenario.new("/home/muga/works/ruby/workspace/working-roma/ruby/server", procs)
-s.test_suite
+cnf = Roma::Test::Config.new(ARGV)
 
+# check for a working path
+unless File::exist?("#{cnf.working_path}/bin/romad")
+  # in invalid path
+  $stderr.puts "#{cnf.working_path}/bin/romad dose't found"
+  $stderr.puts "You should set to a working path option(-p)."
+  exit 1
+end
+
+procs = []
+cnf.number_of_nodes.times{ |i|
+  procs << Roma::Test::RomaProc.new(cnf.hostname, cnf.port + i)  
+}
+
+s = Roma::Test::Scenario.new(cnf.working_path, procs)
+s.test_suite
