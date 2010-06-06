@@ -23,9 +23,11 @@ module Roma
     attr :stats
 
     attr_accessor :eventloop
+    attr_accessor :startup
 
     def initialize(argv = nil)
       @stats = Roma::Stats.instance
+      @startup = true
       options(argv)
       initialize_stats
       initialize_connection
@@ -217,9 +219,6 @@ module Roma
 
       opts.on("-p", "--port [PORT]") { |v| @stats.port = v }
 
-      @stats.start_with_failover = false
-      opts.on(nil,"--start_with_failover"){ |v| @stats.start_with_failover = true }
-
       @stats.verbose = false
       opts.on(nil,"--verbose"){ |v| @stats.verbose = true }
 
@@ -333,7 +332,7 @@ module Roma
         @rttable.fail_cnt_gap = Roma::Config::ROUTING_FAIL_CNT_GAP
       end
       @rttable.lost_action = Roma::Config::DEFAULT_LOST_ACTION
-      @rttable.enabled_failover = @stats.start_with_failover
+      @rttable.enabled_failover = false
       @rttable.set_leave_proc{|nid|
         Roma::Messaging::ConPool.instance.close_same_host(nid)
         Roma::Event::EMConPool.instance.close_same_host(nid)
@@ -462,7 +461,7 @@ module Roma
     end
 
     def timer_event_10sec
-      if @rttable.enabled_failover == false
+      if @startup && @rttable.enabled_failover == false
         @log.debug("nodes_check start")
         nodes=@rttable.nodes
         nodes.delete(@stats.ap_str)
@@ -471,7 +470,10 @@ module Roma
           AsyncProcess::queue.clear
           @rttable.enabled_failover = true
           Command::Receiver::mk_evlist
+          @startup = false
         end
+      elsif @rttable.enabled_failover == false
+        @log.warn("failover disable now!!")
       else
         version_check
         @rttable.delete_old_trans

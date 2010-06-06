@@ -301,9 +301,53 @@ module Roma
 
       def ev_forcedly_start(s)
         @log.info("ROMA forcedly start.")
-        Command::Receiver::mk_evlist
+        AsyncProcess::queue.clear
         @rttable.enabled_failover = true
+        Command::Receiver::mk_evlist
+        $roma.startup = false
         send_data("STARTED\r\n")
+      end
+
+      # switch_failover <on|off>
+      def ev_switch_failover(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        res = broadcast_cmd("rswitch_failover #{s[1]}\r\n")
+        if s[1] == 'on'
+          Messaging::ConPool.instance.close_all
+          Event::EMConPool::instance.close_all
+          @rttable.enabled_failover = true
+          @log.info("failover enabled")
+          res[@stats.ap_str] = "ENABLED"
+        elsif s[1] == 'off'
+          @rttable.enabled_failover = false
+          @log.info("failover disabled")
+          res[@stats.ap_str] = "DISABLED"
+        else
+          res[@stats.ap_str] = "NOTSWITCHED"
+        end
+        send_data("#{res}\r\n")
+      end
+
+      # rswitch_failover <on|off>
+      def ev_rswitch_failover(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1] == 'on'
+          Messaging::ConPool.instance.close_all
+          Event::EMConPool::instance.close_all
+          @rttable.enabled_failover = true
+          @log.info("failover enabled")
+          return send_data("ENABLED\r\n")
+        elsif s[1] == 'off'
+          @rttable.enabled_failover = false
+          @log.info("failover disabled")
+          return send_data("DISABLED\r\n")
+        else
+          send_data("NOTSWITCHED\r\n")
+        end
       end
 
       def ev_set_continuous_limit(s)
