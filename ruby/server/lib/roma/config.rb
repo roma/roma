@@ -9,6 +9,12 @@ module Roma
     # :no_action | :auto_assign | :shutdown
     DEFAULT_LOST_ACTION = :auto_assign
 
+    # failover setting
+    # threshold of failover occurrence
+    ROUTING_FAIL_CNT_THRESHOLD = 15
+    # ROUTING_FAIL_CNT_GAP(sec) doesn't increase the failover counter.
+    ROUTING_FAIL_CNT_GAP = 0
+
     # log setting
     LOG_SHIFT_AGE = 10
     LOG_SHIFT_SIZE = 1024 * 1024 * 10
@@ -23,6 +29,20 @@ module Roma
     # like a MaxStartups spec in the sshd_config
     # 'start:rate:full'
     CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
+    # expired time(sec) for accepted connections
+    CONNECTION_EXPTIME = 60
+
+    # expired time(sec) for an async connection in the connection pool
+    # CONNECTION_POOL_EXPTIME should be less than CONNECTION_EXPTIME
+    CONNECTION_POOL_EXPTIME = 30
+    # max length of the connection pool
+    CONNECTION_POOL_MAX = 5
+
+    # expired time(sec) for an eventmachine's connection in the connection pool
+    # CONNECTION_EMPOOL_EXPTIME should be less than CONNECTION_EXPTIME
+    CONNECTION_EMPOOL_EXPTIME = 30
+    # max length of the eventmachine's connection pool
+    CONNECTION_EMPOOL_MAX = 15
 
     # storage setting
     STORAGE_CLASS = Roma::Storage::RubyHashStorage
@@ -31,7 +51,8 @@ module Roma
     STORAGE_DUMP_PATH = '/tmp'
     STORAGE_OPTION = ''
 
-    # 5 days ago
+    # expired time(sec) for deleted keys, expired keys and invalid vnode keys
+    # typical value is 5 days
     STORAGE_DELMARK_EXPTIME = 60 * 60 * 24 * 5
 
     # data copy setting
@@ -45,6 +66,9 @@ module Roma
     WRITEBEHIND_SHIFT_SIZE = 1024 * 1024 * 10
 
     # redundant setting
+    # REDUNDANT_ZREDUNDANT_SIZE is a option for a redundancy of compressed data.
+    # when the data size is more then REDUNDANT_ZREDUNDANT_SIZE, data compression is done.
+    # however, it dose't in case of REDUNDANT_ZREDUNDANT_SIZE is zero.
     REDUNDANT_ZREDUNDANT_SIZE = 0
 
     def self.get_stat

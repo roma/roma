@@ -28,6 +28,7 @@ module Roma
       @stats = Roma::Stats.instance
       options(argv)
       initialize_stats
+      initialize_connection
       initialize_logger
       initialize_rttable
       initialize_storages
@@ -106,6 +107,34 @@ module Roma
       end
     end
 
+    def initialize_connection
+      if Config.const_defined?(:CONNECTION_CONTINUOUS_LIMIT)
+        unless Event::Handler.set_ccl(Config::CONNECTION_CONTINUOUS_LIMIT)
+          raise "config parse error : Config::CONNECTION_CONTINUOUS_LIMIT"
+        end
+      end
+
+      if Config.const_defined?(:CONNECTION_EXPTIME)
+        Event::Handler::connection_expire_time = Config::CONNECTION_EXPTIME
+      end
+
+      if Config.const_defined?(:CONNECTION_POOL_EXPTIME)
+        Messaging::ConPool.instance.expire_time = Config::CONNECTION_POOL_EXPTIME
+      end
+
+      if Config.const_defined?(:CONNECTION_POOL_MAX)
+        Messaging::ConPool.instance.maxlength = Config::CONNECTION_POOL_MAX
+      end
+
+      if Config.const_defined?(:CONNECTION_EMPOOL_EXPTIME)
+        Event::EMConPool::instance.expire_time = Config::CONNECTION_EMPOOL_EXPTIME
+      end
+
+      if Config.const_defined?(:CONNECTION_EMPOOL_MAX)
+        Event::EMConPool::instance.maxlength = Config::CONNECTION_EMPOOL_MAX
+      end
+    end
+
     def initialize_wb_witer
       @wb_writer = Roma::WriteBehind::FileWriter.new(
                                                      Roma::Config::WRITEBEHIND_PATH, 
@@ -146,12 +175,6 @@ module Roma
         }
       end
       
-      if Config.const_defined?(:CONNECTION_CONTINUOUS_LIMIT)
-        unless Event::Handler.set_ccl(Config::CONNECTION_CONTINUOUS_LIMIT)
-          raise "config parse error : Config::CONNECTION_CONTINUOUS_LIMIT"
-        end
-      end
-
       if @stats.join_ap
         Command::Receiver::mk_evlist
       else
