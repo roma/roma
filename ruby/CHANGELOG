@@ -1,3 +1,26 @@
+* add mailer path option to roma watch configuration file . [byplayer] ee997e1
+* add the program for watching a ROMA [Muga Nishizawa] ee916a8
+* bugfix:after the first node dose join, lost vnodes cannot be detected. [junji torii] 2a5b3b2
+* refactor:exclusive operation for iteration in the storage. [junji torii] 7f7d27c
+* bugfix:stop by irregular data in storage_clean_up_process [junji torii] 40ba9bb
+* add sample_watcher3, which is a checker for split brain [muga] 749f444
+* bugfix:exception happens when nodes is nil has fixed. [junji torii] 1982e72
+* refactor:improve a version command result. [junji torii] 24dd282
+* bugfix:exclusive operation for iteration in the storage. [junji torii] 03e468e
+* added a recoverlost_alist_all. [junji torii] 5cb8dde
+* bugfix:for multi hash feature. [junji torii] b065555
+* storage commands was moved to plugin. [junji torii] ff3de38
+* add dependency to eventmachine . [byplayer] f1b0efc
+* bugfix:eventual consistency in the delete command. [junji torii] bf5eecb
+* added a bin option in the routingdump command. [junji torii] 47ad0b7
+* --config option was added to the argument of romad. [junji torii] 6e6cee5
+* bugfix:multihash concerning the file path was corrected. [junji torii] 0a6f63f
+* Daemonization was isolated from class of Romad. [junji torii] 4a786fb
+* fixed bug for a recover command option. [junji torii] b847b4d
+* the forward operation was corrected in the get command. [junji torii] e18019a
+* improved a vnode balance parameter. [junji torii] 40c762c
+* Bug was fixed that auto-termination logic when my node dosen't exist in the routing-table. [junji torii] 4300767
+
 *0.8.2 (Jan 6 2010)*
 
 * cron.rb removed. [junji torii] dce07ab

@@ -16,6 +16,7 @@ module Roma
     attr_accessor :name
     attr_accessor :verbose
     attr_accessor :enabled_repetition_host_in_routing
+    attr_accessor :disabled_cmd_protect
 
     # proc mode
     attr_accessor :enabled_vnodes_balance

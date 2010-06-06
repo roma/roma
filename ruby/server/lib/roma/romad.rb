@@ -61,7 +61,14 @@ module Roma
 
             @log.info("Now accepting connections on address #{@stats.address}, port #{@stats.port}")
           end
-        rescue =>e
+        rescue Interrupt => e
+          if daemon?
+            @log.error("#{e.inspect}\n#{$@}")
+            retry
+          else
+            $stderr.puts "#{e.inspect}"
+          end
+        rescue Exception => e
           @log.error("#{e}\n#{$@}")
           retry
         end
@@ -104,21 +111,37 @@ module Roma
           end
           @log.info("#{plugin.to_s} included")
       end
+
+      if @stats.disabled_cmd_protect
+        Command::Receiver::mk_evlist
+      end
     end
 
     def initialize_handler
-      return if @stats.verbose==false
-
-      Roma::Event::Handler.class_eval{
-        alias gets2 gets
-        undef gets
-        
-        def gets
-          ret = gets2
-          @log.info("command log:#{ret.chomp}") if ret
-          ret
+      if @stats.verbose
+        Event::Handler.class_eval{
+          alias gets2 gets
+          undef gets
+          
+          def gets
+            ret = gets2
+            @log.info("command log:#{ret.chomp}") if ret
+            ret
+          end
+        }
+      end
+      
+      if Config.const_defined?(:CONNECTION_CONTINUOUS_LIMIT)
+        unless Event::Handler.set_ccl(Config::CONNECTION_CONTINUOUS_LIMIT)
+          raise "config parse error : Config::CONNECTION_CONTINUOUS_LIMIT"
         end
-      }
+      end
+
+      if @stats.join_ap
+        Command::Receiver::mk_evlist
+      else
+        Command::Receiver::mk_starting_evlist
+      end
     end
 
     def initialize_logger
@@ -169,8 +192,13 @@ module Roma
       opts.on("-n", "--name [name]") { |v| @stats.name = v }
 
       @stats.enabled_repetition_host_in_routing = false
-      opts.on(nil,"--enabled_repeathost"){ |v|
+      opts.on(nil,"--enabled_repeathost", "Allow redundancy to same host"){
         @stats.enabled_repetition_host_in_routing = true
+      }
+
+      @stats.disabled_cmd_protect = false
+      opts.on(nil,"--disabled_cmd_protect", "Command protection disable while starting"){
+        @stats.disabled_cmd_protect = true
       }
 
       opts.on("--config [file path of the config.rb]"){ |v| @stats.config_path = File.expand_path(v) }
@@ -311,10 +339,12 @@ module Roma
         begin
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           con.write("join #{@stats.ap_str}\r\n")
-          con.gets
+          if con.gets != "ADDED\r\n"
+            raise "Hotscale initialize failed.\n#{nid} is busy."
+          end
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
         rescue =>e
-          raise "Hotscale initialize failed.\n#{nid} unreachabled."
+          raise "Hotscale initialize failed.\n#{nid} unreachable connection."
         end
       }
       @rttable.add_node(@stats.ap_str)
@@ -350,7 +380,7 @@ module Roma
       con.gets
       Messaging::ConPool.instance.return_connection(nid,con)
       rcv
-    rescue
+    rescue Exception
       nil      
     end
 
@@ -401,6 +431,7 @@ module Roma
         if nodes_check(nodes)
           @log.info("all nodes started")
           @rttable.enabled_failover = true
+          Command::Receiver::mk_evlist
         end
       else
         version_check
@@ -421,7 +452,7 @@ module Roma
       end
 
       @stats.clear_counters
-    rescue =>e
+    rescue Exception =>e
       @log.error("#{e}\n#{$@}")
     end
 
@@ -433,7 +464,7 @@ module Roma
     end
 
     def node_check(nid)
-      name = async_send_cmd(nid,"whoami\r\n",1)
+      name = async_send_cmd(nid,"whoami\r\n",2)
       return false unless name
       if name != @stats.name
         @log.error("#{nid} has diffarent name.")
@@ -446,7 +477,7 @@ module Roma
     def version_check
       nodes=@rttable.nodes
       nodes.each{|nid|
-        vs = async_send_cmd(nid,"version\r\n",1)
+        vs = async_send_cmd(nid,"version\r\n",2)
         next unless vs
         if /VERSION\s(?:ROMA-)?(\d+)\.(\d+)\.(\d+)/ =~ vs
           ver = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
@@ -479,13 +510,17 @@ module Roma
             begin
               con = Roma::Messaging::ConPool.instance.get_connection(nodes[idx-1])
               con.write("create_nodes_from_v_idx\r\n")
-              con.gets
-              Roma::Messaging::ConPool.instance.return_connection(nodes[idx-1], con)
-            rescue =>e
-              @log.error("create_nodes_from_v_idx command unreachabled to the #{nodes[idx-1]}.")
+              if con.gets == "CREATED\r\n"
+                Roma::Messaging::ConPool.instance.return_connection(nodes[idx-1], con)
+              else
+                @log.error("get busy result in create_nodes_from_v_idx command from #{nodes[idx-1]}.")
+                con.close
+              end
+            rescue Exception =>e
+              @log.error("create_nodes_from_v_idx command unreachable to the #{nodes[idx-1]}.")
             end
           end
-        rescue =>e
+        rescue Exception =>e
           @log.error("#{e}\n#{$@}")
         end
         @stats.run_sync_routing = false
@@ -497,7 +532,7 @@ module Roma
       return :skip if @stats.run_acquire_vnodes || @stats.run_recover
       
       h = async_send_cmd(nid,"mklhash #{id}\r\n")
-      if h && @rttable.mtree.get(id) != h
+      if h && h.start_with?("ERROR") == false && @rttable.mtree.get(id) != h
         if (id.length - 1) == @rttable.div_bits
           sync_routing(nid,id)
         else
@@ -514,7 +549,7 @@ module Roma
       @log.warn("vn=#{vn} inconsistent")
       
       res = async_send_cmd(nid,"getroute #{vn}\r\n")
-      return unless res
+      return if res == nil || res.start_with?("ERROR")
       clk,*nids = res.split(' ')
       clk = @rttable.set_route(vn, clk.to_i, nids)
       
@@ -527,29 +562,39 @@ module Roma
     end
 
     def async_send_cmd(nid, cmd, tout=nil)
-      res = nil
+      con = res = nil
       if tout
         timeout(tout){
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
+          unless con
+            @rttable.proc_failed(nid) if @rttable
+            @log.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
+            return nil
+          end
           con.write(cmd)
           res = con.gets
-          Roma::Messaging::ConPool.instance.return_connection(nid, con)
         }
       else
         con = Roma::Messaging::ConPool.instance.get_connection(nid)
+        unless con
+          @rttable.proc_failed(nid) if @rttable
+          @log.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
+          return nil
+        end
         con.write(cmd)
         res = con.gets
+      end
+      if res == nil
+        @rttable.proc_failed(nid) if @rttable
+        return nil
+      elsif res.start_with?("ERROR") == false
+        @rttable.proc_succeed(nid) if @rttable
         Roma::Messaging::ConPool.instance.return_connection(nid, con)
       end
-      if res
-        res.chomp!
-        @rttable.proc_succeed(nid) if @rttable
-      else
-        @rttable.proc_failed(nid) if @rttable
-      end
-      res
-    rescue => e
+      res.chomp
+    rescue Exception => e
       @rttable.proc_failed(nid) if @rttable
+      @log.error("#{__FILE__}:#{__LINE__}:#{e} #{$@}")
       @log.error("#{__FILE__}:#{__LINE__}:Send command failed that node-id is #{nid},command is #{cmd}.")
       nil
     end
@@ -561,7 +606,7 @@ module Roma
         res[nid] = async_send_cmd(nid,cmd,tout) unless without_nids.include?(nid)
       }
       res
-    rescue => e
+    rescue Exception => e
       @log.error("#{e}\n#{$@}")
       nil
     end
@@ -577,5 +622,5 @@ module Roma
     end
 
   end # class Romad
-
 end # module Roma
+

@@ -1,8 +1,8 @@
-/*
- * ROMA client 
+/* 
  * File:   roma_client.h
- * Author: yosuke hara
+ * Author: yosuke
  *
+ * Created on 2009/06/26
  */
 
 #ifndef _ROMA_CLIENT_H

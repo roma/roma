@@ -178,8 +178,8 @@ PHP_FUNCTION(rmc_connect)
 	}
 	int ret = rmc_connect(num, argv);
 	for (i = 0; i < num; i++)
-		free(argv[i]);
-	free(strhosts);	
+        free(argv[i]);
+	free(strhosts);
 	RETURN_LONG(ret);
 }
 /* }}} rmc_connect */
@@ -230,14 +230,14 @@ PHP_FUNCTION(rmc_get)
 		return;
 	}
 
-	rmc_value_info ret = rmc_get(key);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    rmc_value_info ret = rmc_get(key);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_get */
 
@@ -394,13 +394,13 @@ PHP_FUNCTION(rmc_alist_at)
 	}
 
 	rmc_value_info ret = rmc_alist_at(key, index);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_alist_at */
 
@@ -492,13 +492,13 @@ PHP_FUNCTION(rmc_alist_first)
 	}
 
 	rmc_value_info ret = rmc_alist_first(key);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_alist_first */
 
@@ -611,13 +611,13 @@ PHP_FUNCTION(rmc_alist_join)
 	}
 
 	rmc_value_info ret = rmc_alist_join(key, separator);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_alist_join */
 
@@ -634,13 +634,13 @@ PHP_FUNCTION(rmc_alist_to_json)
 	}
 
 	rmc_value_info ret = rmc_alist_to_json(key);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_alist_to_json */
 
@@ -657,13 +657,13 @@ PHP_FUNCTION(rmc_alist_last)
 	}
 
 	rmc_value_info ret = rmc_alist_last(key);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_alist_last */
 
@@ -697,13 +697,13 @@ PHP_FUNCTION(rmc_alist_pop)
 	}
 
 	rmc_value_info ret = rmc_alist_pop(key);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_alist_pop */
 
@@ -743,13 +743,13 @@ PHP_FUNCTION(rmc_alist_shift)
 	}
 
 	rmc_value_info ret = rmc_alist_shift(key);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_alist_shift */
 
@@ -766,13 +766,13 @@ PHP_FUNCTION(rmc_alist_to_str)
 	}
 
 	rmc_value_info ret = rmc_alist_tostr(key);
-  RETVAL_STRINGL(ret.value, ret.length, 1);
+    RETVAL_STRINGL(ret.value, ret.length, 1);
 	//RETURN_STRINGL(ret.value, ret.length, 1);
-  int i;
-  for (i = 0; i < ret.length; i++) {
-      ret.value[i] = '\0';
-  }
-  free(ret.value);
+    int i;
+    for (i = 0; i < ret.length; i++) {
+        ret.value[i] = '\0';
+    }
+    free(ret.value);
 }
 /* }}} rmc_alist_to_str */
 

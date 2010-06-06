@@ -14,59 +14,6 @@ module Roma
       def ev_set(s); set(:set,s); end
       def ev_fset(s); fset(:set,s); end
 
-      # rset <key> <hash value> <timelimit> <length>
-      # "set" means "store this data".
-      # <command name> <key> <digest> <exptime> <bytes> [noreply]\r\n
-      # <data block>\r\n
-      def ev_rset(s)
-        key,hname = s[1].split("\e")
-        hname ||= @defhash
-        d = s[2].to_i
-        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits if d == 0
-        data = read_bytes(s[5].to_i)
-        read_bytes(2)
-        vn = @rttable.get_vnode_id(d)
-        unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
-          return
-        end
-        if @storages[hname].rset(vn, key, d, s[3].to_i, s[4].to_i, data)
-          send_data("STORED\r\n")
-        else
-          @log.error("rset NOT_STORED:#{@storages[hname].error_message} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
-          send_data("NOT_STORED\r\n")
-        end
-        @stats.redundant_count += 1
-      end
-
-      # <command name> <key> <digest> <exptime> <bytes> [noreply]\r\n
-      # <compressed data block>\r\n
-      def ev_rzset(s)
-        key,hname = s[1].split("\e")
-        hname ||= @defhash
-        d = s[2].to_i
-        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits if d == 0
-        zdata = read_bytes(s[5].to_i)
-        read_bytes(2)
-        vn = @rttable.get_vnode_id(d)
-        unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
-          return
-        end
-
-        data = Zlib::Inflate.inflate(zdata)
-        if @storages[hname].rset(vn, key, d, s[3].to_i, s[4].to_i, data)
-          send_data("STORED\r\n")
-        else
-          @log.error("rzset NOT_STORED:#{@storages[hname].error_message} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
-          send_data("NOT_STORED\r\n")
-        end
-        @stats.redundant_count += 1
-      rescue Zlib::DataError => e
-        @log.error("rzset NOT_STORED:#{e} #{vn} #{s[1]} #{d} #{s[3]} #{s[4]}")
-        send_data("NOT_STORED\r\n")
-      end
-
       # get <key>*\r\n
       def ev_get(s)
         return ev_gets(s) if s.length > 2
@@ -175,10 +122,10 @@ module Roma
           cmd << "\r\n"
           @log.warn("forward delete #{s[1]}")
           res = send_cmd(nodes[0], cmd)
-          if res
-            return send_data("#{res}\r\n")
+          if res == nil || res.start_with?("ERROR")
+            return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
-          return send_data("SERVER_ERROR Message forward failed.\r\n")
+          return send_data("#{res}\r\n")
         end
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
@@ -288,10 +235,10 @@ module Roma
         if nodes[0] != @nid
           @log.warn("forward cas key=#{key} vn=#{vn} to #{nodes[0]}")
           res = send_cmd(nodes[0],"fcas #{key}\e#{hname} #{d} #{s[3]} #{v.length} #{s[5]}\r\n#{v}\r\n")
-          if res
-            return send_data("#{res}\r\n")
+          if res == nil || res.start_with?("ERROR")
+            return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
-          return send_data("SERVER_ERROR Message forward failed.\r\n")
+          return send_data("#{res}\r\n")
         end
 
         store_cas(hname, vn, key, d, s[5].to_i, s[3].to_i, v, nodes[1..-1])
@@ -349,16 +296,28 @@ module Roma
         con = get_connection(nid)
         con.send("fget #{k}\r\n")
         res = con.gets
-        return res if res == "END\r\n" || res =~ /$SERVER_ERROR/
-        s = res.split(/ /)
-        res << con.read_bytes(s[3].to_i + 2)
-        res << con.gets
+        if res == nil
+          @rttable.proc_failed(nid)
+          @log.error("forward get failed:nid=#{nid} key=#{k}")
+          return nil
+        elsif res == "END\r\n"
+          # value dose not found
+        elsif res.start_with?("ERROR")
+          @rttable.proc_succeed(nid)
+          con.close_connection
+          return nil
+        else
+          s = res.split(/ /)
+          res << con.read_bytes(s[3].to_i + 2)
+          res << con.gets
+        end
         return_connection(nid, con)
         @rttable.proc_succeed(nid)
         res
       rescue => e
-        @rttable.proc_failed(nid)
-        @log.error("forward get failed:nid=#{nid} key=#{key}")
+        @rttable.proc_failed(nid) if e.message != "no connection"
+        @log.error("#{e.inspect}/#{$@}")
+        @log.error("forward get failed:nid=#{nid} key=#{k}")
         nil
       end
 
@@ -435,7 +394,7 @@ module Roma
 
         nodes.each{ |nid|
           res = send_cmd(nid,"rset #{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}\r\n#{v}\r\n")
-          unless res
+          if res == nil || res.start_with?("ERROR")
             Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('redundant',[nid,hname,k,d,clk,expt,v]))
             @log.warn("redundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
           end
@@ -447,7 +406,7 @@ module Roma
 
         nodes.each{ |nid|
           res = send_cmd(nid,"rzset #{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}\r\n#{zv}\r\n")
-          unless res
+          if res == nil || res.start_with?("ERROR")
             Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('zredundant',[nid,hname,k,d,clk,expt,zv]))
             @log.warn("zredundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length} -> #{nid}")
           end
@@ -464,11 +423,11 @@ module Roma
         nodes = @rttable.search_nodes_for_write(vn)
         if nodes[0] != @nid
           @log.warn("forward #{fnc} key=#{key} vn=#{vn} to #{nodes[0]}")
-          res = send_cmd(nodes[0],"f#{fnc} #{key}\e#{hname} #{d} #{s[3]} #{v.length}\r\n#{v}\r\n")
-          if res
-            return send_data("#{res}\r\n")
+          res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[3]} #{v.length}\r\n#{v}\r\n")
+          if res == nil || res.start_with?("ERROR")
+            return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
-          return send_data("SERVER_ERROR Message forward failed.\r\n")
+          return send_data("#{res}\r\n")
         end
 
         store(fnc, hname, vn, key, d, s[3].to_i, v, nodes[1..-1])
@@ -516,11 +475,11 @@ module Roma
         nodes = @rttable.search_nodes_for_write(vn)
         if nodes[0] != @nid
           @log.debug("forward #{fnc} key=#{s[1]} vn=#{vn} to #{nodes[0]}")
-          res = send_cmd(nodes[0],"f#{fnc} #{key}\e#{hname} #{d} #{s[2]}\r\n")
-          if res
-            return send_data("#{res}\r\n")
+          res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[2]}\r\n")
+          if res == nil || res.start_with?("ERROR")
+            return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
-          return send_data("SERVER_ERROR Message forward failed.\r\n")
+          return send_data("#{res}\r\n")
         end
 
         store_incr_decr(fnc, hname, vn, key, d, v, nodes[1..-1])

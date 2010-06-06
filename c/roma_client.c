@@ -1,8 +1,8 @@
 /* 
- * ROMA client
  * File:   rmc_client.c
- * Author: yosuke hara
+ * Author: yosuke
  *
+ * Created on 2009/06/26
  */
 
 #include <stdio.h>
@@ -11,11 +11,10 @@
 
 #define RMC_COMMAND_TMP "send_%s_command"
 
-static char *_daemon_host;
-rmc_routing_data _rd;
-char *RMC_COMMAND_STR[8] =
+static char *_daemon_host = NULL;
+static rmc_routing_data _rd;
+static char *RMC_COMMAND_STR[8] =
     {"set", "add", "replace", "append", "prepend", "cas", "delete", "get"};
-
 
 /**
  * make routing table.
@@ -27,20 +26,21 @@ static int _rmc_create_routing_table(const int number_of_nodes, const char **nod
 {
     int i, conn=0;
     for (i = 0; i<number_of_nodes; i++)
-    {
-        conn = rmc_get_connection(nodes[0]);
+    {        
+        conn = rmc_get_connection(nodes[i]);
         if (conn > 0)
             break;
     }
     if (conn == 0) return (EXIT_FAILURE);
 
-    _rd = rmc_send_routedump_as_yaml(conn, number_of_nodes);
+    _rd = rmc_send_routedump_as_yaml(conn, number_of_nodes); //@TODO!
     if (_rd.dgst_bits == 0 || _rd.div_bits == 0)
     {
         return (EXIT_FAILURE);
     }
     _rd.number_of_nodes = number_of_nodes;
     rmc_create_routing_table(&_rd);
+
     return (EXIT_SUCCESS);
 }
 
@@ -52,28 +52,32 @@ static int _rmc_create_routing_table(const int number_of_nodes, const char **nod
 int rmc_connect(const int hosts, const char** str_hosts)
 {
     int ret = 0;
-    // for daemon.
-    if (hosts == 2 && strcmp(str_hosts[0],"-d") == 0)
-    {
-        char *hosts[1];
-        hosts[0] = (char *)calloc(strlen(str_hosts[1])+1, sizeof(char));
-        strcpy(hosts[0], str_hosts[1]);
 
-        if((ret = connect_roma_server(1, hosts)) == EXIT_FAILURE)
-        {
-            return (ret);
-        }
-        _daemon_host = (char *)calloc(strlen(str_hosts[1])+1, sizeof(char));
-        strcpy(_daemon_host, str_hosts[1]);
+    memset(&_rd, 0, sizeof(rmc_routing_data));
+    if(_daemon_host) free(_daemon_host);
+
+    ret = connect_roma_server(hosts, str_hosts);
+    if(ret == EXIT_FAILURE)
+    {
+        return (ret);
+    }
+
+    if (hosts == 1)
+    {
+        _daemon_host = (char *)calloc(strlen(str_hosts[0])+1, sizeof(char));
+        strcpy(_daemon_host, str_hosts[0]);
         return (EXIT_SUCCESS);
     }
-    // for ROMA
     else {
+#ifdef USE_ROUTINGTABLE
         _daemon_host = NULL;
-        if((ret = connect_roma_server(hosts, str_hosts)) == EXIT_FAILURE)
-            return (ret);
         ret = _rmc_create_routing_table(hosts, str_hosts);
-        return (ret);
+#else
+        _daemon_host = rmc_select_node_by_rand();
+        if(_daemon_host == NULL) return(EXIT_FAILURE);
+        printf("_daemon_host = %s\n",_daemon_host);
+#endif
+        return (EXIT_SUCCESS);
     }
 }
 
@@ -82,13 +86,33 @@ int rmc_connect(const int hosts, const char** str_hosts)
  *
  */
 int rmc_disconnect()
-{
-   free(_rd.nodes);
-   free(_rd.v_idx);
-   if (_daemon_host != NULL)
-        free(_daemon_host);
+{  
+  if (_rd.dgst_bits != 0) {
+    int i,j;
 
-    disconnect_roma_server();
+    for(i = 0;i < _rd.number_of_nodes;i++)
+      free(_rd.nodes[i].node);
+
+    free(_rd.nodes);
+
+    int vnodes = 1 << _rd.div_bits;
+
+    for(i = 0;i < vnodes;i++) {
+
+      for(j = 0;j < _rd.number_of_nodes;j++)
+	free(_rd.v_idx[i].nodes[j].node);
+
+      free(_rd.v_idx[i].nodes);
+    }
+
+    free(_rd.v_idx);
+    memset(&_rd, 0, sizeof(rmc_routing_data));
+  } else {
+    if(_daemon_host) free(_daemon_host);
+    _daemon_host = NULL;
+  }
+
+  disconnect_roma_server();
 }
 
 /**
@@ -109,7 +133,7 @@ static int _rmc_get_connection(const char *key) {
             for (i =  0; i < _rd.number_of_nodes; i++) {
                 if (!strcmp(dn.node, _rd.nodes[i].node))
                 {
-                    printf("***next:node:[%s]\n", _rd.nodes[i].node);
+                    //printf("***next:node:[%s]\n", _rd.nodes[i].node);
                     con = rmc_get_connection(_rd.nodes[i].node);
                     if (con > 0) break;
                 }

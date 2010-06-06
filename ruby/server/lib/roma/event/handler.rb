@@ -11,6 +11,30 @@ module Roma
 
     class Handler < EventMachine::Connection
       @@ev_list={}
+      def self.ev_list; @@ev_list; end
+      @@system_commands={}
+      def self.system_commands; @@system_commands; end
+
+      @@ccl_start = 200
+      @@ccl_rate = 30
+      @@ccl_full = 300
+
+      def self.get_ccl
+        "#{@@ccl_start}:#{@@ccl_rate}:#{@@ccl_full}"
+      end
+
+      def self.set_ccl(ccl)
+        if ccl =~ /^(\d+):(\d+):(\d+)$/
+          s,r,f = $1.to_i,$2.to_i,$3.to_i
+          return false if(s < 0 || f < 0 || r < 0 || r > 100 || s > f)
+          @@ccl_start = s
+          @@ccl_rate = r
+          @@ccl_full = f
+          return true
+        else
+          return false
+        end
+      end
 
       attr :stop_event_loop
       attr :connected
@@ -31,6 +55,9 @@ module Roma
             end
           }
         end
+        @th1 = 100
+        @close_rate = 70
+        @th2 = 200
 
         @storages = storages
         @rttable = rttable
@@ -40,7 +67,8 @@ module Roma
 
       def post_init
         @addr = Socket.unpack_sockaddr_in(get_peername)
-        @log.info("Connected from #{@addr[1]}:#{@addr[0]}")
+        @log.info("Connected from #{@addr[1]}:#{@addr[0]}. I have #{EM.connection_count} connections.")
+
         @connected = true
         @fiber = Fiber.new { dispatcher }
       end
@@ -48,7 +76,7 @@ module Roma
       def receive_data(data)
         @rbuf << data
         @fiber.resume
-      rescue =>e
+      rescue Exception =>e
         @log.error("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
       end
 
@@ -57,7 +85,7 @@ module Roma
         @fiber.resume
         EventMachine::stop_event_loop if @stop_event_loop
         @log.info("Disconnected from #{@addr[1]}:#{@addr[0]}")
-      rescue =>e
+      rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
       end
 
@@ -94,17 +122,27 @@ module Roma
           if s[0] && @@ev_list.key?(s[0].downcase)
             send(@@ev_list[s[0].downcase],s)
             @lastcmd=s
+            next if @@system_commands.key?(s[0].downcase)
           elsif s.length==0
             next
           elsif s[0]=='!!'
             send(@@ev_list[@lastcmd[0].downcase],@lastcmd)
+            next if @@system_commands.key?(@lastcmd[0].downcase)
           else
             @log.warn("command error:#{s}")
             send_data("ERROR\r\n")
             close_connection_after_writing
           end
+
+          d = EM.connection_count - @@ccl_start
+          if d > 0 &&
+              rand(100) < @@ccl_rate + (100 - @@ccl_rate) * d / (@@ccl_full - @@ccl_start)
+            send_data("ERROR\r\n")
+            close_connection_after_writing
+            @log.warn("Connection count > #{@@ccl_start}:closed")
+          end
         end
-      rescue =>e
+      rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e} #{$@}")
         close_connection
       end
@@ -153,7 +191,17 @@ module Roma
         @connected = false
         Socket::for_fd(detach)
       end
-    end
 
-  end
-end
+      def conn_get_stat
+        ret = {}
+        ret["connection.continuous_limit"] = Handler.get_ccl
+        ret["connection.accepted_count"] = EM.connection_count
+        ret["connection.pool_maxlength"] = Messaging::ConPool.instance.maxlength
+        ret["connection.EMpool_maxlength"] = Event::EMConPool::instance.maxlength
+        ret
+      end
+
+    end # class Handler < EventMachine::Connection
+
+  end # module Event
+end # module Roma

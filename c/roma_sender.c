@@ -1,5 +1,4 @@
 /*
- * ROMA client
  * File:   roma_sender.c
  * Author: yosuke hara
  *
@@ -12,7 +11,6 @@
 
 #define DEF_BUFSIZE_1K 1024
 #define DEF_BUFSIZE_4K 4096
-#define DEF_BUFSIZE_S 64
 
 #define RMC_CMD_MKLHASH            "mklhash 0\r\n"
 #define RMC_CMD_RTDUMP_YAML_BYTES  "routingdump yamlbytes\r\n"
@@ -82,6 +80,7 @@ static int _rmc_check_recv(int conn)
 {
     fd_set fdset;
     FD_ZERO(&fdset);
+    //FD_SET(0, &fdset);
     FD_SET(conn, &fdset);
 
     struct timeval timeout;
@@ -89,6 +88,7 @@ static int _rmc_check_recv(int conn)
     timeout.tv_usec = 0;
 
     int ret = select(conn+1, &fdset, NULL, NULL, &timeout);
+
     return (ret);
 }
 
@@ -108,6 +108,7 @@ static int _rmc_check_send(int conn)
     timeout.tv_usec = 0;
 
     int ret = select(conn+1, NULL, &fdset, NULL, &timeout);
+    //int ret = select(1, NULL, &fdset, NULL, &timeout);
     return (ret);
 }
 
@@ -128,7 +129,7 @@ static char *_rmc_send_command(
     if (_rmc_check_send(connection) != 1)
     {
         fprintf(stderr, "Error in rmc_check_send() %d - %s\n", connection, strerror(connection));
-        buf = RMC_SEND_ERROR;
+	strcpy(buf, RMC_SEND_ERROR);
         return (buf);
     }
     send(connection, command, length, 0);
@@ -137,7 +138,7 @@ static char *_rmc_send_command(
     if (_rmc_check_recv(connection) != 1)
     {
         fprintf(stderr, "Error in rmc_check_recv() %d - %s\n", connection, strerror(connection));
-        buf = RMC_RECV_ERROR;
+	strcpy(buf, RMC_RECV_ERROR);
         return (buf);
     }
 
@@ -154,7 +155,8 @@ static char *_rmc_send_command(
         if (bufsize <= DEF_BUFSIZE_4K) break;
         if (bufsize <= recvbytes) break;
     }
-    //printf("_rmc_send_command-result:[%s]\n",buf);
+    buf[recvbytes] = '\0';
+    //printf("_rmc_send_command-result:[%s] len = %d,recvbytes = %d\n",buf,strlen(buf),recvbytes);
     return (buf);
 }
 
@@ -286,8 +288,7 @@ static rmc_value_info _rmc_get_command(
 
     // check receive.
     int ret_recv, recvbytes = 0, cnt = 0;
-    char *buf = (char *)calloc(DEF_BUFSIZE_1K, sizeof(char));
-    
+    char buf[DEF_BUFSIZE_1K];
     // check receive#1 for header.
     if (_rmc_check_recv(connection) != 1)
     {
@@ -303,6 +304,7 @@ static rmc_value_info _rmc_get_command(
         ret_recv = recv(connection, buf + recvbytes, 1, 0);
         if (ret_recv < 1)
             break;
+	*(buf + recvbytes + 1) = '\0'; // because rmc_index_of_string() use the strstr()
 
         if (rmc_index_of_string(buf, RMC_STATUS_SERVER_ERROR     ) > -1 ||
             rmc_index_of_string(buf, RMC_STATUS_NOT_STORED_CRLF  ) > -1 ||
@@ -339,7 +341,6 @@ static rmc_value_info _rmc_get_command(
         char *str_line = rmc_strpbrk(rmc_strpbrk(buf, RMC_CRLF, 2), RMC_CRLF, 2);
         bufsize = _rmc_get_body_length(str_line);
     }
-    free(buf);
 
     // check receive#2 for body.
     if (_rmc_check_recv(connection) != 1)
@@ -455,7 +456,7 @@ static int _rmc_post_command(const int connection, const char *base_command, con
     char *command = _merge_chars_with_byte_array(base_command, valinfo);
     int command_bytes = strlen(base_command) + valinfo.length + RMC_CRLF_SIZE;
 
-    char *result = _rmc_send_command(connection, command, command_bytes, DEF_BUFSIZE_S);
+    char *result = _rmc_send_command(connection, command, command_bytes, DEF_BUFSIZE_1K);
     free(command);
 
     int ret_value = _get_status_code(result);
@@ -746,11 +747,11 @@ rmc_routing_data rmc_send_routedump_as_yaml(const int connection, const int node
     int bytes = _rmc_send_routedump_as_yamlbytes(connection);
 
     // get yaml => make routing data.
-    rmc_routing_data rd;
-    char *buf = (char *)malloc(bytes+1);
+    char *buf = (char *)calloc(bytes+1, sizeof(char));    
     int ret_bytes = _rmc_recv_yaml(connection, buf, bytes);
     if (ret_bytes != bytes)
     {
+        rmc_routing_data rd;
         rd.dgst_bits = 0;
         rd.div_bits = 0;
         rd.hbits = 0;
@@ -777,11 +778,10 @@ rmc_routing_data rmc_send_routedump_as_yaml(const int connection, const int node
     memcpy(result, &buf[startp], bodylen);
     result[bodylen] = '\0';
 
-    //rmc_routing_data rd = rmc_generate_routing_data(result, nodes);
-    rd = rmc_generate_routing_data(result, nodes);
+    rmc_routing_data rd2 = rmc_generate_routing_data(result, nodes);
     free(buf);
     free(result);
-    return (rd);
+    return (rd2);
 }
 
 /**
@@ -822,7 +822,7 @@ static int _rmc_alist_operate(
     char *ret_command = _merge_chars_with_byte_array(base_command, valinfo);
     int command_bytes = strlen(base_command) + valinfo.length + RMC_CRLF_SIZE;
 
-    char *result = _rmc_send_command(connection, ret_command, command_bytes, DEF_BUFSIZE_S);
+    char *result = _rmc_send_command(connection, ret_command, command_bytes, DEF_BUFSIZE_1K);
     free(ret_command);
 
     int ret_value = _get_status_code(result);
@@ -954,17 +954,15 @@ int rmc_send_alist_index(const int connection, const char *key, const rmc_value_
     char *command = _merge_chars_with_byte_array(base_command, valinfo);
     int command_bytes = strlen(base_command) + valinfo.length + RMC_CRLF_SIZE;
 
-    char *result = _rmc_send_command(connection, command, command_bytes, DEF_BUFSIZE_S);
+    char *result = _rmc_send_command(connection, command, command_bytes, DEF_BUFSIZE_1K);
     free(command);
 
     int ret = _get_status_code(result);
     if (ret == 0)
     {
         int length = strlen(result)-2;
-        char ret_value[length+1];
-        strncpy(ret_value, result, length);
-        ret_value[length] = '\0';
-        ret = atoi(ret_value);
+	result[length] = '\0';
+	ret = atoi(result);
     }
     free(result);
     return (ret);
@@ -1064,13 +1062,13 @@ int rmc_send_alist_length(const int connection, const char *key)
     sprintf(command, RMC_CMD_ALIST_LENGTH, key);
 
     char *result =
-        _rmc_send_command(connection, command, strlen(command), DEF_BUFSIZE_S);
+        _rmc_send_command(connection, command, strlen(command), DEF_BUFSIZE_1K);
 
     int ret = _get_status_code(result);
     if (ret == 0)
     {
         int length = strlen(result)-2;
-        char ret_value[length];
+        char ret_value[length + 1];
         strncpy(ret_value, result, length);
         ret_value[length] = '\0';
         ret = atoi(ret_value);
