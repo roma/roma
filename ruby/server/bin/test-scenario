@@ -8,13 +8,5 @@ $LOAD_PATH.unshift("#{base_path}/commons/lib")
 client_base_path = Pathname(__FILE__).dirname.parent.parent.parent.parent.expand_path
 $LOAD_PATH.unshift("#{client_base_path}/roma-ruby-client/lib")
 
-require 'roma/tools/multi_commander'
-
-if ARGV.length < 2
-  STDERR.puts "usage:#{File.basename($0)} addr_port command args..."
-  exit
-end
-
-w = Roma::MultiCommander.new(ARGV[0])
-STDOUT.puts w.send_cmd_all(ARGV[1..-1].join(' '))
+require 'roma/tools/test-scenario'
 
