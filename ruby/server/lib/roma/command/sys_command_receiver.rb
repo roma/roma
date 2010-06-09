@@ -434,6 +434,28 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_accepted_connection_expire_time <sec>
+      # set to expired time(sec) for accepted connections
+      def ev_set_accepted_connection_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        res = broadcast_cmd("rset_accepted_connection_expire_time #{s[1]}\r\n")
+        Event::Handler::connection_expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_accepted_connection_expire_time <sec>
+      def ev_rset_accepted_connection_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Event::Handler::connection_expire_time = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
       private 
 
       def dcnice(p)
