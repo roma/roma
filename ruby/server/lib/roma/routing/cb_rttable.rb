@@ -40,9 +40,7 @@ module Roma
       
       def set_version(nid,ver)
         @version_of_nodes[nid] = ver
-        if @min_version == nil || @min_version > ver
-          @min_version = ver
-        end
+        @min_version = find_min_version
       end
 
       def find_min_version
