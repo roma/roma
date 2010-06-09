@@ -405,6 +405,10 @@ module Roma
     def receive_routing_dump(nid, cmd)
       con = Messaging::ConPool.instance.get_connection(nid)
       con.write(cmd)
+      unless select [con], nil, nil, 1
+        con.close
+        return nil
+      end
       len = con.gets
       if len.to_i <= 0
         con.close
