@@ -58,7 +58,7 @@ module Roma
         @nodelist_inf = {}
         @errors = {}
         @subject_prefix = @conf['mail']['subject_prefix']
-        @mailer = Mailer.new @conf['mail']['from'], @conf['mail']['to'], @conf['mail']['mailder']
+        @mailer = Mailer.new @conf['mail']['from'], @conf['mail']['to'], @conf['mail']['mailer']
       end
 
       def watch

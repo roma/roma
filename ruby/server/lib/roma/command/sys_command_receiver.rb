@@ -301,9 +301,53 @@ module Roma
 
       def ev_forcedly_start(s)
         @log.info("ROMA forcedly start.")
-        Command::Receiver::mk_evlist
+        AsyncProcess::queue.clear
         @rttable.enabled_failover = true
+        Command::Receiver::mk_evlist
+        $roma.startup = false
         send_data("STARTED\r\n")
+      end
+
+      # switch_failover <on|off>
+      def ev_switch_failover(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        res = broadcast_cmd("rswitch_failover #{s[1]}\r\n")
+        if s[1] == 'on'
+          Messaging::ConPool.instance.close_all
+          Event::EMConPool::instance.close_all
+          @rttable.enabled_failover = true
+          @log.info("failover enabled")
+          res[@stats.ap_str] = "ENABLED"
+        elsif s[1] == 'off'
+          @rttable.enabled_failover = false
+          @log.info("failover disabled")
+          res[@stats.ap_str] = "DISABLED"
+        else
+          res[@stats.ap_str] = "NOTSWITCHED"
+        end
+        send_data("#{res}\r\n")
+      end
+
+      # rswitch_failover <on|off>
+      def ev_rswitch_failover(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1] == 'on'
+          Messaging::ConPool.instance.close_all
+          Event::EMConPool::instance.close_all
+          @rttable.enabled_failover = true
+          @log.info("failover enabled")
+          return send_data("ENABLED\r\n")
+        elsif s[1] == 'off'
+          @rttable.enabled_failover = false
+          @log.info("failover disabled")
+          return send_data("DISABLED\r\n")
+        else
+          send_data("NOTSWITCHED\r\n")
+        end
       end
 
       def ev_set_continuous_limit(s)
@@ -330,6 +374,86 @@ module Roma
         else
           send_data("NOT_STORED\r\n")
         end
+      end
+
+      # set_connection_pool_maxlength <length>
+      # set to max length of the connection pool
+      def ev_set_connection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_connection_pool_maxlength #{s[1]}\r\n")
+        Messaging::ConPool.instance.maxlength = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_maxlength <length>
+      def ev_rset_connection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        Messaging::ConPool.instance.maxlength = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_connection_pool_maxlength <length>
+      # set to max length of the connection pool
+      def ev_set_emconnection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_emconnection_pool_maxlength #{s[1]}\r\n")
+        Event::EMConPool.instance.maxlength = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_maxlength <length>
+      def ev_rset_emconnection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        Event::EMConPool.instance.maxlength = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_accepted_connection_expire_time <sec>
+      # set to expired time(sec) for accepted connections
+      def ev_set_accepted_connection_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        res = broadcast_cmd("rset_accepted_connection_expire_time #{s[1]}\r\n")
+        Event::Handler::connection_expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_accepted_connection_expire_time <sec>
+      def ev_rset_accepted_connection_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Event::Handler::connection_expire_time = s[1].to_i
+        send_data("STORED\r\n")
       end
 
       private 

@@ -107,8 +107,8 @@ int connect_roma_server(const int hosts, const char **str_romahosts)
 {
     if (hosts == 0) return (EXIT_FAILURE);
 
+    disconnect_roma_server();
     rmc_number_of_hosts = hosts;
-    if(rmc_romahosts) free(rmc_romahosts);
     rmc_romahosts = (rmc_host_info *)calloc(hosts, sizeof(rmc_host_info));
 
     int i, errors = 0;
