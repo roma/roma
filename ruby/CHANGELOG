@@ -1,3 +1,13 @@
+*0.8.3 (Jun 11 2010)*
+
+* added a new command for change to max length of a connection pool [junji torii] 1fbbe29
+* added a switch_failover command [junji torii] 6489383
+* added a configuration of connection management items [junji torii] 1f3fbd7
+* added a feature of expired connection [junji torii] b99e2e7
+* added a new option to the romad for unit-test, that command protection disable while starting [junji torii] e2a6af4
+* refactor:support for a REJECT message [junji torii] 7478e86
+* bugfix:cas command result was corrected in forward process [junji torii] c84e00d
+* add mail subject prefix feature [byplayer] afcaf48
 * add mailer path option to roma watch configuration file . [byplayer] ee997e1
 * add the program for watching a ROMA [Muga Nishizawa] ee916a8
 * bugfix:after the first node dose join, lost vnodes cannot be detected. [junji torii] 2a5b3b2
