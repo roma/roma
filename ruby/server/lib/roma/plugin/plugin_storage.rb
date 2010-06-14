@@ -270,6 +270,76 @@ module Roma
       def ev_decr(s); incr_decr(:decr,s); end
       def ev_fdecr(s); fincr_fdecr(:decr,s); end
 
+      # set_expt <key> <expt>
+      def ev_set_expt(s)
+        key,hname = s[1].split("\e")
+        hname ||= @defhash
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+        vn = @rttable.get_vnode_id(d)
+        nodes = @rttable.search_nodes_for_write(vn)
+        if nodes[0] != @nid
+          @log.warn("forward set_expt key=#{key} vn=#{vn} to #{nodes[0]}")
+          res = send_cmd(nodes[0],"fset_expt #{s[1]} #{s[2]}\r\n")
+          if res
+            return send_data("#{res}\r\n")
+          end
+          return send_data("SERVER_ERROR Message forward failed.\r\n")
+        end
+        
+        unless @storages.key?(hname)
+          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          return
+        end
+
+        expt = s[2].to_i
+        if expt == 0
+          expt = 0x7fffffff
+        elsif expt < 2592000
+          expt += Time.now.to_i
+        end
+        
+        ret = @storages[hname].set_expt(vn, key, d, expt)
+        if ret
+          redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
+          send_data("STORED\r\n")
+        else
+          return send_data("NOT_STORED\r\n")
+        end
+      end
+
+      # fset_expt <key> <expt>
+      def ev_fset_expt(s)
+        key,hname = s[1].split("\e")
+        hname ||= @defhash
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+        vn = @rttable.get_vnode_id(d)
+        nodes = @rttable.search_nodes_for_write(vn)
+        if nodes.include?(@nid) == false
+          @log.error("fset_expt failed key = #{s[1]} vn = #{vn}")
+          return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
+        end
+        
+        unless @storages.key?(hname)
+          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          return
+        end
+
+        expt = s[2].to_i
+        if expt == 0
+          expt = 0x7fffffff
+        elsif expt < 2592000
+          expt += Time.now.to_i
+        end
+
+        ret = @storages[hname].set_expt(vn, key, d, expt)
+        if ret
+          redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
+          send_data("STORED\r\n")
+        else
+          return send_data("NOT_STORED\r\n")
+        end
+      end
+
       # set_size_of_zredundant <n>
       def ev_set_size_of_zredundant(s)
         if s.length != 2 || s[1].to_i == 0

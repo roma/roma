@@ -331,6 +331,19 @@ module Roma
         nil
       end
 
+      # set expire time
+      def set_expt(vn, k, d, expt)
+        buf = @hdb[@hdiv[vn]].get(k)
+        if buf
+          vn, t, clk, expt2, v = unpack_data(buf)
+          return nil if Time.now.to_i > expt2
+          clk = (clk + 1) & 0xffffffff
+          ret = [vn, Time.now.to_i, clk, expt, v]
+          return ret if @hdb[@hdiv[vn]].put(k, pack_data(*ret))
+        end
+        nil
+      end
+
       def true_length
         res = 0
         @hdb.each{ |hdb| res += hdb.rnum }
