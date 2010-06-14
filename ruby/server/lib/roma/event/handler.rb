@@ -4,6 +4,7 @@
 require 'eventmachine'
 require 'roma/event/con_pool'
 require 'roma/logging/rlogger'
+require 'roma/stats'
 require 'socket'
 
 module Roma
@@ -102,6 +103,13 @@ module Roma
         @fiber.resume
         EventMachine::stop_event_loop if @stop_event_loop
         @@connections.delete(self)
+        if @enter_time
+          # hilatency check
+          ps = Time.now - @enter_time
+          if ps > @stats.hilatency_warn_time
+            @log.warn("#{@lastcmd} has incompleted, passage of #{ps} seconds")
+          end
+        end
         @log.info("Disconnected from #{@addr[1]}:#{@addr[0]}")
       rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
@@ -134,8 +142,11 @@ module Roma
       end
 
       def dispatcher
+        @stats = Roma::Stats.instance
         while(@connected) do
+          @enter_time = nil
           next unless s=gets
+          @enter_time = Time.now
           s=s.chomp.split(/ /)
           if s[0] && @@ev_list.key?(s[0].downcase)
             send(@@ev_list[s[0].downcase],s)
@@ -150,6 +161,12 @@ module Roma
             @log.warn("command error:#{s}")
             send_data("ERROR\r\n")
             close_connection_after_writing
+          end
+
+          # hilatency check
+          ps = Time.now - @enter_time
+          if ps > @stats.hilatency_warn_time
+            @log.warn("hilatency occurred in #{@lastcmd} put in a #{ps} seconds")
           end
 
           d = EM.connection_count - @@ccl_start

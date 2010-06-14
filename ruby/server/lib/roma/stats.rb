@@ -44,6 +44,8 @@ module Roma
     attr_accessor :out_message_count
     attr_accessor :redundant_count
 
+    attr_accessor :hilatency_warn_time
+
     def initialize
       @config_path = nil
       @run_acquire_vnodes = false
@@ -62,6 +64,7 @@ module Roma
       @out_message_count = 0
       @redundant_count = 0
       @size_of_zredundant = 0
+      @hilatency_warn_time = 5
     end
 
     def ap_str
@@ -91,6 +94,7 @@ module Roma
       ret['stats.out_count'] = @out_count
       ret['stats.out_message_count'] = @out_message_count
       ret['stats.redundant_count'] = @redundant_count
+      ret['stats.hilatency_warn_time'] = @hilatency_warn_time
       ret
     end
 

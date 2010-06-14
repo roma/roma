@@ -456,6 +456,34 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_hilatency_warn_time <sec>
+      # set to threshold of warn message into a log when hilatency occured in a command.
+      def ev_set_hilatency_warn_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_f <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+
+        res = broadcast_cmd("rset_hilatency_warn_time #{s[1]}\r\n")
+        @stats.hilatency_warn_time = s[1].to_f
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_hilatency_warn_time <sec>
+      def ev_rset_hilatency_warn_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_f <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        @stats.hilatency_warn_time = s[1].to_f
+        send_data("STORED\r\n")
+      end
+
       private 
 
       def dcnice(p)
