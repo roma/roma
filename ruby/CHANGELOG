@@ -1,3 +1,7 @@
+*0.8.4 (Jun 17 2010)*
+
+* refactor: supported epoll [junji torii] 5c777f1
+
 *0.8.3 (Jun 11 2010)*
 
 * added a new command for change to max length of a connection pool [junji torii] 1fbbe29
