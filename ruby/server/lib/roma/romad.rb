@@ -53,6 +53,10 @@ module Roma
       start_wb_process
       timer
 
+      EM.epoll
+      if Config.const_defined?(:CONNECTION_DESCRIPTOR_TABLE_SIZE)
+        EM.set_descriptor_table_size(Config::CONNECTION_DESCRIPTOR_TABLE_SIZE)
+      end
       @eventloop = true
       while(@eventloop)
         @eventloop = false

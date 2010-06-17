@@ -26,6 +26,7 @@ module Roma
     RTTABLE_PATH = '.'
 
     # connection setting
+    CONNECTION_DESCRIPTOR_TABLE_SIZE = 4096
     # like a MaxStartups spec in the sshd_config
     # 'start:rate:full'
     CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
@@ -83,6 +84,7 @@ module Roma
       ret['config.PLUGIN_FILES'] = PLUGIN_FILES.inspect
       ret['config.WRITEBEHIND_PATH'] = File.expand_path(WRITEBEHIND_PATH)
       ret['config.WRITEBEHIND_SHIFT_SIZE'] = WRITEBEHIND_SHIFT_SIZE
+      ret['config.CONNECTION_DESCRIPTOR_TABLE_SIZE'] = CONNECTION_DESCRIPTOR_TABLE_SIZE
       ret
     end
 
