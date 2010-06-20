@@ -87,9 +87,10 @@ module Roma
                   elsif k.last_access < Time.now - Event::Handler::connection_expire_time
                     k.close_connection
                     if k.addr
-                      @log.info("connection expired from #{k.addr[1]}:#{k.addr[0]} lastcmd = #{k.lastcmd}")
+                      @log.info("connection expired from #{k.addr[1]}:#{k.addr[0]},lastcmd = #{k.lastcmd}")
                     else
                       @log.info("connection expired in irregular connection")
+                      dellist << k
                     end
                   end
                 }
@@ -111,7 +112,7 @@ module Roma
           end
         rescue Exception => e
           @log.error("#{e}\n#{$@}")
-          @log.error("restart an evantmachine")
+          @log.error("restart an eventmachine")
           retry
         end
       end
