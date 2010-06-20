@@ -231,9 +231,10 @@ module Roma
 
       def conn_get_stat
         ret = {}
+        ret["connection.count"] = EM.connection_count
         ret["connection.continuous_limit"] = Handler.get_ccl
         ret["connection.accepted_connection_expire_time"] = Handler.connection_expire_time
-        ret["connection.accepted_count"] = EM.connection_count
+        ret["connection.handler_instance_count"] = Handler.connections.length
         ret["connection.pool_maxlength"] = Messaging::ConPool.instance.maxlength
         ret["connection.pool_expire_time"] = Messaging::ConPool.instance.expire_time
         ret["connection.EMpool_maxlength"] = Event::EMConPool::instance.maxlength
