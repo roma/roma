@@ -53,28 +53,44 @@ module Roma
       start_wb_process
       timer
 
-      EM.epoll
-      if Config.const_defined?(:CONNECTION_DESCRIPTOR_TABLE_SIZE)
-        EM.set_descriptor_table_size(Config::CONNECTION_DESCRIPTOR_TABLE_SIZE)
+      # select a kind of system call
+      if Config.const_defined?(:CONNECTION_USE_EPOLL) && Config::CONNECTION_USE_EPOLL
+        @log.info("use an epoll")
+        EM.epoll
+        if Config.const_defined?(:CONNECTION_DESCRIPTOR_TABLE_SIZE)
+          EM.set_descriptor_table_size(Config::CONNECTION_DESCRIPTOR_TABLE_SIZE)
+        end
+      else
+        @log.info("use a select")
       end
+
       @eventloop = true
       while(@eventloop)
         @eventloop = false
         begin
+          # initialize an instance of connections as restarting of an evantmachine
+          Event::Handler::connections.each_key{|k| k.close_connection }
+          Event::Handler::connections.clear
+
           EventMachine::run do
             EventMachine.start_server('0.0.0.0', @stats.port, 
                                       Roma::Command::Receiver,
                                       @storages, @rttable)
+            # a management of connections lives
             EventMachine::add_periodic_timer( 10 ) {
               if Event::Handler::connection_expire_time > 0
                 org = Event::Handler::connections.length
                 dellist = []
                 Event::Handler::connections.each{|k,v|
-                  if k.connected == false
+                  if k.connected == false || k.last_access == nil
                     dellist << k
                   elsif k.last_access < Time.now - Event::Handler::connection_expire_time
                     k.close_connection
-                    @log.info("connection expired from #{k.addr[1]}:#{k.addr[0]} lastcmd = #{k.lastcmd}")
+                    if k.addr
+                      @log.info("connection expired from #{k.addr[1]}:#{k.addr[0]} lastcmd = #{k.lastcmd}")
+                    else
+                      @log.info("connection expired in irregular connection")
+                    end
                   end
                 }
                 dellist.each{|k| 
@@ -83,6 +99,7 @@ module Roma
                 }
               end
             }
+
             @log.info("Now accepting connections on address #{@stats.address}, port #{@stats.port}")
           end
         rescue Interrupt => e
@@ -94,6 +111,7 @@ module Roma
           end
         rescue Exception => e
           @log.error("#{e}\n#{$@}")
+          @log.error("restart an evantmachine")
           retry
         end
       end
