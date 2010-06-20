@@ -26,7 +26,12 @@ module Roma
     RTTABLE_PATH = '.'
 
     # connection setting
+
+    # to use a system call of epoll, CONNECTION_USE_EPOLL is to set true
+    CONNECTION_USE_EPOLL = true
+    # to use a system call of epoll, CONNECTION_DESCRIPTOR_TABLE_SIZE can be setting
     CONNECTION_DESCRIPTOR_TABLE_SIZE = 4096
+
     # like a MaxStartups spec in the sshd_config
     # 'start:rate:full'
     CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
