@@ -88,6 +88,8 @@ module Roma
         @connected = true
         @last_access = Time.now
         @fiber = Fiber.new { dispatcher }
+      rescue Exception =>e
+        @log.error("#{__FILE__}:#{__LINE__}:#{e.inspect} #{$@}")
       end
 
       def receive_data(data)
