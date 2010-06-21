@@ -1,5 +1,9 @@
-*0.8.4 (Jun 17 2010)*
+*0.8.4 (Jun 21 2010)*
 
+* refactor: modified a result of a stats command [junji torii] 9e966ed
+* bugfix: connection leak was corrected when a connection expired in irregular connection [junji torii] d23bde9
+* bugfix: access to a nil object in a logging was corrected [junji torii] dae2ed8
+* added a selection of a system call configuration, which of an epoll or select [junji torii] 24c41e2
 * refactor: supported epoll [junji torii] 5c777f1
 
 *0.8.3 (Jun 11 2010)*
