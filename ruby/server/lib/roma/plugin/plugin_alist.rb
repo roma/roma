@@ -831,7 +831,6 @@ module Roma
         data = read_bytes(s[2].to_i)
         read_bytes(2)
         if nodes[0] != @nid
-          @log.debug("forward to #{nodes[0]}");
           return forward2(nodes[0], s, data)
         end
 
@@ -1298,6 +1297,8 @@ module Roma
           return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
         
+        @log.warn("forward #{rs} to #{nid}");
+
         buf = ''
         rs.each{|ss| buf << "#{ss} " }
         buf << "forward\r\n"
@@ -1354,6 +1355,8 @@ module Roma
         if rs.last == "forward"
           return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
+
+        @log.warn("forward #{rs} to #{nid}");
 
         buf = ''
         rs.each{|ss| buf << "#{ss} " }
