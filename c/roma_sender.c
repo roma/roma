@@ -399,8 +399,8 @@ static char *_merge_chars_with_byte_array(const char *base_command, rmc_value_in
     {
         command[p++] = valinfo.value[i];
     }
-    command[p+1] = RMC_CHR_CODE_CR;
-    command[p+2] = RMC_CHR_CODE_LF;
+    command[p++] = RMC_CHR_CODE_CR;
+    command[p] = RMC_CHR_CODE_LF;
 
     char *result = (char *)malloc(base_bytes + value_bytes + RMC_CRLF_SIZE);
     memcpy(result, &command[0], total_len);
