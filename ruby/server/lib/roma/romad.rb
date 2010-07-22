@@ -69,7 +69,13 @@ module Roma
         @eventloop = false
         begin
           # initialize an instance of connections as restarting of an evantmachine
-          Event::Handler::connections.each_key{|k| k.close_connection }
+          Event::Handler::connections.each_key{|k|
+            begin
+              k.close_connection
+            rescue Exception => e
+              @log.error("#{e}\n#{$@}")
+            end
+          }
           Event::Handler::connections.clear
 
           EventMachine::run do
@@ -79,17 +85,21 @@ module Roma
             # a management of connections lives
             EventMachine::add_periodic_timer( 10 ) {
               if Event::Handler::connection_expire_time > 0
-                org = Event::Handler::connections.length
                 dellist = []
                 Event::Handler::connections.each{|k,v|
                   if k.connected == false || k.last_access == nil
                     dellist << k
                   elsif k.last_access < Time.now - Event::Handler::connection_expire_time
-                    k.close_connection
-                    if k.addr
-                      @log.info("connection expired from #{k.addr[1]}:#{k.addr[0]},lastcmd = #{k.lastcmd}")
-                    else
-                      @log.info("connection expired in irregular connection")
+                    begin
+                      k.close_connection
+                      if k.addr
+                        @log.info("connection expired from #{k.addr[1]}:#{k.addr[0]},lastcmd = #{k.lastcmd}")
+                      else
+                        @log.info("connection expired in irregular connection")
+                        dellist << k
+                      end
+                    rescue Exception => e
+                      @log.error("#{e}\n#{$@}")
                       dellist << k
                     end
                   end
