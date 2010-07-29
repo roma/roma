@@ -185,6 +185,7 @@ module Roma
       end
 
       def pop(size)
+        return '' if size == 0
         if @rbuf.size >= size
           r = @rbuf[0..size-1]
           @rbuf = @rbuf[size..-1]
