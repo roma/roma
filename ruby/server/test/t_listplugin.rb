@@ -175,6 +175,16 @@ class ListPluginTest < Test::Unit::TestCase
     assert_equal(["55","66","55","44","33"], @rc.alist_to_s("aa")[1])
     assert_equal('STORED', @rc.alist_sized_insert("aa",3,"22"))
     assert_equal(["22","55","66"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"77"))
+    assert_equal(["77","22","55","66"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"88"))
+    assert_equal(["88","77","22","55","66"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"99"))
+    assert_equal(["99","88","77","22","55","66"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"00"))
+    assert_equal(["00","99","88","77","22","55"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"00"))
+    assert_equal(["00","00","99","88","77","22"], @rc.alist_to_s("aa")[1] )
   end
 
   def test_sized_insert2
