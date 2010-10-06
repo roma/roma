@@ -1,3 +1,11 @@
+
+* bugfix: restart eventmachine by unbind event [junji torii] c457a70
+
+*0.8.5 (Aug 16 2010)*
+
+* bugfix: for zero byte read [junji torii] ef2dada
+* bugfix: for connection expire logic [junji torii] 0d883f6
+
 *0.8.4 (Jun 21 2010)*
 
 * refactor: modified a result of a stats command [junji torii] 9e966ed
