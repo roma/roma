@@ -93,7 +93,7 @@ module Roma
                     begin
                       k.close_connection
                       if k.addr
-                        @log.info("connection expired from #{k.addr[1]}:#{k.addr[0]},lastcmd = #{k.lastcmd}")
+                        @log.info("connection expired from #{k.addr}:#{k.port},lastcmd = #{k.lastcmd}")
                       else
                         @log.info("connection expired in irregular connection")
                         dellist << k

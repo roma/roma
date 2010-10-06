@@ -49,17 +49,11 @@ module Roma
         @@connection_expire_time
       end
 
-      attr :stop_event_loop
-      attr_reader :connected
-      attr :fiber
-      attr :rbuf
-
-      attr :storages
-      attr :rttable
       attr_accessor :timeout
+      attr_reader :connected
       attr_reader :lastcmd
       attr_reader :last_access
-      attr_reader :addr
+      attr_reader :addr, :port
 
       def initialize(storages, rttable)
         @rbuf=''
@@ -79,14 +73,14 @@ module Roma
         @timeout = 10
         @log = Roma::Logging::RLogger.instance
         @last_access = Time.now
-        @@connections[self] = @last_access
       end
 
       def post_init
-        @addr = Socket.unpack_sockaddr_in(get_peername)
-        @log.info("Connected from #{@addr[1]}:#{@addr[0]}. I have #{EM.connection_count} connections.")
+        @port, @addr = Socket.unpack_sockaddr_in(get_peername)
+        @log.info("Connected from #{@addr}:#{@port}. I have #{EM.connection_count} connections.")
         @connected = true
         @last_access = Time.now
+        @@connections[self] = @last_access
         @fiber = Fiber.new { dispatcher }
       rescue Exception =>e
         @log.error("#{__FILE__}:#{__LINE__}:#{e.inspect} #{$@}")
@@ -97,7 +91,7 @@ module Roma
         @last_access = Time.now
         @fiber.resume
       rescue Exception =>e
-        @log.error("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
+        @log.error("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e.inspect} #{$@}")
       end
 
       def unbind
@@ -112,9 +106,9 @@ module Roma
             @log.warn("#{@lastcmd} has incompleted, passage of #{ps} seconds")
           end
         end
-        @log.info("Disconnected from #{@addr[1]}:#{@addr[0]}")
+        @log.info("Disconnected from #{@addr}:#{@port}")
       rescue Exception =>e
-        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
+        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e.inspect} #{$@}")
       end
 
       protected
@@ -180,7 +174,7 @@ module Roma
           end
         end
       rescue Exception =>e
-        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e} #{$@}")
+        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e} #{$@}")
         close_connection
       end
 
@@ -205,7 +199,7 @@ module Roma
             remain = size - @rbuf.size
             Fiber.yield(remain)
             if Time.now.to_i - t > @timeout * mult
-              @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} read_bytes time out");
+              @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} read_bytes time out");
               close_connection
               return nil
             end
