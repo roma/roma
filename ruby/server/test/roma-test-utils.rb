@@ -1,5 +1,4 @@
 require 'shell'
-
 require 'pathname'
 require 'fileutils'
 require 'rbconfig'
@@ -51,11 +50,16 @@ module RomaTestUtils
               "-d","3",
               "--enabled_repeathost")
     sleep 0.1
+    do_command_romad conf
+    sleep 0.8
+  end
+
+  def do_command_romad conf
+    sh = Shell.new
     sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose",
               "--disabled_cmd_protect","--config","#{server_test_dir}/#{conf}")
     sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose",
               "--disabled_cmd_protect","--config","#{server_test_dir}/#{conf}")
-    sleep 0.8
   end
 
   def stop_roma

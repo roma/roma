@@ -1,6 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
-
 require 'roma/client/rclient'
 require 'roma/messaging/con_pool'
 require 'roma/config'
@@ -35,6 +33,10 @@ class MHashTest < Test::Unit::TestCase
     ret = con.gets
     assert_equal("{\"localhost_11212\"=>\"CREATED\", \"localhost_11211\"=>\"CREATED\"}", ret.chomp )
 
+    # file check
+    assert(File.directory? './localhost_11211/test')
+    assert(File.directory? './localhost_11212/test')
+
     con.write("hashlist\r\n")
     ret = con.gets
     assert_equal("roma test", ret.chomp )
@@ -49,83 +51,36 @@ class MHashTest < Test::Unit::TestCase
     assert_equal("hname=roma", @rc.get("roma"))
     assert_equal("DELETED", @rc.delete("roma"))
 
-    @rc.default_hash_name='not_exist_hash' # 存在しないハッシュへのアクセス
-    begin
-      @rc.get("roma")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.',e.message)
+    @rc.default_hash_name='not_exist_hash'
+    [:get, :delete, :incr, :decr].each do |m|
+      assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash dose not exists.') do
+        @rc.send m, "key"
+      end
     end
 
-    begin
-      @rc.set("roma","hname=roma")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.',e.message)
+    [:set, :add, :replace, :append, :prepend].each do |m|
+      assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash dose not exists.') do
+        @rc.send m, "key","value"
+      end
     end
 
-    begin
-      @rc.delete("roma")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.',e.message)
-    end
-
-    begin
-      @rc.add("add","value add")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.',e.message)
-    end
-
-    begin
-      @rc.replace("replace","value replace")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.',e.message)
-    end
-
-    begin
-      @rc.append("append","append")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.', e.message)
-    end
-
-    begin
-      @rc.prepend("prepend","prepend")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.',e.message)
-    end
-
-    begin
-      @rc.incr("incr")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.',e.message)
-    end
-
-    begin
-      @rc.decr("decr")
-      assert(false)
-    rescue =>e
-      assert_equal('SERVER_ERROR not_exist_hash dose not exists.',e.message)
-    end
-
+    # delete hash
     con.write("deletehash test\r\n")
     ret = con.gets
     assert_equal( "{\"localhost_11212\"=>\"DELETED\", \"localhost_11211\"=>\"DELETED\"}", ret.chomp  )
 
     con.close
+
+    # file check
+    assert( File.directory?('./localhost_11211/test') == false)
+    assert( File.directory?('./localhost_11212/test') == false)
   end
 
   def test_createhash2
-    #
     # for file storage
-    #
-    return if Roma::Config::STORAGE_CLASS.to_s != "Roma::Storage::TCStorage"
-    # test ハッシュを追加し終了する
+    assert_equal(Roma::Storage::TCStorage, Roma::Config::STORAGE_CLASS)
+
+    # add 'test' hash
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
     con.write("hashlist\r\n")
     ret = con.gets
@@ -140,20 +95,15 @@ class MHashTest < Test::Unit::TestCase
     @rc.default_hash_name='test'
     assert_equal("STORED", @rc.set("roma","hname=test"))
     assert_equal("hname=test", @rc.get("roma"))
-    con.write("balse\r\n")
-    con.gets
-    con.write "yes\r\n"
-    ret = con.gets
-    con.close
 
-    # 再起動
-    sh = Shell.new
+    # stop roam
+    stop_roma
+
+    # restart roma
     sleep 0.5
-    sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose",
-              "--disabled_cmd_protect","--config","#{server_test_dir}/config4mhash.rb")
-    sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose",
-              "--disabled_cmd_protect","--config","#{server_test_dir}/config4mhash.rb")
+    do_command_romad 'config4mhash.rb'
     sleep 0.8
+
     Roma::Messaging::ConPool.instance.close_all
     Roma::Client::ConPool.instance.close_all
 
@@ -164,24 +114,80 @@ class MHashTest < Test::Unit::TestCase
     con.write("hashlist\r\n")
     ret = con.gets
 
-    # 停止前のデータが残っていることを確認
     assert_equal("hname=test", @rc.get("roma"))
   end
   
   def test_createhash3
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
 
-    # 存在しないハッシュを削除
+    # delete hash to a nothing hash
     con.write("deletehash test\r\n")
     ret = con.gets
     assert_equal("{\"localhost_11212\"=>\"SERVER_ERROR test dose not exists.\", \"localhost_11211\"=>\"SERVER_ERROR test dose not exists.\"}", ret.chomp )
     
-    # デフォルトハッシュを削除
+    # delete hash to default
     con.write("deletehash roma\r\n")
     ret = con.gets
     assert_equal("{\"localhost_11212\"=>\"SERVER_ERROR default hash can't unmount.\", \"localhost_11211\"=>\"SERVER_ERROR default hash can't unmount.\"}", ret.chomp )
   end
 
+  def test_defhash
+    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    con.write("defhash\r\n")
+    ret = con.gets.chomp
+    assert_equal("{\"localhost_11212\"=>\"roma\", \"localhost_11211\"=>\"roma\"}", ret) 
+    
+    con.write("rdefhash not_exist_hash\r\n")
+    ret = con.gets.chomp
+    assert_equal("CLIENT_ERROR not_exist_hash dose not find.", ret)
+
+    con.write("createhash test\r\n")
+    con.gets
+
+    con.write("rdefhash test\r\n")
+    ret = con.gets.chomp
+    assert_equal("STORED", ret)
+  end
+
+  def test_mounthash
+    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+
+    # file check
+    assert( File.directory?('./localhost_11211/test') == false)
+    assert( File.directory?('./localhost_11212/test') == false)
+
+    # umount
+    con.write("umounthash test\r\n")
+    ret = con.gets.chomp
+    assert_equal("SERVER_ERROR test dose not find.", ret)
+
+    # add 'test' hash
+    con.write("createhash test\r\n")
+    ret = con.gets.chomp
+    assert_equal("{\"localhost_11212\"=>\"CREATED\", \"localhost_11211\"=>\"CREATED\"}", ret )
+
+    # file check
+    assert(File.directory? './localhost_11211/test')
+    assert(File.directory? './localhost_11212/test')
+
+    # umount
+    con.write("umounthash test\r\n")
+    ret = con.gets.chomp
+    assert_equal("{\"localhost_11212\"=>\"UNMOUNTED\", \"localhost_11211\"=>\"UNMOUNTED\"}", ret)
+
+    @rc.default_hash_name='test'
+    assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash dose not exists.') do
+      @rc.set "key", "value"
+    end
+
+    # mount
+    con.write("mounthash test\r\n")
+    ret = con.gets.chomp
+    assert_equal("{\"localhost_11212\"=>\"MOUNTED\", \"localhost_11211\"=>\"MOUNTED\"}", ret)
+
+    assert_equal("STORED", @rc.set("key", "value"))
+
+  end
 end
 
 class MHashTestForward < RClientTest
