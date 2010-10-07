@@ -37,7 +37,7 @@ module RomaTestUtils
               RbConfig::CONFIG["ruby_install_name"])
   end
 
-  def start_roma
+  def start_roma conf='config4test.rb'
     sh = Shell.new
     sh.transact do
       Dir.glob("localhost_1121?.*").each{|f| rm f }
@@ -52,9 +52,9 @@ module RomaTestUtils
               "--enabled_repeathost")
     sleep 0.1
     sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose",
-              "--disabled_cmd_protect","--config","#{server_test_dir}/config4test.rb")
+              "--disabled_cmd_protect","--config","#{server_test_dir}/#{conf}")
     sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose",
-              "--disabled_cmd_protect","--config","#{server_test_dir}/config4test.rb")
+              "--disabled_cmd_protect","--config","#{server_test_dir}/#{conf}")
     sleep 0.8
   end
 
