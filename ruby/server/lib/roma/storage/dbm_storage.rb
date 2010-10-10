@@ -18,29 +18,7 @@ module Roma
         @ext_name = 'dbm'
       end
 
-      def clean_up(t,unit_test_flg=nil)
-        n = 0
-        nt = Time.now.to_i
-        @hdb.each_index{ |i|
-          delkey = []
-          @hdb[i].each{ |k, v|
-            vn, last, clk, expt = unpack_header(v)
-            if nt > expt && t > last
-              n += 1
-              delkey << k
-            end
-            if unit_test_flg
-              closedb
-            end
-          }
-          delkey.each{ |k| @hdb[i].out(k) }
-        }
-        n
-      rescue => e
-        raise NoMethodError(e.message)
-      end
-
-   def each_clean_up(t, vnhash)
+      def each_clean_up(t, vnhash)
         @do_clean_up = true
         nt = Time.now.to_i
         @hdb.each{ |hdb|

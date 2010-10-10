@@ -87,6 +87,7 @@ module Roma
       end
 
       def closedb
+        stop_clean_up
         buf = @hdb; @hdb = []
         buf.each{ |hdb| close_db(hdb) }
       end
@@ -356,30 +357,6 @@ module Roma
       def del_vnode(vn)
         buf = get_vnode_hash(vn)
         buf.each_key{ |k| @hdb[@hdiv[vn]].out(k) }
-      end
-
-      def clean_up(t,unit_test_flg=nil)
-        n = 0
-        nt = Time.now.to_i
-        @hdb.each_index{ |i|
-          delkey = []
-          @hdb[i].each{ |k, v|
-            vn, last, clk, expt = unpack_header(v)
-            if nt > expt && t > last
-              n += 1
-              #delkey << k
-              @hdb[i].out(k)
-            end
-            if unit_test_flg
-              closedb
-            end
-            sleep @each_clean_up_sleep
-          }
-          #delkey.each{ |k| @hdb[i].out(k) }
-        }
-        n
-      rescue => e
-        raise NoMethodError(e.message)
       end
 
       def each_clean_up(t, vnhash)
