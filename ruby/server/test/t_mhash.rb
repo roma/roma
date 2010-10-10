@@ -30,8 +30,10 @@ class MHashTest < Test::Unit::TestCase
     assert_equal("roma", ret.chomp )
 
     con.write("createhash test\r\n")
-    ret = con.gets
-    assert_equal("{\"localhost_11212\"=>\"CREATED\", \"localhost_11211\"=>\"CREATED\"}", ret.chomp )
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal 'CREATED', ret['localhost_11211']
+    assert_equal 'CREATED', ret['localhost_11212']
 
     # file check
     assert(File.directory? './localhost_11211/test')
@@ -66,8 +68,10 @@ class MHashTest < Test::Unit::TestCase
 
     # delete hash
     con.write("deletehash test\r\n")
-    ret = con.gets
-    assert_equal( "{\"localhost_11212\"=>\"DELETED\", \"localhost_11211\"=>\"DELETED\"}", ret.chomp  )
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal 'DELETED', ret['localhost_11211']
+    assert_equal 'DELETED', ret['localhost_11212']
 
     con.close
 
@@ -77,9 +81,6 @@ class MHashTest < Test::Unit::TestCase
   end
 
   def test_createhash2
-    # for file storage
-    assert_equal(Roma::Storage::TCStorage, Roma::Config::STORAGE_CLASS)
-
     # add 'test' hash
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
     con.write("hashlist\r\n")
@@ -87,8 +88,10 @@ class MHashTest < Test::Unit::TestCase
     assert_equal("roma", ret.chomp)
 
     con.write("createhash test\r\n")
-    ret = con.gets
-    assert_equal("{\"localhost_11212\"=>\"CREATED\", \"localhost_11211\"=>\"CREATED\"}", ret.chomp  )
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal 'CREATED', ret['localhost_11211']
+    assert_equal 'CREATED', ret['localhost_11212']
 
     assert_equal("STORED", @rc.set("roma","hname=roma"))
     assert_equal("hname=roma", @rc.get("roma"))
@@ -100,9 +103,9 @@ class MHashTest < Test::Unit::TestCase
     stop_roma
 
     # restart roma
-    sleep 0.5
+    sleep 1
     do_command_romad 'config4mhash.rb'
-    sleep 0.8
+    sleep 1
 
     Roma::Messaging::ConPool.instance.close_all
     Roma::Client::ConPool.instance.close_all
@@ -122,20 +125,26 @@ class MHashTest < Test::Unit::TestCase
 
     # delete hash to a nothing hash
     con.write("deletehash test\r\n")
-    ret = con.gets
-    assert_equal("{\"localhost_11212\"=>\"SERVER_ERROR test dose not exists.\", \"localhost_11211\"=>\"SERVER_ERROR test dose not exists.\"}", ret.chomp )
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal 'SERVER_ERROR test dose not exists.', ret['localhost_11211']
+    assert_equal 'SERVER_ERROR test dose not exists.', ret['localhost_11212']
     
     # delete hash to default
     con.write("deletehash roma\r\n")
-    ret = con.gets
-    assert_equal("{\"localhost_11212\"=>\"SERVER_ERROR default hash can't unmount.\", \"localhost_11211\"=>\"SERVER_ERROR default hash can't unmount.\"}", ret.chomp )
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal "SERVER_ERROR default hash can't unmount.", ret['localhost_11211']
+    assert_equal "SERVER_ERROR default hash can't unmount.", ret['localhost_11212']
   end
 
   def test_defhash
     con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
     con.write("defhash\r\n")
-    ret = con.gets.chomp
-    assert_equal("{\"localhost_11212\"=>\"roma\", \"localhost_11211\"=>\"roma\"}", ret) 
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal 'roma', ret['localhost_11212']
+    assert_equal 'roma', ret['localhost_11211']
     
     con.write("rdefhash not_exist_hash\r\n")
     ret = con.gets.chomp
@@ -163,8 +172,10 @@ class MHashTest < Test::Unit::TestCase
 
     # add 'test' hash
     con.write("createhash test\r\n")
-    ret = con.gets.chomp
-    assert_equal("{\"localhost_11212\"=>\"CREATED\", \"localhost_11211\"=>\"CREATED\"}", ret )
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal 'CREATED', ret['localhost_11211']
+    assert_equal 'CREATED', ret['localhost_11212']
 
     # file check
     assert(File.directory? './localhost_11211/test')
@@ -172,8 +183,10 @@ class MHashTest < Test::Unit::TestCase
 
     # umount
     con.write("umounthash test\r\n")
-    ret = con.gets.chomp
-    assert_equal("{\"localhost_11212\"=>\"UNMOUNTED\", \"localhost_11211\"=>\"UNMOUNTED\"}", ret)
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal 'UNMOUNTED', ret['localhost_11211']
+    assert_equal 'UNMOUNTED', ret['localhost_11212']
 
     @rc.default_hash_name='test'
     assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash dose not exists.') do
@@ -182,11 +195,12 @@ class MHashTest < Test::Unit::TestCase
 
     # mount
     con.write("mounthash test\r\n")
-    ret = con.gets.chomp
-    assert_equal("{\"localhost_11212\"=>\"MOUNTED\", \"localhost_11211\"=>\"MOUNTED\"}", ret)
+    ret = eval con.gets.chomp
+    assert_equal 2, ret.length
+    assert_equal 'MOUNTED', ret['localhost_11211']
+    assert_equal 'MOUNTED', ret['localhost_11212']
 
     assert_equal("STORED", @rc.set("key", "value"))
-
   end
 end
 
