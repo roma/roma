@@ -18,7 +18,7 @@ module CommandModuleTest1
     s
   end
   
-  def_command_with_key :get do |s, key, hname, d, vn, nodes|
+  def_command_with_key :get, :no_forward do |s, key, hname, d, vn, nodes|
     case s[2]
     when 'ex_runtime'
       raise s[1]
@@ -30,7 +30,7 @@ module CommandModuleTest1
     [s ,key, hname, d, vn, nodes]
   end
 
-  def_command_with_key_value :set, 4 do |s, key, hname, d, vn, nodes, value|
+  def_command_with_key_value :set, 4, :no_forward do |s, key, hname, d, vn, nodes, value|
     case s[2]
     when 'ex_runtime'
       raise s[1]
@@ -80,10 +80,16 @@ class DefCmdTest
     def search_nodes_for_write(vn) ['roma0','roma1'] end
   end
 
+  class LogStub
+    def warn str
+    end
+  end
+
   def initialize
     @stats = Struct.new(:ap_str).new(:ap_str)
     @rttable = RtStub.new
     @defhash = 'roma'
+    @log = LogStub.new
   end
 
   def send_data str
