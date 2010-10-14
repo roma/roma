@@ -18,28 +18,28 @@ module CommandModuleTest1
     s
   end
   
-  def_command_with_key :get, :no_forward do |s, key, hname, d, vn, nodes|
-    case s[2]
+  def_command_with_key :get, :no_forward do |ctx|
+    case ctx.argv[2]
     when 'ex_runtime'
-      raise s[1]
+      raise ctx.argv[1]
     when 'ex_client'
-      raise Roma::Command::Definition::ClientErrorException, s[1]
+      raise Roma::Command::Definition::ClientErrorException, ctx.argv[1]
     when 'ex_server'
-      raise Roma::Command::Definition::ServerErrorException, s[1]
+      raise Roma::Command::Definition::ServerErrorException, ctx.argv[1]
     end
-    [s ,key, hname, d, vn, nodes]
+    ctx
   end
 
-  def_command_with_key_value :set, 4, :no_forward do |s, key, hname, d, vn, nodes, value|
-    case s[2]
+  def_command_with_key_value :set, 4, :no_forward do |ctx|
+    case ctx.argv[2]
     when 'ex_runtime'
-      raise s[1]
+      raise ctx.argv[1]
     when 'ex_client'
-      raise Roma::Command::Definition::ClientErrorException, s[1]
+      raise Roma::Command::Definition::ClientErrorException, ctx.argv[1]
     when 'ex_server'
-      raise Roma::Command::Definition::ServerErrorException, s[1]
+      raise Roma::Command::Definition::ServerErrorException, ctx.argv[1]
     end
-    [s ,key, hname, d, vn, nodes, value]    
+    ctx
   end
 end
 
@@ -85,11 +85,18 @@ class DefCmdTest
     end
   end
 
+  class StorageStub
+    def get_raw(*arg)
+      nil
+    end
+  end
+
   def initialize
     @stats = Struct.new(:ap_str).new(:ap_str)
     @rttable = RtStub.new
     @defhash = 'roma'
     @log = LogStub.new
+    @storages = Hash.new(StorageStub.new)
   end
 
   def send_data str
@@ -187,21 +194,21 @@ class DefineCommandTest < Test::Unit::TestCase
   
   def test_defcmd_k
     # normal case
-    s, key, hname, d, vn, nodes = @obj.ev_get ['get','arg1']
-    assert_equal ['get','arg1'], s
-    assert_equal 'arg1', key
-    assert_equal 'roma', hname
-    assert_equal Digest::SHA1.hexdigest('arg1').hex % 10, d
-    assert_equal 1, vn
-    assert_equal ['roma0','roma1'], nodes
+    ctx = @obj.ev_get ['get','arg1']
+    assert_equal ['get','arg1'], ctx.argv
+    assert_equal 'arg1', ctx.params.key
+    assert_equal 'roma', ctx.params.hash_name
+    assert_equal Digest::SHA1.hexdigest('arg1').hex % 10, ctx.params.digest
+    assert_equal 1, ctx.params.vn
+    assert_equal ['roma0','roma1'], ctx.params.nodes
 
-    s, key, hname, d, vn, nodes = @obj.ev_get ['get',"arg2\eruby"]
-    assert_equal ['get',"arg2\eruby"], s
-    assert_equal 'arg2', key
-    assert_equal 'ruby', hname
-    assert_equal 1, vn
-    assert_equal Digest::SHA1.hexdigest('arg2').hex % 10, d
-    assert_equal ['roma0','roma1'], nodes
+    ctx = @obj.ev_get ['get',"arg2\eruby"]
+    assert_equal ['get',"arg2\eruby"], ctx.argv
+    assert_equal 'arg2', ctx.params.key
+    assert_equal 'ruby', ctx.params.hash_name
+    assert_equal 1, ctx.params.vn
+    assert_equal Digest::SHA1.hexdigest('arg2').hex % 10, ctx.params.digest
+    assert_equal ['roma0','roma1'], ctx.params.nodes
     
     # case of argument error
     res = @obj.ev_get ['get']
@@ -221,23 +228,23 @@ class DefineCommandTest < Test::Unit::TestCase
   
   def test_defcmd_kv
     # normal case
-    s, key, hname, d, vn, nodes, val = @obj.ev_set ['set','arg1', '0', '0', '5']
-    assert_equal ['set','arg1', '0', '0', '5'], s
-    assert_equal 'arg1', key
-    assert_equal 'roma', hname
-    assert_equal Digest::SHA1.hexdigest('arg1').hex % 10, d
-    assert_equal 1, vn
-    assert_equal ['roma0','roma1'], nodes
-    assert_equal 'abcde', val
+    ctx = @obj.ev_set ['set','arg1', '0', '0', '5']
+    assert_equal ['set','arg1', '0', '0', '5'], ctx.argv
+    assert_equal 'arg1', ctx.params.key
+    assert_equal 'roma', ctx.params.hash_name
+    assert_equal Digest::SHA1.hexdigest('arg1').hex % 10, ctx.params.digest
+    assert_equal 1, ctx.params.vn
+    assert_equal ['roma0','roma1'], ctx.params.nodes
+    assert_equal 'abcde', ctx.params.value
 
-    s, key, hname, d, vn, nodes, val = @obj.ev_set ['set',"arg2\eruby", '0', '0', '5']
-    assert_equal ['set',"arg2\eruby", '0', '0', '5'], s
-    assert_equal 'arg2', key
-    assert_equal 'ruby', hname
-    assert_equal Digest::SHA1.hexdigest('arg2').hex % 10, d
-    assert_equal 1, vn
-    assert_equal ['roma0','roma1'], nodes
-    assert_equal 'abcde', val
+    ctx = @obj.ev_set ['set',"arg2\eruby", '0', '0', '5']
+    assert_equal ['set',"arg2\eruby", '0', '0', '5'], ctx.argv
+    assert_equal 'arg2', ctx.params.key
+    assert_equal 'ruby', ctx.params.hash_name
+    assert_equal Digest::SHA1.hexdigest('arg2').hex % 10, ctx.params.digest
+    assert_equal 1, ctx.params.vn
+    assert_equal ['roma0','roma1'], ctx.params.nodes
+    assert_equal 'abcde', ctx.params.value
 
     # case of argument error
     res = @obj.ev_set ['set']

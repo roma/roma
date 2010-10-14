@@ -8,26 +8,25 @@ module Roma
       include Roma::CommandPlugin
       include Roma::Command::Definition
       
-      # map_set <key> <mapkey> <bytes> [forward]\r\n
+      # map_set <key> <mapkey> <flags> <expt> <bytes> [forward]\r\n
       # <data block>\r\n
       #
       # (STORED|NOT_STORED|SERVER_ERROR <error message>)\r\n
-      def_command_with_key_value :map_set, 3 do |s, k, hname, d, vn, nodes, data|
+      def_write_command_with_key_value :map_set, 5 do |ctx|
         v = {}
-        ddata = @storages[hname].get(vn, k, d)
-        v = Marshal.load(ddata) if ddata
+        v = Marshal.load(ctx.stored.value) if ctx.stored
           
-        v[s[2]] = data
-        expt = 0x7fffffff
-        ret = @storages[hname].set(vn, k, d, expt , Marshal.dump(v))
-        @stats.write_count += 1
-          
-        if ret
-          redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
-          send_data("STORED\r\n")
-        else
-          send_data("NOT_STORED\r\n")
+        v[ctx.argv[2]] = ctx.params.value
+
+        expt = ctx.argv[4].to_i
+        if expt == 0
+          expt = 0x7fffffff
+        elsif expt < 2592000
+          expt += Time.now.to_i
         end
+        
+        # [flags, expire time, value, kind of counter(:write/:delete), result message]
+        [0, expt, Marshal.dump(v), :write, 'STORED']
       end
 
       # map_get <key> <mapkey> [forward]\r\n
@@ -37,12 +36,10 @@ module Roma
       # <value>\r\n]
       # END\r\n
       # |SERVER_ERROR <error message>\r\n)
-      def_command_with_key :map_get, :multi_line do |s, k, hname, d, vn, nodes|
-        ddata = @storages[hname].get(vn, k, d)
-        @stats.read_count += 1
-        if ddata
-          v = Marshal.load(ddata)[s[2]]
-          send_data("VALUE #{s[1]} 0 #{v.length}\r\n#{v}\r\n") if v
+      def_read_command_with_key :map_get, :multi_line do |ctx|
+        if ctx.stored
+          v = Marshal.load(ctx.stored.value)[ctx.argv[2]]
+          send_data("VALUE #{ctx.params.key} 0 #{v.length}\r\n#{v}\r\n") if v
         end
         send_data("END\r\n")
       end
@@ -50,95 +47,74 @@ module Roma
       # map_delete <key> <mapkey> [forward]\r\n
       #
       # (DELETED|NOT_DELETED|NOT_FOUND|SERVER_ERROR <error message>)\r\n
-      def_command_with_key :map_delete do |s, k, hname, d, vn, nodes|
-        ddata = @storages[hname].get(vn, k, d)
-        next send_data("NOT_FOUND\r\n") unless ddata
+      def_write_command_with_key :map_delete do |ctx|
+        next send_data("NOT_FOUND\r\n") unless ctx.stored
 
-        v = Marshal.load(ddata)
-        next send_data("NOT_DELETED\r\n") unless v.key?(s[2])
+        v = Marshal.load(ctx.stored.value)
+        next send_data("NOT_DELETED\r\n") unless v.key?(ctx.argv[2])
         
-        v.delete(s[2])
-        expt = 0x7fffffff
-        ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
-        @stats.write_count += 1
-
-        if ret
-          redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
-          send_data("DELETED\r\n")
-        else
-          send_data("NOT_DELETED\r\n")
-        end
+        v.delete(ctx.argv[2])
+        
+        [0, ctx.stored.expt, Marshal.dump(v), :delete, 'DELETED']
       end
 
       # map_clear <key> [forward]\r\n
       #
       # (CLEARED|NOT_CLEARED|NOT_FOUND|SERVER_ERROR <error message>)\r\n
-      def_command_with_key :map_clear do |s, k, hname, d, vn, nodes|
-        ddata = @storages[hname].get(vn, k, d)
-        next send_data("NOT_FOUND\r\n") unless ddata
+      def_write_command_with_key :map_clear do |ctx|
+        next send_data("NOT_FOUND\r\n") unless ctx.stored
 
-        expt = 0x7fffffff
-        ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump({}))
-        @stats.delete_count += 1
-
-        if ret
-          redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
-          send_data("CLEARED\r\n")
-        else
-          send_data("NOT_CLEARED\r\n")
-        end          
+        [0, ctx.stored.expt, Marshal.dump({}), :delete, 'CLEARED']
       end
+
 
       # map_size <key> [forward]\r\n
       #
       # (<length>|NOT_FOUND|SERVER_ERROR <error message>)\r\n
-      def_command_with_key :map_size do |s, k, hname, d, vn, nodes|
-        ddata = @storages[hname].get(vn, k, d)
-        @stats.read_count += 1
-
-        next send_data("NOT_FOUND\r\n") unless ddata
-        ret = Marshal.load(ddata).size
-        send_data("#{ret}\r\n")
+      def_read_command_with_key :map_size do |ctx|
+        if ctx.stored
+          ret = Marshal.load(ctx.stored.value).size
+          send_data("#{ret}\r\n")
+        else
+          send_data("NOT_FOUND\r\n")
+        end
       end
 
       # map_key? <key> <mapkey> [forward]\r\n
       #
       # (true|false|NOT_FOUND|SERVER_ERROR <error message>)\r\n
-      def_command_with_key :map_key? do |s, k, hname, d, vn, nodes|
-        map_exists? s, k, hname, d, vn, nodes, :key?
+      def_read_command_with_key :map_key? do |ctx|
+        if ctx.stored
+          ret = Marshal.load(ctx.stored.value).key? ctx.argv[2]
+          send_data("#{ret}\r\n")
+        else
+          send_data("NOT_FOUND\r\n")
+        end
       end
       
       # map_value? <key> <bytes> [forward]\r\n
       # <data block>\r\n
       #
       # (true|false|NOT_FOUND|SERVER_ERROR <error message>)\r\n
-      def_command_with_key :map_value? do |s, k, hname, d, vn, nodes|
-        map_exists? s, k, hname, d, vn, nodes, :value?
+      def_read_command_with_key_value :map_value?, 2 do |ctx|
+        if ctx.stored
+          ret = Marshal.load(ctx.stored.value).value? ctx.params.value
+          send_data("#{ret}\r\n")
+        else
+          send_data("NOT_FOUND\r\n")
+        end
       end
       
-      def map_exists?(s, k, hname, d, vn, nodes, method)
-        ddata = @storages[hname].get(vn, k, d)
-        @stats.read_count += 1
-
-        return send_data("NOT_FOUND\r\n") unless ddata
-        ret = Marshal.load(ddata).send method, s[2]
-        send_data("#{ret}\r\n")
-      rescue => e
-        send_data("SERVER_ERROR #{e} #{$@}\r\n")
-        @log.error("#{e} #{$@}") 
-      end
-      private :map_exists?
-
       # map_empty? <key> [forward]\r\n
       #
       # (true|false|NOT_FOUND|SERVER_ERROR <error message>)\r\n
-      def_command_with_key :map_empty? do |s, k, hname, d, vn, nodes|
-        ddata = @storages[hname].get(vn, k, d)
-        @stats.read_count += 1
-
-        next send_data("NOT_FOUND\r\n") unless ddata
-        v = Marshal.load(ddata)
-        send_data("#{v.empty?}\r\n")
+      def_read_command_with_key :map_empty? do |ctx|
+        if ctx.stored
+          v = Marshal.load(ctx.stored.value)
+          send_data("#{v.empty?}\r\n")
+        else
+          send_data("NOT_FOUND\r\n")
+        end
       end
 
       # map_keys <key> [forward]\r\n
@@ -151,8 +127,16 @@ module Roma
       # ]
       # END\r\n
       # |SERVER_ERROR <error message>\r\n)
-      def_command_with_key :map_keys, :multi_line do |s, k, hname, d, vn, nodes|
-        map_return_array s, k, hname, d, vn, nodes, :keys
+      def_read_command_with_key :map_keys, :multi_line do |ctx|
+        if ctx.stored
+          v = Marshal.load(ctx.stored.value).keys
+          len = v.length
+          send_data("VALUE #{ctx.params.key} 0 #{len.to_s.length}\r\n#{len.to_s}\r\n")
+          v.each{|val|
+            send_data("VALUE #{ctx.params.key} 0 #{val.length}\r\n#{val}\r\n")
+          }
+        end
+        send_data("END\r\n")
       end
 
       # map_values <key> [forward]\r\n
@@ -165,29 +149,17 @@ module Roma
       # ]
       # END\r\n
       # |SERVER_ERROR <error message>\r\n)
-      def_command_with_key :map_values, :multi_line do |s, k, hname, d, vn, nodes|
-        map_return_array s, k, hname, d, vn, nodes, :values
-      end
-
-      def map_return_array(s, k, hname, d, vn, nodes, method)
-        ddata = @storages[hname].get(vn, k, 0)
-        @stats.read_count += 1
-
-        if ddata
-          v = Marshal.load(ddata).send method
+      def_read_command_with_key :map_values, :multi_line do |ctx|
+        if ctx.stored
+          v = Marshal.load(ctx.stored.value).values
           len = v.length
-          send_data("VALUE #{s[1]} 0 #{len.to_s.length}\r\n#{len.to_s}\r\n")
+          send_data("VALUE #{ctx.params.key} 0 #{len.to_s.length}\r\n#{len.to_s}\r\n")
           v.each{|val|
-            send_data("VALUE #{s[1]} 0 #{val.length}\r\n#{val}\r\n")
+            send_data("VALUE #{ctx.params.key} 0 #{val.length}\r\n#{val}\r\n")
           }
         end
         send_data("END\r\n")
-      rescue => e
-        msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
-        send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
       end
-      private :map_return_array
 
       # map_to_s <key> [forward]\r\n
       #
@@ -196,12 +168,10 @@ module Roma
       # <value>\r\n]
       # END\r\n
       # |SERVER_ERROR <error message>\r\n)
-      def_command_with_key :map_to_s, :multi_line do |s, k, hname, d, vn, nodes|
-        ddata = @storages[hname].get(vn, k, d)
-        @stats.read_count += 1
-        if ddata
-          v = Marshal.load(ddata).inspect
-          send_data("VALUE #{s[1]} 0 #{v.length}\r\n#{v}\r\n")
+      def_read_command_with_key :map_to_s, :multi_line do |ctx|
+        if ctx.stored
+          v = Marshal.load(ctx.stored.value).inspect
+          send_data("VALUE #{ctx.params.key} 0 #{v.length}\r\n#{v}\r\n")
         end
         send_data("END\r\n")
       end
@@ -214,9 +184,9 @@ module Roma
     
     module PluginMap
       
-      def map_set(key, mapkey, value)
+      def map_set(key, mapkey, value, expt = 0)
         value_validator(value)
-        sender(:oneline_receiver, key, value, "map_set %s #{mapkey} #{value.length}")
+        sender(:oneline_receiver, key, value, "map_set %s #{mapkey} 0 #{expt} #{value.length}")
       end
 
       def map_get(key, mapkey)
@@ -251,7 +221,8 @@ module Roma
       end
 
       def map_value?(key, value)
-        ret = sender(:oneline_receiver, key, nil, "map_value? %s #{value}")
+        value_validator(value)
+        ret = sender(:oneline_receiver, key, value, "map_value? %s #{value.length}")
         if ret == 'true'
           true
         elsif ret == 'false'

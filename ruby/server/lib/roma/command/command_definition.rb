@@ -51,24 +51,126 @@ module Roma
             end
           end
         end # def_command_with_relay
+        
+        CommandParams = Struct.new(:key, :hash_name, :digest, :vn, :nodes, :value)
+        StoredData = Struct.new(:vn, :last, :clk, :flg, :expt, :value)
+        CommandContext = Struct.new(:argv, :params, :stored)
+
+        def def_read_command_with_key(cmd, forward = :one_line, &block)
+          define_method "ev_#{cmd}" do |s|
+            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            begin
+              params = CommandParams.new
+              params.key, params.hash_name = s[1].split("\e")
+              params.hash_name ||= @defhash
+              params.digest = Digest::SHA1.hexdigest(params.key).hex % @rttable.hbits
+              params.vn = @rttable.get_vnode_id(params.digest)
+              params.nodes = @rttable.search_nodes_for_write(params.vn)
+              if params.nodes[0] != @nid
+                if forward == :one_line
+                  return forward_and_one_line_receive(params.nodes[0], s)
+                elsif  forward == :multi_line
+                  return forward_and_multi_line_receive(params.nodes[0], s)
+                end
+              end
+              stored = StoredData.new
+              stored.vn, stored.last, stored.clk, stored.expt, stored.value =
+                @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
+              stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
+              ctx = CommandContext.new(s, params, stored)
+              instance_exec(ctx, &block)
+              @stats.read_count += 1
+            rescue ClientErrorException => e
+              send_data("CLIENT_ERROR #{e.message}\r\n")
+            rescue ServerErrorException => e
+              send_data("SERVER_ERROR #{e.message}\r\n")
+            rescue LocalJumpError => e
+              @log.warn("#{e} #{$@}")
+              e.exit_value
+            end
+          end
+        end # def_read_command_with_key
+
+        def def_write_command_with_key(cmd, forward = :one_line, &block)
+          define_method "ev_#{cmd}" do |s|
+            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            begin
+              params = CommandParams.new
+              params.key, params.hash_name = s[1].split("\e")
+              params.hash_name ||= @defhash
+              params.digest = Digest::SHA1.hexdigest(params.key).hex % @rttable.hbits
+              params.vn = @rttable.get_vnode_id(params.digest)
+              params.nodes = @rttable.search_nodes_for_write(params.vn)
+              if params.nodes[0] != @nid
+                if forward == :one_line
+                  return forward_and_one_line_receive(params.nodes[0], s)
+                elsif  forward == :multi_line
+                  return forward_and_multi_line_receive(params.nodes[0], s)
+                end
+              end
+              stored = StoredData.new
+              stored.vn, stored.last, stored.clk, stored.expt, stored.value =
+                @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
+              stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
+              ctx = CommandContext.new(s, params, stored)
+              
+              ret = instance_exec(ctx, &block)
+              if ret.instance_of? Array
+                flg, expt, value, count, msg = ret
+                ret = @storages[ctx.params.hash_name].set(ctx.params.vn, 
+                                                          ctx.params.key,
+                                                          ctx.params.digest,
+                                                          expt,
+                                                          value)
+                if count == :write
+                  @stats.write_count += 1
+                elsif count == :delete
+                  @stats.delete_count += 1
+                end
+              
+                if ret
+                  redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
+                            ctx.params.key, ctx.params.digest, ret[2], 
+                            expt, ret[4])
+                  send_data("#{msg}\r\n")
+                else
+                  send_data("NOT_#{msg}\r\n")
+                end
+              end
+            rescue ClientErrorException => e
+              send_data("CLIENT_ERROR #{e.message}\r\n")
+            rescue ServerErrorException => e
+              send_data("SERVER_ERROR #{e.message}\r\n")
+            rescue LocalJumpError => e
+              @log.warn("#{e} #{$@}")
+              e.exit_value
+            end
+          end
+        end # def_write_command_with_key
 
         def def_command_with_key(cmd, forward = :one_line, &block)
           define_method "ev_#{cmd}" do |s|
             return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
             begin
-              key, hname = s[1].split("\e")
-              hname ||= @defhash
-              d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
-              vn = @rttable.get_vnode_id(d)
-              nodes = @rttable.search_nodes_for_write(vn)
-              if nodes[0] != @nid
+              params = CommandParams.new
+              params.key, params.hash_name = s[1].split("\e")
+              params.hash_name ||= @defhash
+              params.digest = Digest::SHA1.hexdigest(params.key).hex % @rttable.hbits
+              params.vn = @rttable.get_vnode_id(params.digest)
+              params.nodes = @rttable.search_nodes_for_write(params.vn)
+              if params.nodes[0] != @nid
                 if forward == :one_line
-                  return forward_and_one_line_receive(nodes[0], s)
+                  return forward_and_one_line_receive(params.nodes[0], s)
                 elsif  forward == :multi_line
-                  return forward_and_multi_line_receive(nodes[0], s)
+                  return forward_and_multi_line_receive(params.nodes[0], s)
                 end
               end
-              instance_exec(s, key, hname, d, vn, nodes, &block)
+              stored = StoredData.new
+              stored.vn, stored.last, stored.clk, stored.expt, stored.value =
+                @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
+              stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
+              ctx = CommandContext.new(s, params, stored)
+              instance_exec(ctx, &block)
             rescue ClientErrorException => e
               send_data("CLIENT_ERROR #{e.message}\r\n")
             rescue ServerErrorException => e
@@ -80,25 +182,128 @@ module Roma
           end
         end # def_command_with_key
 
+        def def_write_command_with_key_value(cmd, idx_of_val_len, forward = :one_line, &block)
+          define_method "ev_#{cmd}" do |s|
+            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            begin
+              params = CommandParams.new
+              params.key, params.hash_name = s[1].split("\e")
+              params.hash_name ||= @defhash
+              params.digest = Digest::SHA1.hexdigest(params.key).hex % @rttable.hbits
+              params.vn = @rttable.get_vnode_id(params.digest)
+              params.nodes = @rttable.search_nodes_for_write(params.vn)
+              params.value = read_bytes(s[idx_of_val_len].to_i)
+              read_bytes(2)
+              if params.nodes[0] != @nid
+                if forward == :one_line
+                  return forward_and_one_line_receive(params.nodes[0], s, params.value)
+                elsif  forward == :multi_line
+                  return forward_and_multi_line_receive(params.nodes[0], s, params.value)
+                end
+              end
+              stored = StoredData.new
+              stored.vn, stored.last, stored.clk, stored.expt, stored.value =
+                @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
+              stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
+              ctx = CommandContext.new(s, params, stored)
+
+              ret = instance_exec(ctx, &block)
+              if ret.instance_of? Array
+                flg, expt, value, count, msg = ret
+                ret = @storages[ctx.params.hash_name].set(ctx.params.vn, 
+                                                          ctx.params.key,
+                                                          ctx.params.digest,
+                                                          expt,
+                                                          value)
+                if count == :write
+                  @stats.write_count += 1
+                elsif count == :delete
+                  @stats.delete_count += 1
+                end
+              
+                if ret
+                  redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
+                            ctx.params.key, ctx.params.digest, ret[2], 
+                            expt, ret[4])
+                  send_data("#{msg}\r\n")
+                else
+                  send_data("NOT_#{msg}\r\n")
+                end
+              end
+            rescue ClientErrorException => e
+              send_data("CLIENT_ERROR #{e.message}\r\n")
+            rescue ServerErrorException => e
+              send_data("SERVER_ERROR #{e.message}\r\n")
+            rescue LocalJumpError => e
+              @log.warn("#{e} #{$@}")
+              e.exit_value
+            end
+          end
+        end # def_write_command_with_key_value
+
+        def def_read_command_with_key_value(cmd, idx_of_val_len, forward = :one_line, &block)
+          define_method "ev_#{cmd}" do |s|
+            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            begin
+              params = CommandParams.new
+              params.key, params.hash_name = s[1].split("\e")
+              params.hash_name ||= @defhash
+              params.digest = Digest::SHA1.hexdigest(params.key).hex % @rttable.hbits
+              params.vn = @rttable.get_vnode_id(params.digest)
+              params.nodes = @rttable.search_nodes_for_write(params.vn)
+              params.value = read_bytes(s[idx_of_val_len].to_i)
+              read_bytes(2)
+              if params.nodes[0] != @nid
+                if forward == :one_line
+                  return forward_and_one_line_receive(params.nodes[0], s, params.value)
+                elsif  forward == :multi_line
+                  return forward_and_multi_line_receive(params.nodes[0], s, params.value)
+                end
+              end
+              stored = StoredData.new
+              stored.vn, stored.last, stored.clk, stored.expt, stored.value =
+                @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
+              stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
+              ctx = CommandContext.new(s, params, stored)
+
+              instance_exec(ctx, &block)
+              @stats.read_count += 1
+            rescue ClientErrorException => e
+              send_data("CLIENT_ERROR #{e.message}\r\n")
+            rescue ServerErrorException => e
+              send_data("SERVER_ERROR #{e.message}\r\n")
+            rescue LocalJumpError => e
+              @log.warn("#{e} #{$@}")
+              e.exit_value
+            end
+          end
+        end # def_read_command_with_key_value
+
         def def_command_with_key_value(cmd, idx_of_val_len, forward = :one_line, &block)
           define_method "ev_#{cmd}" do |s|
             return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
             begin
-              key, hname = s[1].split("\e")
-              hname ||= @defhash
-              d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
-              vn = @rttable.get_vnode_id(d)
-              nodes = @rttable.search_nodes_for_write(vn)
-              value = read_bytes(s[idx_of_val_len].to_i)
+              params = CommandParams.new
+              params.key, params.hash_name = s[1].split("\e")
+              params.hash_name ||= @defhash
+              params.digest = Digest::SHA1.hexdigest(params.key).hex % @rttable.hbits
+              params.vn = @rttable.get_vnode_id(params.digest)
+              params.nodes = @rttable.search_nodes_for_write(params.vn)
+              params.value = read_bytes(s[idx_of_val_len].to_i)
               read_bytes(2)
-              if nodes[0] != @nid
+              if params.nodes[0] != @nid
                 if forward == :one_line
-                  return forward_and_one_line_receive(nodes[0], s, value)
-                elsif forward == :multi_line
-                  return forward_and_multi_line_receive(nodes[0], s, value)
+                  return forward_and_one_line_receive(params.nodes[0], s, params.value)
+                elsif  forward == :multi_line
+                  return forward_and_multi_line_receive(params.nodes[0], s, params.value)
                 end
               end
-              instance_exec(s, key, hname, d, vn, nodes, value, &block)
+              stored = StoredData.new
+              stored.vn, stored.last, stored.clk, stored.expt, stored.value =
+                @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
+              stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
+              ctx = CommandContext.new(s, params, stored)
+              instance_exec(ctx, &block)
             rescue ClientErrorException => e
               send_data("CLIENT_ERROR #{e.message}\r\n")
             rescue ServerErrorException => e
