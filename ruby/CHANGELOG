@@ -1,4 +1,7 @@
+*0.8.6 (Oct 20 2010)*
 
+* refactor: class macro for a plugin [junji torii] 7d89e4e
+* add a map plugin [junji torii] 7db2f64
 * bugfix: restart eventmachine by unbind event [junji torii] c457a70
 
 *0.8.5 (Aug 16 2010)*
