@@ -5,6 +5,7 @@ require 'eventmachine'
 require 'roma/event/con_pool'
 require 'roma/logging/rlogger'
 require 'roma/stats'
+require 'roma/storage/basic_storage'
 require 'socket'
 
 module Roma
@@ -173,6 +174,10 @@ module Roma
             @log.warn("Connection count > #{@@ccl_start}:closed")
           end
         end
+      rescue Storage::StorageException => e
+        @log.error("#{e} #{s} #{$@}")
+        send_data("SERVER_ERROR #{e} in storage engine\r\n")
+        close_connection_after_writing
       rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e} #{$@}")
         close_connection

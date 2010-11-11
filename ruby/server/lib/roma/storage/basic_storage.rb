@@ -3,6 +3,8 @@ require 'digest/sha1'
 module Roma
   module Storage
 
+    class StorageException < Exception; end
+
     class BasicStorage
 
       attr :hdb
