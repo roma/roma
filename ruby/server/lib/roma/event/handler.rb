@@ -175,7 +175,7 @@ module Roma
           end
         end
       rescue Storage::StorageException => e
-        @log.error("#{e} #{s} #{$@}")
+        @log.error("#{e.inspect} #{s} #{$@}")
         send_data("SERVER_ERROR #{e} in storage engine\r\n")
         close_connection_after_writing
       rescue Exception =>e

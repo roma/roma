@@ -72,8 +72,11 @@ module Roma
         }
         send_data("STORED\r\n")
         @log.debug("#{__method__}:#{s[2]} #{count} keys loaded. #{rcount} keys rejected.")
+      rescue Storage::StorageException => e
+        @log.error("#{e.inspect} #{$@}")
+        close_connection
       rescue => e
-        @log.error("#{e}\n#{$@}")
+        @log.error("#{e} #{$@}")
       ensure
         @stats.run_receive_a_vnode = false
       end      
@@ -87,13 +90,11 @@ module Roma
           send_data("CLIENT_ERROR usage:reqpushv vnode-id node-id primary-flag(true/false)\r\n")
           return
         end
-
         if @stats.run_iterate_storage == true
           @log.warn("reqpushv rejected:#{s}")
           send_data("REJECTED\r\n")
           return
         end
-
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('reqpushv',[s[1],s[2],s[3]]))
         send_data("PUSHED\r\n")
       rescue =>e
