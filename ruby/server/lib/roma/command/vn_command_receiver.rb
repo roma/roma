@@ -75,6 +75,11 @@ module Roma
       rescue Storage::StorageException => e
         @log.error("#{e.inspect} #{$@}")
         close_connection
+        if Config.const_defined?(:STORAGE_EXCEPTION_ACTION) &&
+            Config::STORAGE_EXCEPTION_ACTION == :shutdown
+          @log.error("Romad will stop")
+          @stop_event_loop = true
+        end
       rescue => e
         @log.error("#{e} #{$@}")
       ensure

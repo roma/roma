@@ -97,7 +97,10 @@ module Roma
 
       def unbind
         @connected=false
-        @fiber.resume
+        begin
+          @fiber.resume
+        rescue FiberError
+        end
         EventMachine::stop_event_loop if @stop_event_loop
         @@connections.delete(self)
         if @enter_time
@@ -178,6 +181,11 @@ module Roma
         @log.error("#{e.inspect} #{s} #{$@}")
         send_data("SERVER_ERROR #{e} in storage engine\r\n")
         close_connection_after_writing
+        if Config.const_defined?(:STORAGE_EXCEPTION_ACTION) &&
+            Config::STORAGE_EXCEPTION_ACTION == :shutdown
+          @log.error("Romad will stop")
+          @stop_event_loop = true
+        end
       rescue Exception =>e
         @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e} #{$@}")
         close_connection
