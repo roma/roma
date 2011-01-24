@@ -37,6 +37,22 @@ module Roma
         @stop_event_loop = true
       end
 
+      # shutdown_instance [node-id]
+      def ev_shutdown_instance(s)
+        if s.length != 2
+          send_data("usage:shutdown_instance [node-id]\r\n")
+        else
+          if s[1] == @stats.ap_str
+            @rttable.enabled_failover = false
+            send_data("BYE\r\n")
+            @stop_event_loop = true
+            close_connection_after_writing
+          else
+            send_data("invalid [node-id]\r\n")
+          end
+        end
+      end
+
       # version
       def ev_version(s)
         send_data("VERSION ROMA-#{Roma::VERSION}\r\n")
@@ -60,7 +76,7 @@ module Roma
         h = {}
         h['version'] = Roma::VERSION
         send_stat_result(nil,h,regexp)
-        send_stat_result(nil,Roma::Config.get_stat,regexp)
+        send_stat_result(nil,get_config_stat,regexp)
         send_stat_result(nil,@stats.get_stat,regexp)
         @storages.each{|hname,st|
           send_stat_result("storages[#{hname}].",st.get_stat,regexp)
@@ -521,9 +537,29 @@ module Roma
         else
           return "CLIENT_ERROR You sholud input a priority from 1 to 5."
         end
+        @stats.dcnice = p
         "STORED"
       end
-    end # module SystemCommandReceiver
 
+      def get_config_stat
+        ret = {}
+        ret['config.DEFAULT_LOST_ACTION'] = Config::DEFAULT_LOST_ACTION
+        ret['config.LOG_SHIFT_AGE'] = Config::LOG_SHIFT_AGE
+        ret['config.LOG_SHIFT_SIZE'] = Config::LOG_SHIFT_SIZE
+        ret['config.LOG_PATH'] = File.expand_path(Config::LOG_PATH)
+        ret['config.RTTABLE_PATH'] = File.expand_path(Config::RTTABLE_PATH)
+        ret['config.STORAGE_DELMARK_EXPTIME'] = Config::STORAGE_DELMARK_EXPTIME
+        if Config.const_defined?(:STORAGE_EXCEPTION_ACTION)
+          ret['config.STORAGE_EXCEPTION_ACTION'] = Config::STORAGE_EXCEPTION_ACTION
+        end
+        ret['config.DATACOPY_STREAM_COPY_WAIT_PARAM'] = Config::DATACOPY_STREAM_COPY_WAIT_PARAM
+        ret['config.PLUGIN_FILES'] = Config::PLUGIN_FILES.inspect
+        ret['config.WRITEBEHIND_PATH'] = File.expand_path(Config::WRITEBEHIND_PATH)
+        ret['config.WRITEBEHIND_SHIFT_SIZE'] = Config::WRITEBEHIND_SHIFT_SIZE
+        ret['config.CONNECTION_DESCRIPTOR_TABLE_SIZE'] = Config::CONNECTION_DESCRIPTOR_TABLE_SIZE
+        ret
+      end
+
+    end # module SystemCommandReceiver
   end # module Command
 end # module Roma

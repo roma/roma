@@ -1,3 +1,7 @@
+*0.8.7 (Nov 24 2010)*
+
+* refactor: add storage exception [junji torii] 5739597
+
 *0.8.6 (Oct 20 2010)*
 
 * refactor: class macro for a plugin [junji torii] 7d89e4e

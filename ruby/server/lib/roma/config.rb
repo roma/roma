@@ -56,6 +56,8 @@ module Roma
     STORAGE_PATH = '.'
     STORAGE_DUMP_PATH = '/tmp'
     STORAGE_OPTION = ''
+    # :no_action | :shutdown
+    STORAGE_EXCEPTION_ACTION = :no_action
 
     # expired time(sec) for deleted keys, expired keys and invalid vnode keys
     # typical value is 5 days
@@ -76,22 +78,6 @@ module Roma
     # when the data size is more then REDUNDANT_ZREDUNDANT_SIZE, data compression is done.
     # however, it dose't in case of REDUNDANT_ZREDUNDANT_SIZE is zero.
     REDUNDANT_ZREDUNDANT_SIZE = 0
-
-    def self.get_stat
-      ret = {}
-      ret['config.DEFAULT_LOST_ACTION'] = DEFAULT_LOST_ACTION
-      ret['config.LOG_SHIFT_AGE'] = LOG_SHIFT_AGE
-      ret['config.LOG_SHIFT_SIZE'] = LOG_SHIFT_SIZE
-      ret['config.LOG_PATH'] = File.expand_path(LOG_PATH)
-      ret['config.RTTABLE_PATH'] = File.expand_path(RTTABLE_PATH)
-      ret['config.STORAGE_DELMARK_EXPTIME'] = STORAGE_DELMARK_EXPTIME
-      ret['config.DATACOPY_STREAM_COPY_WAIT_PARAM'] = DATACOPY_STREAM_COPY_WAIT_PARAM
-      ret['config.PLUGIN_FILES'] = PLUGIN_FILES.inspect
-      ret['config.WRITEBEHIND_PATH'] = File.expand_path(WRITEBEHIND_PATH)
-      ret['config.WRITEBEHIND_SHIFT_SIZE'] = WRITEBEHIND_SHIFT_SIZE
-      ret['config.CONNECTION_DESCRIPTOR_TABLE_SIZE'] = CONNECTION_DESCRIPTOR_TABLE_SIZE
-      ret
-    end
 
   end
 

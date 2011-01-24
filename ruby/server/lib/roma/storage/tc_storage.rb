@@ -6,6 +6,33 @@ module Roma
 
     class TCStorage < BasicStorage
       include TokyoCabinet
+      
+      class TokyoCabinet::HDB
+        alias get_org get
+        def get key
+          ret = get_org key
+          if ret == nil && ecode != ENOREC
+            raise StorageException, errmsg(ecode)
+          end
+          ret
+        end
+        
+        alias put_org put
+        def put key, value
+          ret = put_org key, value
+          raise StorageException, errmsg(ecode) unless ret
+          ret
+        end
+        
+        alias out_org out
+        def out key
+          ret = out_org key
+          if ret == false && ecode != ENOREC
+            raise StorageException, errmsg(ecode)
+          end
+          ret
+        end
+      end
 
       def initialize
         super
