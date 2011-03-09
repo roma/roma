@@ -1085,6 +1085,41 @@ module Roma
         @log.error("#{e} #{$@}")
       end
 
+      # alist_update_at <key> <index> <bytes>[forward]\r\n
+      # <data block>\r\n
+      # 
+      # (STORED|NOT_STORED|NOT_FOUND|SERVER_ERROR <error message>)\r\n
+      def ev_alist_update_at(s)
+        hname, k, d, vn, nodes = calc_hash(s[1])
+        data = read_bytes(s[3].to_i)
+        read_bytes(2)
+        return forward2(nodes[0], s, data) if nodes[0] != @nid
+
+        ddata = @storages[hname].get(vn, k, d)
+        return send_data("NOT_FOUND\r\n") unless ddata
+
+        v = Marshal.load(ddata)
+
+        idx = s[2].to_i
+        return send_data("NOT_FOUND\r\n") if idx < 0 || v[0].length <= idx
+        v[0][idx] = data
+        v[1][idx] = Time.now.to_i
+
+        expt = 0x7fffffff
+        ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
+        @stats.write_count += 1
+
+        if ret
+          redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
+          send_data("STORED\r\n")
+        else
+          send_data("NOT_STORED\r\n")
+        end  
+      rescue => e
+        msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
+        send_data("#{msg}\r\n")
+        @log.error("#{e} #{$@}")
+      end
 
       # alist_shift <key> [forward]\r\n
       #
@@ -1558,6 +1593,12 @@ module Roma
         value_validator(value)
         sender(:oneline_receiver, key, value,
                "alist_expired_swap_and_sized_push %s #{expt} #{array_size} #{value.length}")
+      end
+
+      def alist_update_at(key, index, value)
+        value_validator(value)
+        sender(:oneline_receiver, key, value,
+               "alist_update_at %s #{index} #{value.length}")
       end
 
       def alist_shift(key)

@@ -479,6 +479,34 @@ class ListPluginTest < Test::Unit::TestCase
     assert_equal(["44"], @rc.alist_to_s("aa")[1])
   end
 
+  def test_alist_update_at
+    @rc.delete("aa")
+
+    assert_equal('NOT_FOUND', @rc.alist_update_at("aa",0,"a0"))
+
+    assert_equal('STORED', @rc.alist_push("aa","00"))
+    assert_equal('STORED', @rc.alist_push("aa","11"))
+    assert_equal('STORED', @rc.alist_push("aa","22"))
+    assert_equal('STORED', @rc.alist_push("aa","33"))
+    assert_equal('STORED', @rc.alist_push("aa","44"))
+    
+    assert_equal(["00","11","22","33","44"], @rc.alist_to_s("aa")[1])
+
+    assert_equal('NOT_FOUND', @rc.alist_update_at("aa",-1,"a0"))
+    assert_equal('NOT_FOUND', @rc.alist_update_at("aa",5,"a0"))
+
+    assert_equal('STORED', @rc.alist_update_at("aa",2,"a2"))
+    assert_equal(["00","11","a2","33","44"], @rc.alist_to_s("aa")[1])
+    assert_equal('STORED', @rc.alist_update_at("aa",0,"a0"))
+    assert_equal(["a0","11","a2","33","44"], @rc.alist_to_s("aa")[1])
+    assert_equal('STORED', @rc.alist_update_at("aa",1,"a1"))
+    assert_equal(["a0","a1","a2","33","44"], @rc.alist_to_s("aa")[1])
+    assert_equal('STORED', @rc.alist_update_at("aa",3,"a3"))
+    assert_equal(["a0","a1","a2","a3","44"], @rc.alist_to_s("aa")[1])
+    assert_equal('STORED', @rc.alist_update_at("aa",4,"a4"))
+    assert_equal(["a0","a1","a2","a3","a4"], @rc.alist_to_s("aa")[1])
+  end
+
   def test_shift
     @rc.delete("aa")
 
