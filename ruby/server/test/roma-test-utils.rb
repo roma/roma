@@ -49,9 +49,9 @@ module RomaTestUtils
               "localhost_11211","localhost_11212",
               "-d","3",
               "--enabled_repeathost")
-    sleep 0.1
+    sleep 0.2
     do_command_romad conf
-    sleep 0.8
+    sleep 1
   end
 
   def do_command_romad conf
