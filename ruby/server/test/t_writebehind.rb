@@ -3,6 +3,8 @@
 require 'logger'
 require 'stringio'
 require 'roma/write_behind'
+require 'roma/client/rclient'
+require 'roma/messaging/con_pool'
 
 class FileWriterTest < Test::Unit::TestCase
   
@@ -14,9 +16,6 @@ class FileWriterTest < Test::Unit::TestCase
     @stats = Roma::Stats.instance
     @stats.address = 'roma0'
     @stats.port = 11211
-
-    @log = Logger.new(StringIO.new)
-    @log.level = Logger::INFO
   end
 
   def teardown
@@ -24,9 +23,9 @@ class FileWriterTest < Test::Unit::TestCase
   end
 
   # 作成と write のテスト
-  def test_write
+  def test_wb_write
     system('rm -rf wb_test')
-    fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, @log)
+    fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, Logger.new(nil))
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
 
     assert(!File.exist?("#{path}/0.wb"))
@@ -55,9 +54,9 @@ class FileWriterTest < Test::Unit::TestCase
   end
 
   # サイズによるローテーションのテスト
-  def test_rotation
+  def test_wb_rotation
     system('rm -rf wb_test')
-    fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, @log)
+    fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, Logger.new(nil))
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
 
     100.times{|i|
@@ -76,7 +75,7 @@ class FileWriterTest < Test::Unit::TestCase
   # 時間によるローテーションのテスト
   def test_rotation2
     system('rm -rf wb_test')
-    fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, @log)
+    fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, Logger.new(nil))
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
 
     # インスタンス生成直後の rottime の時分秒usecは何かの値を持っている
@@ -112,9 +111,9 @@ class FileWriterTest < Test::Unit::TestCase
   end
 
   # 外部からローテーションするテスト
-  def test_rotation3
+  def test_wb_rotation3
     system('rm -rf wb_test')
-    fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, @log)
+    fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, Logger.new(nil))
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
 
     # ファイルはない
@@ -154,9 +153,9 @@ class FileWriterTest < Test::Unit::TestCase
   end
 
 
-  def test_get_current_file_path
+  def test_wb_get_current_file_path
     system('rm -rf wb_test')
-    fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, @log)
+    fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, Logger.new(nil))
 
     assert_nil( fw.get_current_file_path('roma') )
 
@@ -172,14 +171,12 @@ class FileWriterTest < Test::Unit::TestCase
     assert_equal( File.join(path,"1.wb"), fw.get_current_file_path('roma') )
   end
 
-  def test_get_path
+  def test_wb_get_path
     system('rm -rf wb_test')
-    fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, @log)
+    fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, Logger.new(nil))
     path = File.expand_path("./wb_test/roma0_11211/roma")
     assert_equal( path, fw.wb_get_path('roma'))
   end
-
-  private
 
   def read_wb(fname)
     ret = []
@@ -195,6 +192,100 @@ class FileWriterTest < Test::Unit::TestCase
       end
     }
     ret
+  end
+
+end
+
+
+class FileWriterTest2 < FileWriterTest
+  include RomaTestUtils
+
+  def setup
+    start_roma
+    @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
+    system('rm -rf wb')
+  end
+
+  def teardown
+    stop_roma
+    Roma::Messaging::ConPool::instance.close_all
+   rescue => e
+    puts "#{e} #{$@}"
+  end
+
+  def test_wb2_stat
+    ret = send_cmd("localhost_11211", "stat wb_command_map")
+    assert_equal("stats.wb_command_map {}\r\n", ret)
+  end
+
+  def test_wb2_command_map
+    send_cmd("localhost_11211", "wb_command_map {:set=>1}")
+    ret = send_cmd("localhost_11211", "stat wb_command_map")
+    assert_equal("stats.wb_command_map {:set=>1}\r\n", ret)
+  end
+
+  def test_wb2_set
+    send_cmd("localhost_11211", "wb_command_map {:set=>1}")
+    assert_equal("STORED", @rc.set("abc","value abc",0,true))
+    send_cmd("localhost_11211", "writebehind_rotate roma")
+    
+    wb0 = read_wb("#{wb_path}/0.wb")
+    assert(1, wb0.length)
+    wb0.each do |last, cmd, key, val|
+      assert_equal(1, cmd)
+      assert_equal("abc", key)
+      assert_equal("value abc", val)
+    end
+  end
+
+  def test_wb2_storage_commands
+    h = {:set=>1,:delete=>2,:add=>3,:replace=>4,:append=>5,:prepend=>6,:cas=>7,:incr=>8,:decr=>9,:set_expt=>10}
+    send_cmd("localhost_11211", "wb_command_map #{h}")
+    assert_equal("STORED", @rc.set("abc","1",0,true))
+    assert_equal("DELETED", @rc.delete("abc"))
+    assert_equal("STORED", @rc.add("abc","1",0,true))
+    assert_equal("STORED", @rc.replace("abc","2",0,true))
+    assert_equal("STORED", @rc.append("abc","3"))
+    assert_equal("STORED", @rc.prepend("abc","1"))
+    res = @rc.cas("abc", 0, true) do |v|
+      v = "128"
+    end
+    assert_equal("STORED", res)
+    assert_equal(129, @rc.incr("abc"))
+    assert_equal(128, @rc.decr("abc"))
+    ## test for set_expt TODO
+    send_cmd("localhost_11211", "writebehind_rotate roma")
+    
+    
+    res = {1=>'1',2=>'1',3=>'1',4=>'2',5=>'23',6=>'123',7=>'128',8=>'129',9=>'128'}
+    wb0 = read_wb("#{wb_path}/0.wb")
+    assert(1, wb0.length)
+    wb0.each do |last, cmd, key, val|
+      puts "#{cmd} #{key} #{val}"
+      assert_equal(res[cmd], val)
+    end
+  end
+
+  def send_cmd(host, cmd)
+    con = Roma::Messaging::ConPool.instance.get_connection(host)
+    con.write("#{cmd}\r\n")
+    ret = con.gets
+    con.close
+    ret
+  end
+
+  def wb_path
+    path = "wb/#{wb_hostname}/roma/#{Time.now.strftime('%Y%m%d')}/"
+  end
+
+  def wb_hostname
+    if File.exist?("wb/localhost_11211")
+      "localhost_11211"
+    elsif File.exist?("wb/localhost_11212")
+      "localhost_11212"
+    else
+      nil
+    end
   end
 
 end
