@@ -47,6 +47,9 @@ module Roma
 
     attr_accessor :hilatency_warn_time
 
+    # for write behind
+    attr_accessor :wb_command_map
+
     def initialize
       @config_path = nil
       @run_acquire_vnodes = false
@@ -67,6 +70,7 @@ module Roma
       @redundant_count = 0
       @size_of_zredundant = 0
       @hilatency_warn_time = 5
+      @wb_command_map = {}
     end
 
     def ap_str
@@ -98,6 +102,7 @@ module Roma
       ret['stats.out_message_count'] = @out_message_count
       ret['stats.redundant_count'] = @redundant_count
       ret['stats.hilatency_warn_time'] = @hilatency_warn_time
+      ret['stats.wb_command_map'] = @wb_command_map.inspect
       ret
     end
 

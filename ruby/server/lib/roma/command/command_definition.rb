@@ -127,8 +127,11 @@ module Roma
                 elsif count == :delete
                   @stats.delete_count += 1
                 end
-              
+
                 if ret
+                  if @stats.wb_command_map.key?(cmd.to_sym)
+                    Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ret[4])
+                  end
                   redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
                             ctx.params.key, ctx.params.digest, ret[2], 
                             expt, ret[4])
@@ -222,6 +225,9 @@ module Roma
                 end
               
                 if ret
+                  if @stats.wb_command_map.key?(cmd.to_sym)
+                    Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ret[4])
+                  end
                   redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
                             ctx.params.key, ctx.params.digest, ret[2], 
                             expt, ret[4])

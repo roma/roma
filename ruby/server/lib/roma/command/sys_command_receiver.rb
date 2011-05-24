@@ -500,6 +500,48 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # wb_command_map <hash string>
+      # ex.
+      # {:set=>1,:append=>2,:delete=>3}
+      def ev_wb_command_map(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        map = {}
+        cmd = s[1..-1].join
+        if cmd =~ /^\{(.+)\}$/
+          $1.split(',').each do |kv|
+            k, v = kv.split('=>')
+            map[k[1..-1].to_sym] = v.to_i if v && k[0]==':'
+          end
+
+          res = broadcast_cmd("rwb_command_map #{s[1..-1].join}\r\n")
+          @stats.wb_command_map = map
+          res[@stats.ap_str] = map.inspect
+          send_data("#{res}\r\n")
+        else
+          send_data("CLIENT_ERROR hash string parse error\r\n")
+        end
+      end
+
+      def ev_rwb_command_map(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        map = {}
+        cmd = s[1..-1].join
+        if cmd =~ /^\{(.+)\}$/
+          $1.split(',').each do |kv|
+            k, v = kv.split('=>')
+            map[k[1..-1].to_sym] = v.to_i if v && k[0]==':'
+          end
+          @stats.wb_command_map = map
+          send_data("#{map}\r\n")
+        else
+          send_data("CLIENT_ERROR hash string parse error\r\n")
+        end        
+      end
+
       private 
 
       def dcnice(p)
@@ -556,7 +598,9 @@ module Roma
         ret['config.PLUGIN_FILES'] = Config::PLUGIN_FILES.inspect
         ret['config.WRITEBEHIND_PATH'] = File.expand_path(Config::WRITEBEHIND_PATH)
         ret['config.WRITEBEHIND_SHIFT_SIZE'] = Config::WRITEBEHIND_SHIFT_SIZE
-        ret['config.CONNECTION_DESCRIPTOR_TABLE_SIZE'] = Config::CONNECTION_DESCRIPTOR_TABLE_SIZE
+        if Config.const_defined?(:CONNECTION_DESCRIPTOR_TABLE_SIZE)
+          ret['config.CONNECTION_DESCRIPTOR_TABLE_SIZE'] = Config::CONNECTION_DESCRIPTOR_TABLE_SIZE
+        end
         ret
       end
 

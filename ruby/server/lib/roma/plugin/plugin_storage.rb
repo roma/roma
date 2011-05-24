@@ -133,8 +133,13 @@ module Roma
         end
         res = @storages[hname].delete(vn, key, d)
         @stats.delete_count += 1
+
         return send_data("NOT_DELETED\r\n") unless res
         return send_data("NOT_FOUND\r\n") if res == :deletemark
+
+        if @stats.wb_command_map.key?(:delete)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:delete], key, res[4])
+        end
 
         nodes[1..-1].each{ |nid|
           res2 = send_cmd(nid,"rdelete #{key}\e#{hname} #{res[2]}\r\n")
@@ -164,8 +169,13 @@ module Roma
         end
         res = @storages[hname].delete(vn, key, d)
         @stats.delete_count += 1
+
         return send_data("NOT_DELETED\r\n") unless res
         return send_data("NOT_FOUND\r\n") if res == :deletemark
+
+        if @stats.wb_command_map.key?(:delete)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:delete], key, res[4])
+        end
 
         nodes.delete(@nid)
         nodes.each{ |nid|
@@ -299,7 +309,11 @@ module Roma
         end
         
         ret = @storages[hname].set_expt(vn, key, d, expt)
+
         if ret
+          if @stats.wb_command_map.key?(:set_export)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], k, expt.to_s)
+          end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           send_data("STORED\r\n")
         else
@@ -332,7 +346,11 @@ module Roma
         end
 
         ret = @storages[hname].set_expt(vn, key, d, expt)
+
         if ret
+          if @stats.wb_command_map.key?(:set_export)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], k, expt.to_s)
+          end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           send_data("STORED\r\n")
         else
@@ -421,7 +439,11 @@ module Roma
         end
         ret = @storages[hname].send(fnc, vn, k, d, expt ,v)
         @stats.write_count += 1
+
         if ret
+          if @stats.wb_command_map.key?(fnc)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, ret[4])
+          end
           redundant(nodes, hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -443,6 +465,7 @@ module Roma
 
         ret = @storages[hname].cas(vn, k, d, clk, expt ,v)
         @stats.write_count += 1
+
         case ret
         when nil
           @log.error("cas NOT_STORED:#{hname} #{vn} #{k} #{d} #{expt} #{clk}")
@@ -452,6 +475,9 @@ module Roma
         when :exists
           send_data("EXISTS\r\n")
         else
+          if @stats.wb_command_map.key?(:cas)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:cas], k, ret[4])
+          end
           redundant(nodes, hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")          
         end
@@ -528,7 +554,11 @@ module Roma
         end
         res = @storages[hname].send(fnc, vn, k, d, v)
         @stats.write_count += 1
+
         if res
+          if @stats.wb_command_map.key?(fnc)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, res[4])
+          end
           redundant(nodes, hname, k, d, res[2], res[3], res[4])
           send_data("#{res[4]}\r\n")
         else

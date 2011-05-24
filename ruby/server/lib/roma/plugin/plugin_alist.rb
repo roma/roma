@@ -48,9 +48,12 @@ module Roma
         expt = 0x7fffffff
         ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump([[],[]]))
         @stats.delete_count += 1
-        Roma::WriteBehindProcess::push(hname, 3, k, ddata)
+
 
         if ret
+          if @stats.wb_command_map.key?(:alist_clear)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_clear], k, ddata)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("CLEARED\r\n")
         else
@@ -86,9 +89,10 @@ module Roma
         ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
         @stats.delete_count += 1
 
-        Roma::WriteBehindProcess::push(hname, 2, k, data)
-
         if ret
+          if @stats.wb_command_map.key?(:alist_delete)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_delete], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("DELETED\r\n")
         else
@@ -119,9 +123,10 @@ module Roma
         ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
         @stats.delete_count += 1
 
-        Roma::WriteBehindProcess::push(hname, 2, k, dret)
-
         if ret
+          if @stats.wb_command_map.key?(:alist_delete_at)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_delete_at], k, dret)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("DELETED\r\n")
         else
@@ -358,6 +363,9 @@ module Roma
         @stats.write_count += 1
 
         if ret
+          if @stats.wb_command_map.key?(:alist_insert)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_insert], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -398,6 +406,9 @@ module Roma
         @stats.write_count += 1
 
         if ret
+          if @stats.wb_command_map.key?(:alist_sized_insert)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_sized_insert], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -440,9 +451,10 @@ module Roma
         ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
         @stats.write_count += 1
 
-        Roma::WriteBehindProcess::push(hname, 1, k, data)
-
         if ret
+          if @stats.wb_command_map.key?(:alist_swap_and_insert)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_swap_and_insert], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -487,9 +499,10 @@ module Roma
         ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
         @stats.write_count += 1
 
-        Roma::WriteBehindProcess::push(hname, 1, k, data)
-
         if ret
+          if @stats.wb_command_map.key?(:alist_swap_and_sized_insert)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_swap_and_sized_insert], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -535,9 +548,10 @@ module Roma
         ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
         @stats.write_count += 1
 
-        Roma::WriteBehindProcess::push(hname, 1, k, data)
-
         if ret
+          if @stats.wb_command_map.key?(:alist_expired_swap_and_insert)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_expired_swap_and_insert], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -585,9 +599,10 @@ module Roma
         ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
         @stats.write_count += 1
 
-        Roma::WriteBehindProcess::push(hname, 1, k, data)
-
         if ret
+          if @stats.wb_command_map.key?(:alist_expired_swap_and_sized_insert)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_expired_swap_and_sized_insert], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -848,6 +863,9 @@ module Roma
         @stats.write_count += 1
 
         if ret
+          if @stats.wb_command_map.key?(:alist_push)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_push], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -888,7 +906,11 @@ module Roma
         ret = @storages[hname].set(vn, k, d, expt ,Marshal.dump(v))
         @stats.write_count += 1
 
+
         if ret
+          if @stats.wb_command_map.key?(:alist_sized_push)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_sized_push], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -930,6 +952,9 @@ module Roma
         @stats.write_count += 1
 
         if ret
+          if @stats.wb_command_map.key?(:alist_swap_and_push)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_swap_and_push], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -977,6 +1002,9 @@ module Roma
         @stats.write_count += 1
 
         if ret
+          if @stats.wb_command_map.key?(:alist_swap_and_sized_push)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_swap_and_sized_push], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -1023,6 +1051,9 @@ module Roma
         @stats.write_count += 1
 
         if ret
+          if @stats.wb_command_map.key?(:alist_expired_swap_and_push)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_expired_swap_and_push], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -1074,6 +1105,9 @@ module Roma
         @stats.write_count += 1
 
         if ret
+          if @stats.wb_command_map.key?(:alist_expired_swap_and_sized_push)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_expired_swap_and_sized_push], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
@@ -1110,6 +1144,9 @@ module Roma
         @stats.write_count += 1
 
         if ret
+          if @stats.wb_command_map.key?(:alist_update_at)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:alist_update_at], k, data)
+          end
           redundant(nodes[1..-1], hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
