@@ -203,7 +203,8 @@ class WriteBehindTest < FileWriterTest
   def setup
     start_roma
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"],
-                                     [::Roma::ClientPlugin::PluginAshiatoList])
+                                     [::Roma::ClientPlugin::PluginAshiatoList,
+                                     ::Roma::ClientPlugin::PluginMap])
     system('rm -rf wb')
   end
 
@@ -314,6 +315,32 @@ class WriteBehindTest < FileWriterTest
     wb0.each do |last, cmd, key, val|
       begin
         val = Marshal.load(val)[0]
+      rescue
+      end
+      # puts "#{cmd} #{key} #{val.inspect}"
+      assert_equal(res[cmd], val)
+    end
+  end
+
+  def test_wb2_map_commands
+    h = {
+      :map_set=>1,
+      :map_delete=>2,
+      :map_clear=>3
+    }
+    send_cmd("localhost_11211", "wb_command_map #{h}")
+    assert_equal('STORED', @rc.map_set('abc','mapkey1','value1'))
+    assert_equal('DELETED', @rc.map_delete('abc', 'mapkey1'))
+    assert_equal('STORED', @rc.map_set('abc','mapkey1','value1'))
+    assert_equal('CLEARED', @rc.map_clear("abc"))
+    send_cmd("localhost_11211", "writebehind_rotate roma")
+    
+    res = {1=>'value1',2=>{},3=>{}}
+    wb0 = read_wb("#{wb_path}/0.wb")
+    assert_equal(4, wb0.length)
+    wb0.each do |last, cmd, key, val|
+      begin
+        val = Marshal.load(val)
       rescue
       end
       # puts "#{cmd} #{key} #{val.inspect}"
