@@ -44,7 +44,7 @@ class FileWriterTest < Test::Unit::TestCase
     fw.close_all
 
     wb0 = read_wb("#{path}/0.wb")
-    assert(100,wb0.length )
+    assert_equal(100,wb0.length )
     wb0.each{|last, cmd, key, val|
       assert_equal( "key-#{cmd}",key)
       assert_equal( "val-#{cmd}",val)
@@ -197,12 +197,13 @@ class FileWriterTest < Test::Unit::TestCase
 end
 
 
-class FileWriterTest2 < FileWriterTest
+class WriteBehindTest < FileWriterTest
   include RomaTestUtils
 
   def setup
     start_roma
-    @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
+    @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"],
+                                     [::Roma::ClientPlugin::PluginAshiatoList])
     system('rm -rf wb')
   end
 
@@ -230,7 +231,7 @@ class FileWriterTest2 < FileWriterTest
     send_cmd("localhost_11211", "writebehind_rotate roma")
     
     wb0 = read_wb("#{wb_path}/0.wb")
-    assert(1, wb0.length)
+    assert_equal(1, wb0.length)
     wb0.each do |last, cmd, key, val|
       assert_equal(1, cmd)
       assert_equal("abc", key)
@@ -259,9 +260,63 @@ class FileWriterTest2 < FileWriterTest
     
     res = {1=>'1',2=>'1',3=>'1',4=>'2',5=>'23',6=>'123',7=>'128',8=>'129',9=>'128'}
     wb0 = read_wb("#{wb_path}/0.wb")
-    assert(1, wb0.length)
+    assert_equal(9, wb0.length)
     wb0.each do |last, cmd, key, val|
-      puts "#{cmd} #{key} #{val}"
+      # puts "#{cmd} #{key} #{val.inspect}"
+      assert_equal(res[cmd], val)
+    end
+  end
+
+  def test_wb2_alist_commands
+    h = {
+      :alist_clear=>1,
+      :alist_delete=>2,
+      :alist_delete_at=>3,
+      :alist_insert=>4,
+      :alist_sized_insert=>5,
+      :alist_swap_and_insert=>6,
+      :alist_swap_and_sized_insert=>7,
+      :alist_expired_swap_and_insert=>8,
+      :alist_expired_swap_and_sized_insert=>9,
+      :alist_push=>10,
+      :alist_sized_push=>11,
+      :alist_swap_and_push=>12,
+      :alist_swap_and_sized_push=>13,
+      :alist_expired_swap_and_push=>14,
+      :alist_expired_swap_and_sized_push=>15,
+      :alist_update_at=>16
+    }
+    send_cmd("localhost_11211", "wb_command_map #{h}")
+    assert_equal('STORED', @rc.alist_push("abc","1")) # ['1']
+    assert_equal('STORED', @rc.alist_insert("abc",0,"2")) #['2','1']
+    assert_equal('STORED', @rc.alist_sized_insert("abc",5,"3")) #['3','2','1']
+    assert_equal('STORED', @rc.alist_swap_and_insert("abc","4")) #['4','3','2','1']
+    assert_equal('STORED', @rc.alist_swap_and_sized_insert("abc",5,"5")) #['5','4','3','2','1']
+    assert_equal('STORED', @rc.alist_expired_swap_and_insert("abc",100,"6")) #['6','5','4','3','2','1']
+    assert_equal('STORED', @rc.alist_expired_swap_and_sized_insert("abc",100,10,"7")) #['7','6','5','4','3','2','1']
+    assert_equal('STORED', @rc.alist_sized_push("abc",10,"8")) #['7','6','5','4','3','2','1','8']
+    assert_equal('STORED', @rc.alist_swap_and_push("abc","9")) #['7','6','5','4','3','2','1','8','9']
+    assert_equal('STORED', @rc.alist_swap_and_sized_push("abc",10,"10")) #['7','6','5','4','3','2','1','8','9','10']
+    assert_equal('STORED', @rc.alist_expired_swap_and_push("abc",100,"11")) #['7','6','5','4','3','2','1','8','9','10','11']
+    assert_equal('STORED', @rc.alist_expired_swap_and_sized_push("abc",100,12,"12")) #['7','6','5','4','3','2','1','8','9','10','12']
+    assert_equal('STORED', @rc.alist_update_at("abc",0,"13")) #['13','6','5','4','3','2','1','8','9','10','12']
+    assert_equal('DELETED', @rc.alist_delete("abc","3") ) #['13','6','5','4','2','1','8','9','10','12']
+    assert_equal('DELETED', @rc.alist_delete_at("abc",1)) #['13','5','4','2','1','8','9','10','12']
+    assert_equal('CLEARED', @rc.alist_clear("abc"))
+    send_cmd("localhost_11211", "writebehind_rotate roma")
+    
+    res = {
+      10=>'1',4=>'2',5=>'3',6=>'4',7=>'5',8=>'6',9=>'7',11=>'8',12=>'9',
+      13=>'10',14=>'11',15=>'12',16=>'13',2=>'3',3=>'6',
+      1=>["13", "5", "4", "2", "1", "8", "9", "10", "11", "12"]}
+    wb0 = read_wb("#{wb_path}/0.wb")
+    assert_equal(16, wb0.length)
+    wb0.each do |last, cmd, key, val|
+      begin
+        val = Marshal.load(val)[0]
+      rescue
+      end
+      # puts "#{cmd} #{key} #{val.inspect}"
       assert_equal(res[cmd], val)
     end
   end
@@ -287,5 +342,4 @@ class FileWriterTest2 < FileWriterTest
       nil
     end
   end
-
 end
