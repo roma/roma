@@ -130,7 +130,7 @@ module Roma
 
                 if ret
                   if @stats.wb_command_map.key?(cmd.to_sym)
-                    Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ret[4])
+                    Roma::WriteBehindProcess::push(ctx.params.hash_name, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ret[4])
                   end
                   redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
                             ctx.params.key, ctx.params.digest, ret[2], 
@@ -226,7 +226,7 @@ module Roma
               
                 if ret
                   if @stats.wb_command_map.key?(cmd.to_sym)
-                    Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ret[4])
+                    Roma::WriteBehindProcess::push(ctx.params.hash_name, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ctx.params.value)
                   end
                   redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
                             ctx.params.key, ctx.params.digest, ret[2], 
