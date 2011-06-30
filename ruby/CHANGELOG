@@ -1,3 +1,8 @@
+*0.8.8 (Jun 30 2011)*
+
+* create a lock file in the open method,and remove a lock file in the close method. [junji torii] 874f76a
+* for dynamic write-behind [junji torii] 0885028
+
 *0.8.7 (Nov 24 2010)*
 
 * refactor: add storage exception [junji torii] 5739597
