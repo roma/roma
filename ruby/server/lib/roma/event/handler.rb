@@ -4,6 +4,8 @@
 require 'eventmachine'
 require 'roma/event/con_pool'
 require 'roma/logging/rlogger'
+require 'roma/stats'
+require 'roma/storage/basic_storage'
 require 'socket'
 
 module Roma
@@ -36,15 +38,23 @@ module Roma
         end
       end
 
-      attr :stop_event_loop
-      attr :connected
-      attr :fiber
-      attr :rbuf
+      @@connections = {}
+      def self.connections; @@connections; end
 
-      attr :storages
-      attr :rttable
+      @@connection_expire_time = 60
+      def self.connection_expire_time=(t)
+        @@connection_expire_time = t
+      end
+
+      def self.connection_expire_time
+        @@connection_expire_time
+      end
+
       attr_accessor :timeout
+      attr_reader :connected
       attr_reader :lastcmd
+      attr_reader :last_access
+      attr_reader :addr, :port
 
       def initialize(storages, rttable)
         @rbuf=''
@@ -63,30 +73,46 @@ module Roma
         @rttable = rttable
         @timeout = 10
         @log = Roma::Logging::RLogger.instance
+        @last_access = Time.now
       end
 
       def post_init
-        @addr = Socket.unpack_sockaddr_in(get_peername)
-        @log.info("Connected from #{@addr[1]}:#{@addr[0]}. I have #{EM.connection_count} connections.")
-
+        @port, @addr = Socket.unpack_sockaddr_in(get_peername)
+        @log.info("Connected from #{@addr}:#{@port}. I have #{EM.connection_count} connections.")
         @connected = true
+        @last_access = Time.now
+        @@connections[self] = @last_access
         @fiber = Fiber.new { dispatcher }
+      rescue Exception =>e
+        @log.error("#{__FILE__}:#{__LINE__}:#{e.inspect} #{$@}")
       end
 
       def receive_data(data)
         @rbuf << data
+        @last_access = Time.now
         @fiber.resume
       rescue Exception =>e
-        @log.error("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
+        @log.error("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e.inspect} #{$@}")
       end
 
       def unbind
         @connected=false
-        @fiber.resume
+        begin
+          @fiber.resume
+        rescue FiberError
+        end
         EventMachine::stop_event_loop if @stop_event_loop
-        @log.info("Disconnected from #{@addr[1]}:#{@addr[0]}")
+        @@connections.delete(self)
+        if @enter_time
+          # hilatency check
+          ps = Time.now - @enter_time
+          if ps > @stats.hilatency_warn_time
+            @log.warn("#{@lastcmd} has incompleted, passage of #{ps} seconds")
+          end
+        end
+        @log.info("Disconnected from #{@addr}:#{@port}")
       rescue Exception =>e
-        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e.inspect} #{$@}")
+        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e.inspect} #{$@}")
       end
 
       protected
@@ -116,8 +142,11 @@ module Roma
       end
 
       def dispatcher
+        @stats = Roma::Stats.instance
         while(@connected) do
+          @enter_time = nil
           next unless s=gets
+          @enter_time = Time.now
           s=s.chomp.split(/ /)
           if s[0] && @@ev_list.key?(s[0].downcase)
             send(@@ev_list[s[0].downcase],s)
@@ -134,6 +163,12 @@ module Roma
             close_connection_after_writing
           end
 
+          # hilatency check
+          ps = Time.now - @enter_time
+          if ps > @stats.hilatency_warn_time
+            @log.warn("hilatency occurred in #{@lastcmd} put in a #{ps} seconds")
+          end
+
           d = EM.connection_count - @@ccl_start
           if d > 0 &&
               rand(100) < @@ccl_rate + (100 - @@ccl_rate) * d / (@@ccl_full - @@ccl_start)
@@ -142,12 +177,22 @@ module Roma
             @log.warn("Connection count > #{@@ccl_start}:closed")
           end
         end
+      rescue Storage::StorageException => e
+        @log.error("#{e.inspect} #{s} #{$@}")
+        send_data("SERVER_ERROR #{e} in storage engine\r\n")
+        close_connection_after_writing
+        if Config.const_defined?(:STORAGE_EXCEPTION_ACTION) &&
+            Config::STORAGE_EXCEPTION_ACTION == :shutdown
+          @log.error("Romad will stop")
+          @stop_event_loop = true
+        end
       rescue Exception =>e
-        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} #{e} #{$@}")
+        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e} #{$@}")
         close_connection
       end
 
       def pop(size)
+        return '' if size == 0
         if @rbuf.size >= size
           r = @rbuf[0..size-1]
           @rbuf = @rbuf[size..-1]
@@ -167,7 +212,7 @@ module Roma
             remain = size - @rbuf.size
             Fiber.yield(remain)
             if Time.now.to_i - t > @timeout * mult
-              @log.warn("#{__FILE__}:#{__LINE__}:#{@addr[1]}:#{@addr[0]} read_bytes time out");
+              @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} read_bytes time out");
               close_connection
               return nil
             end
@@ -194,10 +239,14 @@ module Roma
 
       def conn_get_stat
         ret = {}
+        ret["connection.count"] = EM.connection_count
         ret["connection.continuous_limit"] = Handler.get_ccl
-        ret["connection.accepted_count"] = EM.connection_count
+        ret["connection.accepted_connection_expire_time"] = Handler.connection_expire_time
+        ret["connection.handler_instance_count"] = Handler.connections.length
         ret["connection.pool_maxlength"] = Messaging::ConPool.instance.maxlength
+        ret["connection.pool_expire_time"] = Messaging::ConPool.instance.expire_time
         ret["connection.EMpool_maxlength"] = Event::EMConPool::instance.maxlength
+        ret["connection.EMpool_expire_time"] = Event::EMConPool.instance.expire_time
         ret
       end
 

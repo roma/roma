@@ -1,5 +1,4 @@
 require 'shell'
-
 require 'pathname'
 require 'fileutils'
 require 'rbconfig'
@@ -37,7 +36,7 @@ module RomaTestUtils
               RbConfig::CONFIG["ruby_install_name"])
   end
 
-  def start_roma
+  def start_roma conf='config4test.rb'
     sh = Shell.new
     sh.transact do
       Dir.glob("localhost_1121?.*").each{|f| rm f }
@@ -50,12 +49,17 @@ module RomaTestUtils
               "localhost_11211","localhost_11212",
               "-d","3",
               "--enabled_repeathost")
-    sleep 0.1
+    sleep 0.2
+    do_command_romad conf
+    sleep 1
+  end
+
+  def do_command_romad conf
+    sh = Shell.new
     sh.system(ruby_path,romad_path,"localhost","-p","11211","-d","--verbose",
-              "--disabled_cmd_protect","--config","#{server_test_dir}/config4test.rb")
+              "--disabled_cmd_protect","--config","#{server_test_dir}/#{conf}")
     sh.system(ruby_path,romad_path,"localhost","-p","11212","-d","--verbose",
-              "--disabled_cmd_protect","--config","#{server_test_dir}/config4test.rb")
-    sleep 0.8
+              "--disabled_cmd_protect","--config","#{server_test_dir}/#{conf}")
   end
 
   def stop_roma

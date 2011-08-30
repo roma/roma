@@ -175,6 +175,16 @@ class ListPluginTest < Test::Unit::TestCase
     assert_equal(["55","66","55","44","33"], @rc.alist_to_s("aa")[1])
     assert_equal('STORED', @rc.alist_sized_insert("aa",3,"22"))
     assert_equal(["22","55","66"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"77"))
+    assert_equal(["77","22","55","66"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"88"))
+    assert_equal(["88","77","22","55","66"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"99"))
+    assert_equal(["99","88","77","22","55","66"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"00"))
+    assert_equal(["00","99","88","77","22","55"], @rc.alist_to_s("aa")[1] )
+    assert_equal('STORED', @rc.alist_sized_insert("aa",6,"00"))
+    assert_equal(["00","00","99","88","77","22"], @rc.alist_to_s("aa")[1] )
   end
 
   def test_sized_insert2
@@ -467,6 +477,34 @@ class ListPluginTest < Test::Unit::TestCase
     # for expired logic
     assert_equal('STORED', @rc.alist_expired_swap_and_sized_push("aa",0,10,"44"))
     assert_equal(["44"], @rc.alist_to_s("aa")[1])
+  end
+
+  def test_alist_update_at
+    @rc.delete("aa")
+
+    assert_equal('NOT_FOUND', @rc.alist_update_at("aa",0,"a0"))
+
+    assert_equal('STORED', @rc.alist_push("aa","00"))
+    assert_equal('STORED', @rc.alist_push("aa","11"))
+    assert_equal('STORED', @rc.alist_push("aa","22"))
+    assert_equal('STORED', @rc.alist_push("aa","33"))
+    assert_equal('STORED', @rc.alist_push("aa","44"))
+    
+    assert_equal(["00","11","22","33","44"], @rc.alist_to_s("aa")[1])
+
+    assert_equal('NOT_FOUND', @rc.alist_update_at("aa",-1,"a0"))
+    assert_equal('NOT_FOUND', @rc.alist_update_at("aa",5,"a0"))
+
+    assert_equal('STORED', @rc.alist_update_at("aa",2,"a2"))
+    assert_equal(["00","11","a2","33","44"], @rc.alist_to_s("aa")[1])
+    assert_equal('STORED', @rc.alist_update_at("aa",0,"a0"))
+    assert_equal(["a0","11","a2","33","44"], @rc.alist_to_s("aa")[1])
+    assert_equal('STORED', @rc.alist_update_at("aa",1,"a1"))
+    assert_equal(["a0","a1","a2","33","44"], @rc.alist_to_s("aa")[1])
+    assert_equal('STORED', @rc.alist_update_at("aa",3,"a3"))
+    assert_equal(["a0","a1","a2","a3","44"], @rc.alist_to_s("aa")[1])
+    assert_equal('STORED', @rc.alist_update_at("aa",4,"a4"))
+    assert_equal(["a0","a1","a2","a3","a4"], @rc.alist_to_s("aa")[1])
   end
 
   def test_shift

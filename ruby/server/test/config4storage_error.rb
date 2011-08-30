@@ -1,4 +1,5 @@
 require 'roma/storage/rh_storage'
+require 'roma/storage/storage_error_storage'
 
 module Roma
   
@@ -25,7 +26,8 @@ module Roma
     CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
 
     # storage setting
-    STORAGE_CLASS = Roma::Storage::RubyHashStorage
+#    STORAGE_CLASS = Roma::Storage::RubyHashStorage
+    STORAGE_CLASS = Storage::StorageErrorStorage
     STORAGE_DIVNUM = 10
     STORAGE_PATH = '.'
     STORAGE_DUMP_PATH = '/tmp'

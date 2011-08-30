@@ -32,6 +32,7 @@ module Roma
 
     # proc param
     attr_accessor :stream_copy_wait_param
+    attr_accessor :dcnice
 
     # compressed redundant param
     attr_accessor :size_of_zredundant
@@ -44,6 +45,11 @@ module Roma
     attr_accessor :out_message_count
     attr_accessor :redundant_count
 
+    attr_accessor :hilatency_warn_time
+
+    # for write behind
+    attr_accessor :wb_command_map
+
     def initialize
       @config_path = nil
       @run_acquire_vnodes = false
@@ -54,6 +60,7 @@ module Roma
       @run_receive_a_vnode = false
       @run_release = false
       @stream_copy_wait_param = 0.0001
+      @dcnice = 3
       @enabled_vnodes_balance = nil
       @write_count = 0
       @read_count = 0
@@ -62,6 +69,8 @@ module Roma
       @out_message_count = 0
       @redundant_count = 0
       @size_of_zredundant = 0
+      @hilatency_warn_time = 5
+      @wb_command_map = {}
     end
 
     def ap_str
@@ -84,6 +93,7 @@ module Roma
       ret['stats.run_storage_clean_up'] = @run_storage_clean_up
       ret['stats.run_release'] = @run_release
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
+      ret['stats.dcnice'] = @dcnice
       ret['stats.size_of_zredundant'] = @size_of_zredundant
       ret['stats.write_count'] = @write_count
       ret['stats.read_count'] = @read_count
@@ -91,6 +101,8 @@ module Roma
       ret['stats.out_count'] = @out_count
       ret['stats.out_message_count'] = @out_message_count
       ret['stats.redundant_count'] = @redundant_count
+      ret['stats.hilatency_warn_time'] = @hilatency_warn_time
+      ret['stats.wb_command_map'] = @wb_command_map.inspect
       ret
     end
 

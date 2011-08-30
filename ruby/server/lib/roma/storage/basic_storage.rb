@@ -3,6 +3,8 @@ require 'digest/sha1'
 module Roma
   module Storage
 
+    class StorageException < Exception; end
+
     class BasicStorage
 
       attr :hdb
@@ -87,6 +89,7 @@ module Roma
       end
 
       def closedb
+        stop_clean_up
         buf = @hdb; @hdb = []
         buf.each{ |hdb| close_db(hdb) }
       end
@@ -331,6 +334,19 @@ module Roma
         nil
       end
 
+      # set expire time
+      def set_expt(vn, k, d, expt)
+        buf = @hdb[@hdiv[vn]].get(k)
+        if buf
+          vn, t, clk, expt2, v = unpack_data(buf)
+          return nil if Time.now.to_i > expt2
+          clk = (clk + 1) & 0xffffffff
+          ret = [vn, Time.now.to_i, clk, expt, v]
+          return ret if @hdb[@hdiv[vn]].put(k, pack_data(*ret))
+        end
+        nil
+      end
+
       def true_length
         res = 0
         @hdb.each{ |hdb| res += hdb.rnum }
@@ -343,30 +359,6 @@ module Roma
       def del_vnode(vn)
         buf = get_vnode_hash(vn)
         buf.each_key{ |k| @hdb[@hdiv[vn]].out(k) }
-      end
-
-      def clean_up(t,unit_test_flg=nil)
-        n = 0
-        nt = Time.now.to_i
-        @hdb.each_index{ |i|
-          delkey = []
-          @hdb[i].each{ |k, v|
-            vn, last, clk, expt = unpack_header(v)
-            if nt > expt && t > last
-              n += 1
-              #delkey << k
-              @hdb[i].out(k)
-            end
-            if unit_test_flg
-              closedb
-            end
-            sleep @each_clean_up_sleep
-          }
-          #delkey.each{ |k| @hdb[i].out(k) }
-        }
-        n
-      rescue => e
-        raise NoMethodError(e.message)
       end
 
       def each_clean_up(t, vnhash)

@@ -37,6 +37,22 @@ module Roma
         @stop_event_loop = true
       end
 
+      # shutdown_instance [node-id]
+      def ev_shutdown_instance(s)
+        if s.length != 2
+          send_data("usage:shutdown_instance [node-id]\r\n")
+        else
+          if s[1] == @stats.ap_str
+            @rttable.enabled_failover = false
+            send_data("BYE\r\n")
+            @stop_event_loop = true
+            close_connection_after_writing
+          else
+            send_data("invalid [node-id]\r\n")
+          end
+        end
+      end
+
       # version
       def ev_version(s)
         send_data("VERSION ROMA-#{Roma::VERSION}\r\n")
@@ -60,7 +76,7 @@ module Roma
         h = {}
         h['version'] = Roma::VERSION
         send_stat_result(nil,h,regexp)
-        send_stat_result(nil,Roma::Config.get_stat,regexp)
+        send_stat_result(nil,get_config_stat,regexp)
         send_stat_result(nil,@stats.get_stat,regexp)
         @storages.each{|hname,st|
           send_stat_result("storages[#{hname}].",st.get_stat,regexp)
@@ -301,9 +317,53 @@ module Roma
 
       def ev_forcedly_start(s)
         @log.info("ROMA forcedly start.")
-        Command::Receiver::mk_evlist
+        AsyncProcess::queue.clear
         @rttable.enabled_failover = true
+        Command::Receiver::mk_evlist
+        $roma.startup = false
         send_data("STARTED\r\n")
+      end
+
+      # switch_failover <on|off>
+      def ev_switch_failover(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        res = broadcast_cmd("rswitch_failover #{s[1]}\r\n")
+        if s[1] == 'on'
+          Messaging::ConPool.instance.close_all
+          Event::EMConPool::instance.close_all
+          @rttable.enabled_failover = true
+          @log.info("failover enabled")
+          res[@stats.ap_str] = "ENABLED"
+        elsif s[1] == 'off'
+          @rttable.enabled_failover = false
+          @log.info("failover disabled")
+          res[@stats.ap_str] = "DISABLED"
+        else
+          res[@stats.ap_str] = "NOTSWITCHED"
+        end
+        send_data("#{res}\r\n")
+      end
+
+      # rswitch_failover <on|off>
+      def ev_rswitch_failover(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1] == 'on'
+          Messaging::ConPool.instance.close_all
+          Event::EMConPool::instance.close_all
+          @rttable.enabled_failover = true
+          @log.info("failover enabled")
+          return send_data("ENABLED\r\n")
+        elsif s[1] == 'off'
+          @rttable.enabled_failover = false
+          @log.info("failover disabled")
+          return send_data("DISABLED\r\n")
+        else
+          send_data("NOTSWITCHED\r\n")
+        end
       end
 
       def ev_set_continuous_limit(s)
@@ -330,6 +390,156 @@ module Roma
         else
           send_data("NOT_STORED\r\n")
         end
+      end
+
+      # set_connection_pool_maxlength <length>
+      # set to max length of the connection pool
+      def ev_set_connection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_connection_pool_maxlength #{s[1]}\r\n")
+        Messaging::ConPool.instance.maxlength = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_maxlength <length>
+      def ev_rset_connection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        Messaging::ConPool.instance.maxlength = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_connection_pool_maxlength <length>
+      # set to max length of the connection pool
+      def ev_set_emconnection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_emconnection_pool_maxlength #{s[1]}\r\n")
+        Event::EMConPool.instance.maxlength = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_maxlength <length>
+      def ev_rset_emconnection_pool_maxlength(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        Event::EMConPool.instance.maxlength = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_accepted_connection_expire_time <sec>
+      # set to expired time(sec) for accepted connections
+      def ev_set_accepted_connection_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        res = broadcast_cmd("rset_accepted_connection_expire_time #{s[1]}\r\n")
+        Event::Handler::connection_expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_accepted_connection_expire_time <sec>
+      def ev_rset_accepted_connection_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Event::Handler::connection_expire_time = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_hilatency_warn_time <sec>
+      # set to threshold of warn message into a log when hilatency occured in a command.
+      def ev_set_hilatency_warn_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_f <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+
+        res = broadcast_cmd("rset_hilatency_warn_time #{s[1]}\r\n")
+        @stats.hilatency_warn_time = s[1].to_f
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_hilatency_warn_time <sec>
+      def ev_rset_hilatency_warn_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        if s[1].to_f <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        @stats.hilatency_warn_time = s[1].to_f
+        send_data("STORED\r\n")
+      end
+
+      # wb_command_map <hash string>
+      # ex.
+      # {:set=>1,:append=>2,:delete=>3}
+      def ev_wb_command_map(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        map = {}
+        cmd = s[1..-1].join
+        if cmd =~ /^\{(.+)\}$/
+          $1.split(',').each do |kv|
+            k, v = kv.split('=>')
+            map[k[1..-1].to_sym] = v.to_i if v && k[0]==':'
+          end
+
+          res = broadcast_cmd("rwb_command_map #{s[1..-1].join}\r\n")
+          @stats.wb_command_map = map
+          res[@stats.ap_str] = map.inspect
+          send_data("#{res}\r\n")
+        else
+          send_data("CLIENT_ERROR hash string parse error\r\n")
+        end
+      end
+
+      def ev_rwb_command_map(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        map = {}
+        cmd = s[1..-1].join
+        if cmd =~ /^\{(.+)\}$/
+          $1.split(',').each do |kv|
+            k, v = kv.split('=>')
+            map[k[1..-1].to_sym] = v.to_i if v && k[0]==':'
+          end
+          @stats.wb_command_map = map
+          send_data("#{map}\r\n")
+        else
+          send_data("CLIENT_ERROR hash string parse error\r\n")
+        end        
       end
 
       private 
@@ -369,9 +579,31 @@ module Roma
         else
           return "CLIENT_ERROR You sholud input a priority from 1 to 5."
         end
+        @stats.dcnice = p
         "STORED"
       end
-    end # module SystemCommandReceiver
 
+      def get_config_stat
+        ret = {}
+        ret['config.DEFAULT_LOST_ACTION'] = Config::DEFAULT_LOST_ACTION
+        ret['config.LOG_SHIFT_AGE'] = Config::LOG_SHIFT_AGE
+        ret['config.LOG_SHIFT_SIZE'] = Config::LOG_SHIFT_SIZE
+        ret['config.LOG_PATH'] = File.expand_path(Config::LOG_PATH)
+        ret['config.RTTABLE_PATH'] = File.expand_path(Config::RTTABLE_PATH)
+        ret['config.STORAGE_DELMARK_EXPTIME'] = Config::STORAGE_DELMARK_EXPTIME
+        if Config.const_defined?(:STORAGE_EXCEPTION_ACTION)
+          ret['config.STORAGE_EXCEPTION_ACTION'] = Config::STORAGE_EXCEPTION_ACTION
+        end
+        ret['config.DATACOPY_STREAM_COPY_WAIT_PARAM'] = Config::DATACOPY_STREAM_COPY_WAIT_PARAM
+        ret['config.PLUGIN_FILES'] = Config::PLUGIN_FILES.inspect
+        ret['config.WRITEBEHIND_PATH'] = File.expand_path(Config::WRITEBEHIND_PATH)
+        ret['config.WRITEBEHIND_SHIFT_SIZE'] = Config::WRITEBEHIND_SHIFT_SIZE
+        if Config.const_defined?(:CONNECTION_DESCRIPTOR_TABLE_SIZE)
+          ret['config.CONNECTION_DESCRIPTOR_TABLE_SIZE'] = Config::CONNECTION_DESCRIPTOR_TABLE_SIZE
+        end
+        ret
+      end
+
+    end # module SystemCommandReceiver
   end # module Command
 end # module Roma

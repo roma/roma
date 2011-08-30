@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 
 require 'roma/storage/tc_storage'
 require 'roma/storage/dbm_storage'
@@ -35,26 +34,28 @@ class TCStorageTest < Test::Unit::TestCase
     rmtestdir('storage_test')
   end
 
-  # 普通のset get
   def test_set_get
     assert_equal( 'abc_data',@st.set(0,'abc',0,0xffffffff,'abc_data')[4])
     assert_equal( 'abc_data', @st.get(0,'abc',0)  )
   end
 
-  # 普通のset delete
   def test_set_delete
     @st.set(0,'abc',0,0xffffffff,'abc_data')
-    assert_equal( 'abc_data', @st.delete(0,'abc',0)[4]) # 存在するキーの削除は value が返る
+    # delete method returns a value
+    assert_equal( 'abc_data', @st.delete(0,'abc',0)[4])
     assert_nil( @st.get(0,'abc',0) )
-    assert_equal(:deletemark, @st.delete(0,'abc',0)) # 削除済みはマークがあることを返す
+    # delete method returns :deletemark with deleted key
+    assert_equal(:deletemark, @st.delete(0,'abc',0))
   end
 
-  # 有効期限
   def test_set_exptime
     @st.set(0,'abc',0,Time.now.to_i,'abc_data')
-    assert_equal('abc_data', @st.get(0,'abc',0) ) # 期限内
-    @st.set(0,'abc',0,Time.now.to_i-1,'abc_data') # 有効期限を1秒前に
-    assert_nil( @st.get(0,'abc',0)) # 期限切れ
+    # returns a value within a fixed time limit
+    assert_equal('abc_data', @st.get(0,'abc',0) )
+    # expire time is a second ago
+    @st.set(0,'abc',0,Time.now.to_i-1,'abc_data')
+    # returns a nil when expired
+    assert_nil( @st.get(0,'abc',0))
   end
 
   def test_set_get_raw
@@ -70,35 +71,36 @@ class TCStorageTest < Test::Unit::TestCase
     }
   end
 
-  # 期限切れデータの削除
   def test_exp_delete
     assert_nil( @st.delete(0,'abc',0)[4])
-    assert_equal('abc_data' , @st.set(0,'abc',0,Time.now.to_i-1,'abc_data')[4]) # 有効期限を1秒前に
-    assert_nil( @st.delete(0,'abc',0)[4]) # 期限切れ
+    # expire time is a second ago
+    assert_equal('abc_data' , @st.set(0,'abc',0,Time.now.to_i-1,'abc_data')[4])
+    # delete method returns a nil in expired
+    assert_nil( @st.delete(0,'abc',0)[4])
   end
 
   def test_rset
-    # クロックがカウントアップされる
+    # increase a logical clock
     assert_equal(0, @st.set(0,'abc',0,Time.now.to_i,'abc_data')[2] )
     assert_equal(1, @st.set(0,'abc',0,Time.now.to_i,'abc_data')[2] )
     assert_equal(2, @st.set(0,'abc',0,Time.now.to_i,'abc_data')[2] )
-    # 指定したクロックが挿入される
+    # rset method returns a inputed clock value
     assert_equal(4, @st.rset(0,'abc',0,4,Time.now.to_i,'new_data')[2] )
-    # 古いクロックは拒否される
+    # but if input clock value is old then not store the data
     assert_nil( @st.rset(0,'abc',0,4,Time.now.to_i,'new_data') )
     assert_nil( @st.rset(0,'abc',0,3,Time.now.to_i,'new_data') )
   end
 
   def test_rdelete
-    # 指定したクロックで削除マークされる
+    # save a clock value in the deletemark
     assert_equal(2, @st.rdelete(0,'abc',0,2)[2] )
-    # 古いクロックの挿入は許されない
+    # reject a old clock value in rset method
     assert_nil( @st.rset(0,'abc',0,1,Time.now.to_i,'new_data'))
     assert_nil( @st.rset(0,'abc',0,2,Time.now.to_i,'new_data'))
-    # 古いクロックの削除も拒否される
+    # also reject a old clock value in rdelete method
     assert_nil( @st.rdelete(0,'abc',0,1) )
     assert_nil( @st.rdelete(0,'abc',0,2) )
-    # 新しいクロックの削除はマークされる
+    # but input the new clock to allow
     assert_equal( 3, @st.rdelete(0,'abc',0,3)[2] )
   end
 
@@ -108,7 +110,7 @@ class TCStorageTest < Test::Unit::TestCase
     assert( @st.out(0,'abc',0) )
   end
 
-  # 論理クロックの境界をテスト
+  # on boundary of a clock
   def test_clock_count
     assert_equal( 0xfffffffe, @st.rset(0,'set',0,0xfffffffe,Time.now.to_i,'new_data')[2])
     assert_equal(0xffffffff, @st.set(0,'set',0,Time.now.to_i,'abc_data')[2])
@@ -135,9 +137,10 @@ class TCStorageTest < Test::Unit::TestCase
 
   def test_add
     assert_equal('abc_data',@st.add(0,'abc',0,Time.now.to_i+1,'abc_data')[4])
-    assert_nil( @st.add(0,'abc',0,Time.now.to_i+1,'abc_data') ) # 上書きは失敗する
+    # deny a over write
+    assert_nil( @st.add(0,'abc',0,Time.now.to_i+1,'abc_data') )
     assert_equal( 'abc_data', @st.delete(0,'abc',0)[4])
-    assert_equal('abc_data', @st.add(0,'abc',0,Time.now.to_i,'abc_data')[4]) # delete 後の add の成功を確認
+    assert_equal('abc_data', @st.add(0,'abc',0,Time.now.to_i,'abc_data')[4])
   end
 
   def test_replace
@@ -169,7 +172,7 @@ class TCStorageTest < Test::Unit::TestCase
     assert_equal('100',  @st.incr(0,'abc',0,-6)[4]) # 106 + (-6) = 100
     assert_equal('0', @st.incr(0,'abc',0,-200)[4] ) # 100 + (-200) = 0
     assert_equal('0', @st.incr(0,'abc',0,-200)[4] ) # 0 + (-200) = 0
-    # 最大値をセット
+    # set to max value
     assert_equal('18446744073709551615',  @st.set(0,'abc',0,Time.now.to_i,
       '18446744073709551615')[4])
     assert_equal('1', @st.incr(0,'abc',0,2)[4] ) # max + 2 = 1
@@ -183,21 +186,20 @@ class TCStorageTest < Test::Unit::TestCase
     assert_equal('100', @st.decr(0,'abc',0,-6)[4] ) # 94 - (-6) = 100
     assert_equal('0', @st.decr(0,'abc',0,200)[4] ) # 100 - 200 = 0
     assert_equal('0', @st.decr(0,'abc',0,200)[4] ) # 0 - 200 = 0
-    # 最大値をセット
+    # set to max value
     assert_equal('18446744073709551615',  @st.set(0,'abc',0,Time.now.to_i,
       '18446744073709551615')[4])
     assert_equal('2',  @st.decr(0,'abc',0,-3)[4]) # max - (-2) = 2
   end
 
   def test_dump
-    assert_nil( @st.dump(0) ) # 最初は０件
+    assert_nil( @st.dump(0) )
     @st.set(0,'abc',0,0xffffffff,'abc_data')
     assert_equal(1, Marshal.load(@st.dump(0)).length )
     @st.set(0,'def',0,0xffffffff,'def_data')
     assert_equal(2, Marshal.load(@st.dump(0)).length )
-    assert_nil( @st.dump(1) ) # 異なるvnodeは０件
+    assert_nil( @st.dump(1) ) # another vnode is empty
 
-    # 10万件いれてみる
     n=@ndat
     n.times{|i|
       @st.set(2,i.to_s,0,0xffffffff,'abc_data')
@@ -205,7 +207,6 @@ class TCStorageTest < Test::Unit::TestCase
     assert_equal(n, Marshal.load(@st.dump(2)).length )
   end
 
-  # 10万件程度
   def test_volume
     n=@ndat
     n.times{|i|
@@ -217,31 +218,8 @@ class TCStorageTest < Test::Unit::TestCase
     n.times{|i|
       assert_equal('abc_data',  @st.delete(0,i.to_s,0)[4])
     }
-    # 削除記録も含めた本当のレコード数
+    # true_length value is included in number of deletemark
     assert_equal(n, @st.true_length )
-  end
-
-  def test_clean_up
-    @st.each_clean_up_sleep = 0
-    n=@ndat
-    n.times{|i|
-      @st.set(0,i.to_s,0,0xffffffff,'abc_data')
-    }
-    # 指定時刻より以前 and 有効期限切れを削除
-    # 全てのデータは現在よりも以前だが、有効期限内なので０件
-    assert_equal(0, @st.clean_up(Time.now.to_i+100) )
-    # 10件を削除（削除は有効期限を０する）
-    10.times{|i|
-      assert_equal('abc_data', @st.delete(0,i.to_s,0)[4])
-    }
-    assert_nil( @st.get(0,'0',0) )
-    assert_equal('abc_data', @st.get(0,'19',0) )
-    # 削除時刻よりも以前を指定すると、０件
-    assert_equal(0, @st.clean_up(Time.now.to_i-100) )
-    # 削除時刻よりも進ませると、10件
-    assert_equal(10, @st.clean_up(Time.now.to_i+100) )
-    # 残は n-10
-    assert_equal(n-10, Marshal.load(@st.dump(0)).length )
   end
 
   def test_each_clean_up
@@ -256,21 +234,21 @@ class TCStorageTest < Test::Unit::TestCase
     }
     # ---------+------+---------------------
     #        last < now+100
-    # 全てのデータは現在よりも以前だが、有効期限内なので０件
+    # all data within a fixed time limit
     @st.each_clean_up_sleep = 0
     @st.each_clean_up(Time.now.to_i+100,vnhash){|k,vn|
       puts "k=#{k} vn=#{vn}"
       assert(false)
     }
 
-    # vn=0 を10件削除
+    # delete data in vn=0
     n.times{|i| @st.delete(0,"key0-#{i}",0) }
-    # 削除時刻よりも以前を指定すると、０件
+    # time is 100 second ago
     @st.each_clean_up(Time.now.to_i-100,vnhash){|k,vn|
       assert(false)
     }
 
-    # 削除時刻よりも進ませると、10件
+    # time is 100 second later
     cnt=0
     @st.each_clean_up(Time.now.to_i+100,vnhash){|k,vn|
       assert_equal(0, vn)
@@ -279,17 +257,17 @@ class TCStorageTest < Test::Unit::TestCase
     }
     assert_equal(10,cnt )
 
-    # vn=1 を10件削除
+    # delete data in vn=1
     n.times{|i| @st.delete(1,"key1-#{i}",0) }
-    # vn=1 をセカンダリとする
+    # set to :secondary in vn=1
     vnhash[1]=:secondary
-    # セカンダリは削除されないので、０件
+    # :secondary was not deleted
     @st.each_clean_up(Time.now.to_i-100,vnhash){|k,vn|
       assert(false)
     }
-    # vn=1 をプライマリに戻す
+    # set to :primary in vn=1
     vnhash[1]=:primary
-    # 10件になる
+    # in :primary data was deleted
     cnt=0
     @st.each_clean_up(Time.now.to_i+100,vnhash){|k,vn|
       assert_equal(1, vn)
@@ -298,18 +276,18 @@ class TCStorageTest < Test::Unit::TestCase
     }
     assert_equal(10,cnt)
     
-    # 消すものが存在しないので、０件
+    # deletemark was empty
     @st.each_clean_up(Time.now.to_i-100,vnhash){|k,vn|
       assert(false)
     }
 
-    # vn=2 を担当から外す
+    # vn=2 is not taken of charge
     vnhash.delete(2)
-    # vn=2 のデータは存在する
+    # but still have a data in vn=2
     n.times{|i|
       assert_match(/val2-/,@st.get(2,"key2-#{i}",0) )
     }
-    # vn=2 の10件が削除される
+    # data was deleted in vn=2
     cnt=0
     @st.each_clean_up(Time.now.to_i+100,vnhash){|k,vn|
       assert_equal(2, vn)
@@ -317,16 +295,16 @@ class TCStorageTest < Test::Unit::TestCase
       cnt += 1
     }
     assert_equal(10,cnt)
-    # vn=2 のデータは消えているはず
+    # confirm it in vn=2
     n.times{|i|
       assert_nil( @st.get(2,"key2-#{i}",0) )
     }
 
-    # vn=3 有効期限を 100秒前にする
+    # time is 100 second ago in vn=3
     n.times{|i|
       @st.set(3,"key3-#{i}",0,Time.now.to_i-100,"val3-#{i}")
     }
-    # 期限切れは last に関係なく削除されるので、10件
+    # 10 kyes deleted
     cnt=0
     @st.each_clean_up(Time.now.to_i-100,vnhash){|k,vn|
       assert_equal(3, vn)
@@ -336,11 +314,10 @@ class TCStorageTest < Test::Unit::TestCase
     assert_equal(10,cnt)
   end
 
-  # 途中で止めるテスト
   def test_each_clean_up2
     n=10
 
-    # テストデータを100件登録する
+    # set and delete is repeated 100 times
     vnhash={}
     n.times{|i|
       n.times{|j|
@@ -350,7 +327,7 @@ class TCStorageTest < Test::Unit::TestCase
       vnhash[i]=:primary
     }
 
-    # 10msec の wait で each する
+    # each waite is 10 msec
     cnt = 0
     th = Thread.new{
       @st.each_clean_up_sleep = 0.01
@@ -358,60 +335,66 @@ class TCStorageTest < Test::Unit::TestCase
         cnt += 1
       }
     }
-    # 500msec 後に停止を指示
+    # in 500msec later will stop 
     sleep 0.5
     @st.stop_clean_up
     th.join
-    # 途中で停止したので cnt は 100未満
+    # should cnt is less than 100
     assert_operator(100, :>, cnt)
-    # 残りを削除
+    # delete a remain keys
     @st.each_clean_up_sleep = 0
     @st.each_clean_up(Time.now.to_i+100,vnhash){|k,vn|
       cnt += 1
     }
-    # 全件消えるので cnt は 100
+    # after all cnt is 100
     assert_equal(100, cnt)
   end
 
   def test_dump_and_load
     n=10
     n.times{|i|
+      # clock = 0
       @st.set(0,i.to_s,0,0xffffffff,'abc_data')
-
     }
-    assert_equal(0, @st.load(@st.dump(0)) ) # 同じ論理クロックはコピー件数 0 件
+    # not loaded
+    assert_equal(0, @st.load(@st.dump(0)) )
 
-    # 進んだ論理クロックのデータを n 件作成
     h={}
     n.times{|i|
+      # clock = 1
       h[i.to_s]=[0,Time.now.to_i,1,0xffffffff].pack('NNNN')+'new data'  
     }
     dmp=Marshal.dump(h)
 
-    assert_equal(n, @st.load(dmp) ) # 進んだ論理クロックの n 件のみコピーされる
+    # loaded
+    assert_equal(n, @st.load(dmp) )
     assert_equal('new data',  @st.get(0,'0',0))
   end
 
   def test_dump_and_load2
     n=10
+    # create a deletemark
     n.times{|i|
-      assert_nil( @st.delete(0,i.to_s,0)[4] ) # データが存在しなくても削除記録を残す
+      assert_nil( @st.delete(0,i.to_s,0)[4] )
     }
+    # dump a deletemark
     dmp=@st.dump(0)
-    assert_equal(n, Marshal.load(dmp).length ) # 削除記録もダンプされる
-    assert_equal(0, @st.load(@st.dump(0)) ) # 同じデータの場合はコピー件数 0 件
+    assert_equal(n, Marshal.load(dmp).length )
+    # not loaded, it's same data
+    assert_equal(0, @st.load(@st.dump(0)) )
 
-    # 遅れた論理クロックのデータを作成
+    # create a old clock data
     h={}
     n.times{|i|
       h[i.to_s]=[0,Time.now.to_i,0xffffffff,0xffffffff].pack('NNNN')+'old data'
     }
     dmp=Marshal.dump(h)
-    assert_equal(0, @st.load(dmp) ) # 進んだ論理クロックの削除記録があるのでデータは上書きされない
+    # not loaded
+    assert_equal(0, @st.load(dmp) )
     assert_nil( @st.get(0,'0',0) )
   end
 
-  # closedb 後のアクセスは NoMethodError が発生することを確認する
+  # access after close
   def test_close
     @st.closedb
 
@@ -437,31 +420,19 @@ class TCStorageTest < Test::Unit::TestCase
       @st.load(dmp)
     end
 
-    # この場合は 0 件
-    assert_equal(0,@st.clean_up(Time.now.to_i+100) )
+  end
 
-    # clean_up 中に closedb をするテスト
-    #
-    # わざわざユニットテストを行う理由 => レアケースなだけにバグも発見しにくい。
-    #
-    # バッチによる clean_up 処理中に deletehash を行ったときこの状態になる。
-    # NoMethodError を判定した retry を保証するためテストを行う。
-    # 
-    @st.opendb
+  def test_close_after_each_clean_up
     h={}
-    10.times{|i|
-      h[i.to_s]=[0,Time.now.to_i,0,Time.now.to_i].pack('NNNN')+'old data'
+    1000.times{|i|
+      h[i.to_s]=[i%10,Time.now.to_i,0,Time.now.to_i].pack('NNNN')+'old data'
     }
     dmp=Marshal.dump(h)
     @st.load(dmp)
 
-    # clean_up 中に closedb されると NoMethodError が発生する
-    assert_raise NoMethodError do
-      @st.clean_up(Time.now.to_i-10,true)
-    end
-
-    # 次のテストのために再度 open
-    @st.opendb
+    @st.each_clean_up(Time.now.to_i-100, Hash.new(:primary) ){|k,vn|
+      @st.closedb
+    }
   end
 
   def test_dump_file
@@ -550,19 +521,31 @@ class DbmStorageTest < TCStorageTest
   def setup
     rmtestdir('storage_test')
     @st=Roma::Storage::DbmStorage.new
-    @st.vn_list = [0]
+    @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
     @st.storage_path = 'storage_test'
     @st.opendb
   end
 
-  #undef test_each_clean_up
-  #undef test_each_clean_up2
+  def test_close_after_each_clean_up
+    h={}
+    1000.times{|i|
+      h[i.to_s]=[i%10,Time.now.to_i,0,Time.now.to_i].pack('NNNN')+'old data'
+    }
+    dmp=Marshal.dump(h)
+    @st.load(dmp)
+
+    assert_raise RuntimeError do
+      @st.each_clean_up(Time.now.to_i-100, Hash.new(:primary) ){|k,vn|
+        @st.closedb
+      }
+    end
+  end
 end
 
 class RubyHashStorageTest < TCStorageTest
   def setup
     @st=Roma::Storage::RubyHashStorage.new
-    @st.vn_list = [0]
+    @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
     @st.opendb
   end
 
@@ -625,19 +608,32 @@ class SQLite3StorageTest < TCStorageTest
   def setup
     rmtestdir('storage_test')
     @st=Roma::Storage::SQLite3Storage.new
-    @st.vn_list = [0]
+    @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
     @st.storage_path = 'storage_test'
     @st.opendb
   end
 
-  #undef test_out
+  def test_close_after_each_clean_up
+    h={}
+    1000.times{|i|
+      h[i.to_s]=[i%10,Time.now.to_i,0,Time.now.to_i].pack('NNNN')+'old data'
+    }
+    dmp=Marshal.dump(h)
+    @st.load(dmp)
+
+    assert_raise SQLite3::BusyException do
+      @st.each_clean_up(Time.now.to_i-100, Hash.new(:primary) ){|k,vn|
+        @st.closedb
+      }
+    end
+  end
 end
 
 class TCMemStorageTest < TCStorageTest
   def setup
     rmtestdir('storage_test')
     @st=Roma::Storage::TCMemStorage.new
-    @st.vn_list = [0]
+    @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
     @st.storage_path = 'storage_test'
     @st.opendb
   end

@@ -1,97 +1,105 @@
+require 'fileutils'
 require 'roma/stats'
 require 'roma/command/util_command_receiver'
+require 'roma/command/command_definition'
 
 module Roma
   module Command
 
     module MultiHashCommandReceiver
+      include Roma::Command::Definition
 
-      # defhash hashname
-      def ev_defhash(s)
-        if s.length!=2
-          send_data("CLIENT_ERROR usage:defhash hashname\r\n")
-          return
+      # defhash <name>
+      def_command_with_relay :defhash do |s|
+        if s.length != 2
+          "#{@defhash}"
+        else
+          unless @storages.key?(s[1])
+            raise(Roma::Command::Definition::ClientErrorException,
+                  "#{s[1]} dose not find.")
+          end
+          @defhash = s[1]
+          "STORED"
+        end        
+      end
+
+      # mounthash <name>
+      def_command_with_relay :mounthash do |s|
+        if s.length != 2
+          raise(Roma::Command::Definition::ClientErrorException,
+                "usage:mounthash <name>")
         end
-        @defhash=s[1]
-        send_data("STORED\r\n")
+        if @storages.key?(s[1])
+          raise(Roma::Command::Definition::ServerErrorException,
+                "#{s[1]} already mounted.")
+        end
+        # check a directory existence
+        unless File.directory? "#{Config::STORAGE_PATH}/#{@stats.ap_str}/#{s[1]}"
+          raise(Roma::Command::Definition::ServerErrorException,
+                "#{s[1]} dose not find.")
+        end
+        createhash(s[1], 'MOUNTED')
+      end
+
+      # umounthash <name>
+      def_command_with_relay :umounthash do |s|
+        if s.length != 2
+          raise(Roma::Command::Definition::ClientErrorException,
+                "usage:umounthash <name>")
+        end
+        unless @storages.key?(s[1])
+          raise(Roma::Command::Definition::ServerErrorException,
+                "#{s[1]} dose not find.")
+        end
+        umounthash(s[1])
+      end
+            
+      # createhash <name>
+      def_command_with_relay :createhash do |s|
+        if s.length != 2
+          raise(Roma::Command::Definition::ClientErrorException,
+                "usage:createhash <name>")
+        end
+        createhash(s[1], 'CREATED')
+      end
+
+      # deletehash <name>
+      def_command_with_relay :deletehash do |s|
+        if s.length != 2
+          raise(Roma::Command::Definition::ClientErrorException,
+                "usage:deletehash <name>")
+        end
+        deletehash(s[1])
       end
 
       # hashlist
       def ev_hashlist(s)
-        ret=''
-        @storages.each_key{|hn| ret << hn << ' ' }
-        send_data("#{ret[0...-1]}\r\n")
-      end
-      
-      # createhash hashname
-      def ev_createhash(s)
-        if s.length != 2
-          send_data("CLIENT_ERROR usage:createhash hashname\r\n")
-          return
-        end
-        res = broadcast_cmd("rcreatehash #{s[1]}\r\n")
-        res[@stats.ap_str] = createhash(s[1])
-        send_data("#{res.inspect}\r\n")
+        send_data("#{@storages.keys.join ' '}\r\n")
       end
 
-      # rcreatehash hashname
-      def ev_rcreatehash(s)
-        if s.length != 2
-          send_data("CLIENT_ERROR usage:createhash hashname\r\n")
-          return
-        end
-        send_data("#{createhash(s[1])}\r\n")
-      end
-      
-      def createhash(hname)
+      def createhash(hname, msg)
         if @storages.key?(hname)
           return "SERVER_ERROR #{hname} already exists."
         end
-        st = Roma::Config::STORAGE_CLASS.new
-        st.storage_path = "#{Roma::Config::STORAGE_PATH}/#{@stats.ap_str}/#{hname}"
+        st = Config::STORAGE_CLASS.new
+        st.storage_path = "#{Config::STORAGE_PATH}/#{@stats.ap_str}/#{hname}"
         st.vn_list = @rttable.vnodes
-        st.divnum = Roma::Config::STORAGE_DIVNUM
-        st.option = Roma::Config::STORAGE_OPTION
+        st.divnum = Config::STORAGE_DIVNUM
+        st.option = Config::STORAGE_OPTION
         @storages[hname] = st
         @storages[hname].opendb
         @log.info("createhash #{hname}")
-        return "CREATED"
+        return msg
       rescue =>e
-        @log.error("#{e}")
+        @log.error("#{e} #{$@}")
+        "NOT #{msg}"
       end
       private :createhash
 
-      # deletehash hashname
-      def ev_deletehash(s)
-        if s.length != 2
-          send_data("CLIENT_ERROR usage:deletehash hashname\r\n")
-          return
-        end
-        res = broadcast_cmd("rdeletehash #{s[1]}\r\n")
-        res[@stats.ap_str] = deletehash(s[1])
-        send_data("#{res.inspect}\r\n")        
-      end
-
-      # rdeletehash hashname
-      def ev_rdeletehash(s)
-        if s.length != 2
-          send_data("CLIENT_ERROR usage:rdeletehash hashname\r\n")
-          return
-        end
-        send_data("#{deletehash(s[1])}\r\n")        
-      end
-
       def deletehash(hname)
-        unless @storages.key?(hname)
-          return "SERVER_ERROR #{hname} dose not exists."
-        end
-        if hname == 'roma'
-          return "SERVER_ERROR the hash name of 'roma' can't delete."
-        end
-        st = @storages[hname]
-        @storages.delete(hname)
-        st.closedb
-        rm_rf("#{Roma::Config::STORAGE_PATH}/#{@stats.ap_str}/#{hname}")
+        ret = umounthash(hname)
+        return ret if ret != 'UNMOUNTED'
+        FileUtils.rm_rf "#{Config::STORAGE_PATH}/#{@stats.ap_str}/#{hname}"
         @log.info("deletehash #{hname}")
         return "DELETED"
       rescue =>e
@@ -99,17 +107,19 @@ module Roma
       end
       private :deletehash
       
-      # looked like a "rm -rf" command
-      def rm_rf(fname)
-        return unless File.exists?(fname)
-        if File::directory?(fname)
-          Dir["#{fname}/*"].each{|f| rm_rf(f) }
-          Dir.rmdir(fname)
-        else
-          File.delete(fname)
+      def umounthash(hname)
+        if @defhash == hname
+          return "SERVER_ERROR default hash can't unmount."
         end
+        unless @storages.key?(hname)
+          return "SERVER_ERROR #{hname} dose not exists."
+        end
+        st = @storages[hname]
+        @storages.delete(hname)
+        st.closedb
+        "UNMOUNTED"
       end
-      private :rm_rf
+      private :umounthash
 
     end # MultiHashCommandReceiver
 

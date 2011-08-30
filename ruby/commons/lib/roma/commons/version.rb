@@ -13,10 +13,10 @@ module Roma #:nodoc:
         MAJOR = 0
 
         # マイナバージョン
-        MINOR = 3
+        MINOR = 8
 
         # TINY version
-        TINY  = 6
+        TINY  = 3
 
         # バージョン文字列
         STRING = [MAJOR, MINOR, TINY].join('.')

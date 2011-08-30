@@ -61,6 +61,7 @@ module Roma
         nil
       end
 
+
     end # module UtilCommandReceiver
 
   end # module Command

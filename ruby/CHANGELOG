@@ -1,3 +1,41 @@
+*0.8.8 (Jun 30 2011)*
+
+* create a lock file in the open method,and remove a lock file in the close method. [junji torii] 874f76a
+* for dynamic write-behind [junji torii] 0885028
+
+*0.8.7 (Nov 24 2010)*
+
+* refactor: add storage exception [junji torii] 5739597
+
+*0.8.6 (Oct 20 2010)*
+
+* refactor: class macro for a plugin [junji torii] 7d89e4e
+* add a map plugin [junji torii] 7db2f64
+* bugfix: restart eventmachine by unbind event [junji torii] c457a70
+
+*0.8.5 (Aug 16 2010)*
+
+* bugfix: for zero byte read [junji torii] ef2dada
+* bugfix: for connection expire logic [junji torii] 0d883f6
+
+*0.8.4 (Jun 21 2010)*
+
+* refactor: modified a result of a stats command [junji torii] 9e966ed
+* bugfix: connection leak was corrected when a connection expired in irregular connection [junji torii] d23bde9
+* bugfix: access to a nil object in a logging was corrected [junji torii] dae2ed8
+* added a selection of a system call configuration, which of an epoll or select [junji torii] 24c41e2
+* refactor: supported epoll [junji torii] 5c777f1
+
+*0.8.3 (Jun 11 2010)*
+
+* added a new command for change to max length of a connection pool [junji torii] 1fbbe29
+* added a switch_failover command [junji torii] 6489383
+* added a configuration of connection management items [junji torii] 1f3fbd7
+* added a feature of expired connection [junji torii] b99e2e7
+* added a new option to the romad for unit-test, that command protection disable while starting [junji torii] e2a6af4
+* refactor:support for a REJECT message [junji torii] 7478e86
+* bugfix:cas command result was corrected in forward process [junji torii] c84e00d
+* add mail subject prefix feature [byplayer] afcaf48
 * add mailer path option to roma watch configuration file . [byplayer] ee997e1
 * add the program for watching a ROMA [Muga Nishizawa] ee916a8
 * bugfix:after the first node dose join, lost vnodes cannot be detected. [junji torii] 2a5b3b2

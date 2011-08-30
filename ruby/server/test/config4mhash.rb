@@ -1,4 +1,5 @@
 require 'roma/storage/rh_storage'
+require 'roma/storage/tc_storage'
 
 module Roma
   
@@ -25,7 +26,7 @@ module Roma
     CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
 
     # storage setting
-    STORAGE_CLASS = Roma::Storage::RubyHashStorage
+    STORAGE_CLASS = Storage::TCStorage
     STORAGE_DIVNUM = 10
     STORAGE_PATH = '.'
     STORAGE_DUMP_PATH = '/tmp'
@@ -38,7 +39,7 @@ module Roma
     DATACOPY_STREAM_COPY_WAIT_PARAM = 0.0001
 
     # plugin setting
-    PLUGIN_FILES = ['plugin_storage.rb','plugin_alist.rb','plugin_map.rb']
+    PLUGIN_FILES = ['plugin_storage.rb','plugin_alist.rb']
 
     # write-behind setting
     WRITEBEHIND_PATH = './wb'

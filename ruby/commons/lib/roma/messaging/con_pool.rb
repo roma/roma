@@ -9,29 +9,30 @@ module Roma
       include Singleton
 
       attr_accessor :maxlength
-      attr_accessor :refresh_rate
+      attr_accessor :expire_time
 
-      def initialize(maxlength = 10, refresh_rate = 0.0001)
+      def initialize(maxlength = 10, expire_time = 30)
         @pool = {}
         @maxlength = maxlength
-        @refresh_rate = refresh_rate
+        @expire_time = expire_time
         @lock = Mutex.new
       end
 
       def get_connection(ap)
-        ret = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
+        ret,last = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
+        if ret && last < Time.now - @expire_time
+          ret.close
+          ret = nil
+          Logging::RLogger.instance.info("connection expired at #{ap},remains #{@pool[ap].length}")
+        end
         return create_connection(ap) unless ret
         ret
-      rescue
+      rescue => e
+        Logging::RLogger.instance.error("#{__FILE__}:#{__LINE__}:#{e}")
         nil
       end
 
       def return_connection(ap, con)
-        if rand < @refresh_rate
-          con.close
-          return
-        end
-
         if select([con],nil,nil,0.0001)
           con.gets
           con.close
@@ -42,12 +43,13 @@ module Roma
           if @pool[ap].length > @maxlength
             con.close
           else
-            @pool[ap] << con
+            @pool[ap] << [con, Time.now]
           end
         else
-          @pool[ap] = [con]
+          @pool[ap] = [[con, Time.now]]
         end
-      rescue
+      rescue => e
+        Logging::RLogger.instance.error("#{__FILE__}:#{__LINE__}:#{e}")
       end
 
       def create_connection(ap)
@@ -75,7 +77,7 @@ module Roma
         @lock.synchronize {
           while(@pool[ap].length > 0)
             begin
-              @pool[ap].shift.close
+              @pool[ap].shift[0].close
             rescue =>e
               Roma::Logging::RLogger.instance.error("#{__FILE__}:#{__LINE__}:#{e}")
             end

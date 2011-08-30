@@ -22,12 +22,18 @@ module Roma
       @rd = @sender.send_routedump_command(nid)
     end
 
-    def send_cmd(cmd)
+    def send_cmd(cmd, nid = nil)
+      nid = @rd.nodes[0] unless nid
+      res = ''
+      res << @sender.send_command(nid, cmd, nil, :multiplelines_receiver2).join("\r\n")
+      res << "\r\n"
+    end
+
+    def send_cmd_all(cmd)
       res = ''
       @rd.nodes.each{|nid|
         res << "****** #{nid}\r\n"
-        res << @sender.send_command(nid, cmd, nil, :multiplelines_receiver2).join("\r\n")
-        res << "\r\n"
+        res << send_cmd(cmd, nid)
       }
       res
     end
@@ -35,12 +41,3 @@ module Roma
   end # class MultiCommander
   
 end # module Roma
-
-if ARGV.length < 2
-  STDERR.puts "usage:#{File.basename($0)} addr_port command args..."
-  exit
-end
-
-w = Roma::MultiCommander.new(ARGV[0])
-
-STDOUT.puts w.send_cmd(ARGV[1..-1].join(' '))
