@@ -26,9 +26,13 @@ module Roma
           end
         end
 
+        v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
+
         expt = calc_expt(ctx.argv[3].to_i)
 
-        [0, expt, Marshal.dump(v), :write, 'STORED']
+        @log.info("v:#{v.inspect}")
+
+        [0, expt, Marshal.dump(v), :write, return_str(v)]
       end
 
       private
@@ -41,6 +45,12 @@ module Roma
 
         expt
       end
+
+      def return_str(data)
+        data.to_json
+      end
+
+      DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
     end # PluginCount
   end # CommandPlugin
 end # Roma
