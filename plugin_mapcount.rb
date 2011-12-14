@@ -7,7 +7,7 @@ module Roma
       include ::Roma::CommandPlugin
       include ::Roma::Command::Definition
 
-      # mapcount_set <key> <flags> <expt> <sub_keys>\r\n
+      # mapcount_countup <key> <flags> <expt> <sub_keys>\r\n
       # TODO: comment for return value
       def_write_command_with_key :mapcount_countup do |ctx|
         v = {}
@@ -33,6 +33,15 @@ module Roma
         @log.info("v:#{v.inspect}")
 
         [0, expt, Marshal.dump(v), :write, return_str(v)]
+      end
+
+      # mapcount_get <key> <sub_keys>\r\n
+      # TODO: comment for return value
+      def_write_command_with_key :mapcount_get do |ctx|
+        next send_data("NOT_FOUND\r\n") unless ctx.stored
+
+        ret = Marshal.load(ctx.stored.value) if ctx.stored
+        send_data("#{return_str(ret)}\r\n")
       end
 
       private
