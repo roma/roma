@@ -9,7 +9,7 @@ module Roma
 
       # mapcount_set <key> <flags> <expt> <sub_keys>\r\n
       # TODO: comment for return value
-      def_write_command_with_key :mapcount_set do |ctx|
+      def_write_command_with_key :mapcount_countup do |ctx|
         v = {}
         v = Marshal.load(ctx.stored.value) if ctx.stored
 
