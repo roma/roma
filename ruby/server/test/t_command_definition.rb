@@ -295,44 +295,32 @@ class DefineCommandNoHashTest < Test::Unit::TestCase
   end
 
   def test_rcwk
-    assert_raise Roma::Command::Definition::ClientErrorException do
-      ctx = @obj.ev_rget ['get',"arg1\eno_hash_name"]
-      assert_equal "hoge", ctx.params.hash_name
-    end
+    ret = @obj.ev_rget ['get',"arg1\eno_hash_name"]
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
   end
 
   def test_wcwk
-    assert_raise Roma::Command::Definition::ClientErrorException do
-      ctx = @obj.ev_wget ['get',"arg1\eno_hash_name"]
-      assert_equal "hoge", ctx.params.hash_name
-    end
+    ret = @obj.ev_wget ['get',"arg1\eno_hash_name"]
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
   end
 
   def test_cwk
-    assert_raise Roma::Command::Definition::ClientErrorException do
-      ctx = @obj.ev_get ['get',"arg1\eno_hash_name"]
-      assert_equal "hoge", ctx.params.hash_name
-    end
+    ret = @obj.ev_get ['get',"arg1\eno_hash_name"]
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
   end
 
   def test_rcwkv
-    assert_raise Roma::Command::Definition::ClientErrorException do
-      ctx = @obj.ev_rset ['set',"arg1\eno_hash_name", '0', '0', '5']
-      assert_equal "hoge", ctx.params.hash_name
-    end
+    ret = @obj.ev_rset ['set',"arg1\eno_hash_name", '0', '0', '5']
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
   end
 
   def test_wcwkv
-    assert_raise Roma::Command::Definition::ClientErrorException do
-      ctx = @obj.ev_wset ['set',"arg1\eno_hash_name", '0', '0', '5']
-      assert_equal "hoge", ctx.params.hash_name
-    end
+    ret = @obj.ev_wset ['set',"arg1\eno_hash_name", '0', '0', '5']
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
   end
 
   def test_cwkv
-    assert_raise Roma::Command::Definition::ClientErrorException do
-      ctx = @obj.ev_set ['set',"arg1\eno_hash_name", '0', '0', '5']
-      assert_equal "hoge", ctx.params.hash_name
-    end
+    ret = @obj.ev_set ['set',"arg1\eno_hash_name", '0', '0', '5']
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
   end
 end
