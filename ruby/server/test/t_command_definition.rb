@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require 'roma/command/command_definition'
 require 'digest/sha1'
+require 'test/unit'
 
 module CommandModuleTest1
   include Roma::Command::Definition
@@ -17,7 +18,15 @@ module CommandModuleTest1
     end
     s
   end
-  
+
+  def_read_command_with_key :rget, :no_forward do |ctx|
+    ctx
+  end
+
+  def_write_command_with_key :wget, :no_forward do |ctx|
+    ctx
+  end
+
   def_command_with_key :get, :no_forward do |ctx|
     case ctx.argv[2]
     when 'ex_runtime'
@@ -27,6 +36,14 @@ module CommandModuleTest1
     when 'ex_server'
       raise Roma::Command::Definition::ServerErrorException, ctx.argv[1]
     end
+    ctx
+  end
+
+  def_write_command_with_key_value :wset, 4, :no_forward do |ctx|
+    ctx
+  end
+
+  def_read_command_with_key_value :rset, 4, :no_forward do |ctx|
     ctx
   end
 
@@ -57,7 +74,6 @@ module CommandModuleTest3
   def_command_with_relay :balse do |s|
     "override"
   end
-  
 end
 
 class DefCmdTest
@@ -177,7 +193,7 @@ class DefineCommandTest < Test::Unit::TestCase
     DefCmdTest.class_eval do
       include CommandModuleTest3
     end
-    
+
     res = @obj.ev_balse ['balse','arg1','arg2']
     robj = eval res.chomp # String -> Hash
     assert_equal "override", robj[:ap_str]
@@ -191,7 +207,7 @@ class DefineCommandTest < Test::Unit::TestCase
       @obj.ev_runtimeexception ['balse']
     end
   end
-  
+
   def test_defcmd_k
     # normal case
     ctx = @obj.ev_get ['get','arg1']
@@ -209,7 +225,7 @@ class DefineCommandTest < Test::Unit::TestCase
     assert_equal 1, ctx.params.vn
     assert_equal Digest::SHA1.hexdigest('arg2').hex % 10, ctx.params.digest
     assert_equal ['roma0','roma1'], ctx.params.nodes
-    
+
     # case of argument error
     res = @obj.ev_get ['get']
     assert_equal "CLIENT_ERROR dose not find key\r\n", res
@@ -225,7 +241,7 @@ class DefineCommandTest < Test::Unit::TestCase
     res = @obj.ev_get ['get','arg2','ex_server']
     assert_equal "SERVER_ERROR arg2\r\n", res
   end
-  
+
   def test_defcmd_kv
     # normal case
     ctx = @obj.ev_set ['set','arg1', '0', '0', '5']
@@ -260,5 +276,51 @@ class DefineCommandTest < Test::Unit::TestCase
     assert_equal "CLIENT_ERROR arg1\r\n", res
     res = @obj.ev_set ['set','arg2','ex_server']
     assert_equal "SERVER_ERROR arg2\r\n", res
+  end
+end
+
+class DefCmdTestNoHash < DefCmdTest
+  def initialize
+    super
+    @storages = {}
+  end
+end
+
+class DefineCommandNoHashTest < Test::Unit::TestCase
+  def setup
+    @obj = DefCmdTestNoHash.new
+  end
+
+  def teardown
+  end
+
+  def test_rcwk
+    ret = @obj.ev_rget ['get',"arg1\eno_hash_name"]
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+  end
+
+  def test_wcwk
+    ret = @obj.ev_wget ['get',"arg1\eno_hash_name"]
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+  end
+
+  def test_cwk
+    ret = @obj.ev_get ['get',"arg1\eno_hash_name"]
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+  end
+
+  def test_rcwkv
+    ret = @obj.ev_rset ['set',"arg1\eno_hash_name", '0', '0', '5']
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+  end
+
+  def test_wcwkv
+    ret = @obj.ev_wset ['set',"arg1\eno_hash_name", '0', '0', '5']
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+  end
+
+  def test_cwkv
+    ret = @obj.ev_set ['set',"arg1\eno_hash_name", '0', '0', '5']
+    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
   end
 end
