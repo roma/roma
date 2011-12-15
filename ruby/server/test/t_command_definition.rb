@@ -19,6 +19,14 @@ module CommandModuleTest1
     s
   end
 
+  def_read_command_with_key :rget, :no_forward do |ctx|
+    ctx
+  end
+
+  def_write_command_with_key :wget, :no_forward do |ctx|
+    ctx
+  end
+
   def_command_with_key :get, :no_forward do |ctx|
     case ctx.argv[2]
     when 'ex_runtime'
@@ -28,6 +36,14 @@ module CommandModuleTest1
     when 'ex_server'
       raise Roma::Command::Definition::ServerErrorException, ctx.argv[1]
     end
+    ctx
+  end
+
+  def_write_command_with_key_value :wset, 4, :no_forward do |ctx|
+    ctx
+  end
+
+  def_read_command_with_key_value :rset, 4, :no_forward do |ctx|
     ctx
   end
 
@@ -260,5 +276,63 @@ class DefineCommandTest < Test::Unit::TestCase
     assert_equal "CLIENT_ERROR arg1\r\n", res
     res = @obj.ev_set ['set','arg2','ex_server']
     assert_equal "SERVER_ERROR arg2\r\n", res
+  end
+end
+
+class DefCmdTestNoHash < DefCmdTest
+  def initialize
+    super
+    @storages = {}
+  end
+end
+
+class DefineCommandNoHashTest < Test::Unit::TestCase
+  def setup
+    @obj = DefCmdTestNoHash.new
+  end
+
+  def teardown
+  end
+
+  def test_rcwk
+    assert_raise Roma::Command::Definition::ClientErrorException do
+      ctx = @obj.ev_rget ['get',"arg1\eno_hash_name"]
+      assert_equal "hoge", ctx.params.hash_name
+    end
+  end
+
+  def test_wcwk
+    assert_raise Roma::Command::Definition::ClientErrorException do
+      ctx = @obj.ev_wget ['get',"arg1\eno_hash_name"]
+      assert_equal "hoge", ctx.params.hash_name
+    end
+  end
+
+  def test_cwk
+    assert_raise Roma::Command::Definition::ClientErrorException do
+      ctx = @obj.ev_get ['get',"arg1\eno_hash_name"]
+      assert_equal "hoge", ctx.params.hash_name
+    end
+  end
+
+  def test_rcwkv
+    assert_raise Roma::Command::Definition::ClientErrorException do
+      ctx = @obj.ev_rset ['set',"arg1\eno_hash_name", '0', '0', '5']
+      assert_equal "hoge", ctx.params.hash_name
+    end
+  end
+
+  def test_wcwkv
+    assert_raise Roma::Command::Definition::ClientErrorException do
+      ctx = @obj.ev_wset ['set',"arg1\eno_hash_name", '0', '0', '5']
+      assert_equal "hoge", ctx.params.hash_name
+    end
+  end
+
+  def test_cwkv
+    assert_raise Roma::Command::Definition::ClientErrorException do
+      ctx = @obj.ev_set ['set',"arg1\eno_hash_name", '0', '0', '5']
+      assert_equal "hoge", ctx.params.hash_name
+    end
   end
 end
