@@ -1,4 +1,3 @@
-
 module Roma
   module Command
     module Definition
@@ -74,6 +73,10 @@ module Roma
                 end
               end
               stored = StoredData.new
+              unless @storages[params.hash_name]
+                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+              end
+
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
@@ -109,6 +112,10 @@ module Roma
                 end
               end
               stored = StoredData.new
+              unless @storages[params.hash_name]
+                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+              end
+
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
@@ -169,6 +176,10 @@ module Roma
                 end
               end
               stored = StoredData.new
+              unless @storages[params.hash_name]
+                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+              end
+
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
@@ -205,6 +216,10 @@ module Roma
                 end
               end
               stored = StoredData.new
+              unless @storages[params.hash_name]
+                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+              end
+
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
@@ -267,6 +282,10 @@ module Roma
                 end
               end
               stored = StoredData.new
+              unless @storages[params.hash_name]
+                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+              end
+
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
@@ -305,6 +324,10 @@ module Roma
                 end
               end
               stored = StoredData.new
+              unless @storages[params.hash_name]
+                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+              end
+
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
