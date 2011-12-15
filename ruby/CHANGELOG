@@ -1,3 +1,8 @@
+*0.8.9 (Dec 16 2011)*
+
+* add chg_time_expt() method [junji torii] 305cefc
+* implement to check hash does not exist. [yukio.goto] cef82e0
+
 *0.8.8 (Jun 30 2011)*
 
 * create a lock file in the open method,and remove a lock file in the close method. [junji torii] 874f76a
