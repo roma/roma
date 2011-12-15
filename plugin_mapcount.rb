@@ -86,7 +86,7 @@ module Roma
         data.to_json
       end
 
-      DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
+      DATE_FORMAT = "%Y-%m-%dT%H:%M:%S +00"
     end # PluginCount
   end # CommandPlugin
 end # Roma
