@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require 'roma/command/command_definition'
 require 'digest/sha1'
+require 'test/unit'
 
 module CommandModuleTest1
   include Roma::Command::Definition
@@ -17,7 +18,7 @@ module CommandModuleTest1
     end
     s
   end
-  
+
   def_command_with_key :get, :no_forward do |ctx|
     case ctx.argv[2]
     when 'ex_runtime'
@@ -57,7 +58,6 @@ module CommandModuleTest3
   def_command_with_relay :balse do |s|
     "override"
   end
-  
 end
 
 class DefCmdTest
@@ -177,7 +177,7 @@ class DefineCommandTest < Test::Unit::TestCase
     DefCmdTest.class_eval do
       include CommandModuleTest3
     end
-    
+
     res = @obj.ev_balse ['balse','arg1','arg2']
     robj = eval res.chomp # String -> Hash
     assert_equal "override", robj[:ap_str]
@@ -191,7 +191,7 @@ class DefineCommandTest < Test::Unit::TestCase
       @obj.ev_runtimeexception ['balse']
     end
   end
-  
+
   def test_defcmd_k
     # normal case
     ctx = @obj.ev_get ['get','arg1']
@@ -209,7 +209,7 @@ class DefineCommandTest < Test::Unit::TestCase
     assert_equal 1, ctx.params.vn
     assert_equal Digest::SHA1.hexdigest('arg2').hex % 10, ctx.params.digest
     assert_equal ['roma0','roma1'], ctx.params.nodes
-    
+
     # case of argument error
     res = @obj.ev_get ['get']
     assert_equal "CLIENT_ERROR dose not find key\r\n", res
@@ -225,7 +225,7 @@ class DefineCommandTest < Test::Unit::TestCase
     res = @obj.ev_get ['get','arg2','ex_server']
     assert_equal "SERVER_ERROR arg2\r\n", res
   end
-  
+
   def test_defcmd_kv
     # normal case
     ctx = @obj.ev_set ['set','arg1', '0', '0', '5']
