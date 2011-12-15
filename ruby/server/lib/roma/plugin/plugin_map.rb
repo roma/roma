@@ -17,13 +17,7 @@ module Roma
         v = Marshal.load(ctx.stored.value) if ctx.stored
           
         v[ctx.argv[2]] = ctx.params.value
-
-        expt = ctx.argv[4].to_i
-        if expt == 0
-          expt = 0x7fffffff
-        elsif expt < 2592000
-          expt += Time.now.to_i
-        end
+        expt = chg_time_expt(ctx.argv[4].to_i)
         
         # [flags, expire time, value, kind of counter(:write/:delete), result message]
         [0, expt, Marshal.dump(v), :write, 'STORED']

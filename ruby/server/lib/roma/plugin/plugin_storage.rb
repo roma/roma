@@ -301,13 +301,7 @@ module Roma
           return
         end
 
-        expt = s[2].to_i
-        if expt == 0
-          expt = 0x7fffffff
-        elsif expt < 2592000
-          expt += Time.now.to_i
-        end
-        
+        expt = chg_time_expt(s[2].to_i)
         ret = @storages[hname].set_expt(vn, key, d, expt)
 
         if ret
@@ -338,13 +332,7 @@ module Roma
           return
         end
 
-        expt = s[2].to_i
-        if expt == 0
-          expt = 0x7fffffff
-        elsif expt < 2592000
-          expt += Time.now.to_i
-        end
-
+        expt = chg_time_expt(s[2].to_i)
         ret = @storages[hname].set_expt(vn, key, d, expt)
 
         if ret
@@ -428,11 +416,7 @@ module Roma
       end
 
       def store(fnc, hname, vn, k, d, expt, v, nodes)
-        if expt == 0
-          expt = 0x7fffffff
-        elsif expt < 2592000
-          expt += Time.now.to_i
-        end
+        expt = chg_time_expt(expt)
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
           return
@@ -453,11 +437,7 @@ module Roma
       end
 
       def store_cas(hname, vn, k, d, clk, expt, v, nodes)
-        if expt == 0
-          expt = 0x7fffffff
-        elsif expt < 2592000
-          expt += Time.now.to_i
-        end
+        expt = chg_time_expt(expt)
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
           return
