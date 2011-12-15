@@ -32,6 +32,13 @@ class MapPluginTest < Test::Unit::TestCase
     end    
   end
 
+  def test_map_set_expt
+    assert_equal 'STORED', @rc.map_set('key1','mapkey1','value1', 1)
+    assert_equal 'value1', @rc.map_get('key1','mapkey1')
+    sleep 2
+    assert_nil @rc.map_get('key1','mapkey1')
+  end
+
   def test_map_set
     assert_nil @rc.map_get('key1','mapkey1')
     assert_equal 'STORED', @rc.map_set('key1','mapkey1','value1')

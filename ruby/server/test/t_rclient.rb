@@ -25,12 +25,19 @@ class RClientTest < Test::Unit::TestCase
     puts "#{e} #{$@}"
   end
 
+  def test_set_expt_and_get
+    assert_equal("STORED", @rc.set("abc","value abc", 1))
+    assert_equal("value abc", @rc.get("abc"))
+    sleep 2
+    assert_nil( @rc.get("abc") )
+  end
+
   def test_set_get_delete
     @rc.delete("abc")
     assert_nil( @rc.get("abc") )
     assert_equal("STORED", @rc.set("abc","value abc"))
     assert_equal("value abc", @rc.get("abc"))
-    assert_equal("STORED", @rc.set("abc","value abc")) # 上書きは成功する
+    assert_equal("STORED", @rc.set("abc","value abc")) # over write will be success
     assert_equal("DELETED", @rc.delete("abc"))
     assert_nil( @rc.get("abc"))
     assert_equal("NOT_FOUND", @rc.delete("abc"))
@@ -88,25 +95,24 @@ class RClientTest < Test::Unit::TestCase
   end
 
   def test_out
-    # 本当に消す
     @rc.out("key-out")
-    # 本当にない場合は NOT_DELETED
+    # will return NOT_DELETED
     assert_equal("NOT_DELETED", @rc.out("key-out"))
     assert_equal("STORED", @rc.set("key-out","value out"))
     assert_equal("DELETED", @rc.out("key-out"))
     assert_equal("STORED", @rc.set("key-out","value out"))
-    # 削除マークをつける
+    # create a delete mark
     assert_equal("DELETED", @rc.delete("key-out"))
-    # delete してもマークを消すので DELETED
+    # will return DELETED cause for delete mark
     assert_equal("DELETED", @rc.out("key-out"))
   end
 
   def test_add
     assert_nil( @rc.get("add") )
     assert_equal("STORED", @rc.add("add","value add"))
-    assert_equal("NOT_STORED", @rc.add("add","value add")) # 上書きは失敗する
+    assert_equal("NOT_STORED", @rc.add("add","value add")) # will fail
     assert_equal("DELETED", @rc.delete("add"))
-    assert_equal("STORED", @rc.add("add","value add")) # delete 後の add の成功を確認
+    assert_equal("STORED", @rc.add("add","value add")) # will success add after delete
     assert_equal("DELETED", @rc.delete("add"))
   end
 
