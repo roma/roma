@@ -15,7 +15,7 @@ module Roma
 
         def def_command_with_relay(cmd, &block)
           # check a duplicated command definition in a same scope
-          if public_method_defined? "ev_#{cmd}".to_sym          
+          if public_method_defined? "ev_#{cmd}".to_sym
             raise "ev_#{cmd} already defined."
           end
 
@@ -51,7 +51,7 @@ module Roma
             end
           end
         end # def_command_with_relay
-        
+
         CommandParams = Struct.new(:key, :hash_name, :digest, :vn, :nodes, :value)
         StoredData = Struct.new(:vn, :last, :clk, :flg, :expt, :value)
         CommandContext = Struct.new(:argv, :params, :stored)
@@ -132,8 +132,8 @@ module Roma
                   if @stats.wb_command_map.key?(cmd.to_sym)
                     Roma::WriteBehindProcess::push(ctx.params.hash_name, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ret[4])
                   end
-                  redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
-                            ctx.params.key, ctx.params.digest, ret[2], 
+                  redundant(ctx.params.nodes[1..-1], ctx.params.hash_name,
+                            ctx.params.key, ctx.params.digest, ret[2],
                             expt, ret[4])
                   send_data("#{msg}\r\n")
                 else
@@ -223,7 +223,7 @@ module Roma
                 elsif count == :delete
                   @stats.delete_count += 1
                 end
-              
+
                 if ret
                   if @stats.wb_command_map.key?(cmd.to_sym)
                     Roma::WriteBehindProcess::push(ctx.params.hash_name, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ctx.params.value)
@@ -339,18 +339,18 @@ module Roma
         end
         send_data("#{res}\r\n")
       end
-      
+
       # 
       def forward_and_multi_line_receive(nid, rs, data=nil)
         if rs.last == "forward"
           return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
-        
+
         @log.warn("forward #{rs} to #{nid}");
 
         buf = rs.join(' ') + " forward\r\n"
         buf << data + "\r\n" if data
-        
+
         con = get_connection(nid)
         con.send(buf)
 
@@ -369,7 +369,7 @@ module Roma
           @rttable.proc_succeed(nid)
           return send_data(buf)
         end
-        
+
         res = ''
         begin
           res << buf
@@ -379,7 +379,7 @@ module Roma
             @rttable.proc_succeed(nid)
             return send_data(buf)
           end
-          res << con.read_bytes(s[3].to_i + 2)          
+          res << con.read_bytes(s[3].to_i + 2)
         end while (buf = con.gets)!="END\r\n"
 
         res << "END\r\n"
