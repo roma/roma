@@ -61,6 +61,15 @@ module Roma
         nil
       end
 
+      # change to actual time for a memcached's expire time value
+      def chg_time_expt(expt)
+        if expt == 0
+          expt = 0x7fffffff
+        elsif expt < 2592000
+          expt += Time.now.to_i
+        end
+        expt
+      end
 
     end # module UtilCommandReceiver
 
