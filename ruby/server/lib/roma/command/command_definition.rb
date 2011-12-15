@@ -113,7 +113,7 @@ module Roma
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
               ctx = CommandContext.new(s, params, stored)
-              
+
               ret = instance_exec(ctx, &block)
               if ret.instance_of? Array
                 flg, expt, value, count, msg = ret
