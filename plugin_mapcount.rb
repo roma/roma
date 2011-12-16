@@ -17,7 +17,7 @@ module Roma
 
         args = ctx.params.value.split(/\s*,\s*/)
         args.each do |arg|
-          if arg =~ /^([A-Za-z0-9]+)(:(\-?[\d]))?$/
+          if arg =~ /^([A-Za-z0-9]+)(:(\-?[\d]+))?$/
             key = $1
             count = 1
             count = $3.to_i if $3
