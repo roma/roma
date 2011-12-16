@@ -24,7 +24,7 @@ module Roma
             v[key] ||= 0
             v[key] += count
           else
-            raise ClientErrorException, "invalid sub_keys format: #{ctx.argv[4]}"
+            raise ClientErrorException, "invalid sub_keys format: #{ctx.params.value}"
           end
         end
 
