@@ -29,7 +29,7 @@ module Roma
         end
 
         v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
-        expt = calc_expt(ctx.argv[2].to_i)
+        expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_str = return_str(v)
         ret_msg = "VALUE #{ctx.params.key} 0 #{ret_str.length}\r\n#{ret_str}\r\nEND"
@@ -46,7 +46,7 @@ module Roma
         v = Marshal.load(ctx.stored.value) if ctx.stored
 
         v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
-        expt = calc_expt(ctx.argv[2].to_i)
+        expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_str = return_str(v)
         ret_msg = "VALUE #{ctx.params.key} 0 #{ret_str.length}\r\n#{ret_str}\r\nEND"
@@ -72,16 +72,6 @@ module Roma
       end
 
       private
-      def calc_expt(expt)
-        if expt == 0
-          expt = 0x7fffffff
-        elsif expt < 2592000
-          expt += Time.now.to_i
-        end
-
-        expt
-      end
-
       def return_str(data)
         data.to_json
       end
