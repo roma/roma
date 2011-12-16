@@ -3,7 +3,7 @@ require 'roma/command/command_definition'
 module Roma
   module CommandPlugin
 
-    module PluginCount
+    module PluginMapCount
       include ::Roma::CommandPlugin
       include ::Roma::Command::Definition
 
