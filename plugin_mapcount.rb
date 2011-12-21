@@ -56,15 +56,28 @@ module Roma
       # mapcount_get <key> 0 <sub_keys_str_len>\r\n
       # <sub_keys>\r\n
       #
-      # TODO: handle sub_keys
       # TODO: comment for return value
-      def_read_command_with_key :mapcount_get, :multi_line do |ctx|
+      def_read_command_with_key_value :mapcount_get, 3, :multi_line do |ctx|
         ret = nil
         if ctx.stored
           ret_val = Marshal.load(ctx.stored.value)
           if ret_val.is_a?(Hash)
-            ret = return_str(ret_val)
+            args = ctx.params.value.split(/\s*,\s*/)
+            if args.count == 0
+              ret = return_str(ret_val)
+            else
+              ret = {}
+              ret[:last_updated_date] = ret_val[:last_updated_date]
+              args.each do |arg|
+                ret[arg] = ret_val[arg] if ret_val[arg] != nil
+              end
+              ret = return_str(ret)
+            end
+          else
+            send_data("NOT_COLLECT_TYPE_DATA\r\n")
           end
+        else
+          send_data("NOT_FOUND\r\n")
         end
 
         send_data("VALUE #{ctx.params.key} 0 #{ret.length}\r\n#{ret}\r\n") if ret
