@@ -10,7 +10,12 @@ module Roma
       # mapcount_countup <key> <expt> <sub_keys_length>\r\n
       # <sub_keys> \r\n
       #
-      # TODO: comment for return value
+      # (
+      # VALUE <key> 0 <length of json string>\r\n
+      # <json string>\r\n
+      # END\r\n
+      # |CLIENT_ERROR invalid sub_keys format: <sub_keys>\r\n
+      # |SERVER_ERROR <error message>\r\n)
       def_write_command_with_key_value :mapcount_countup, 3, :multi_line do |ctx|
         v = {}
         v = Marshal.load(ctx.stored.value) if ctx.stored
@@ -36,11 +41,17 @@ module Roma
         [0, expt, Marshal.dump(v), :write, ret_msg]
       end
 
+      # mapcount_update <key> <expt>\r\n
+      #
+      # (
+      # VALUE <key> 0 <length of json string>\r\n
+      # <json string>\r\n
+      # END\r\n
+      # |SERVER_ERROR <error message>\r\n)
+      #
+      # TODO: handle sub_keys for following format?
       # mapcount_update <key> <expt> <sub_keys_length>\r\n
       # <sub_keys>\r\n
-      #
-      # TODO: handle sub_keys
-      # TODO: comment for return value
       def_write_command_with_key :mapcount_update, :multi_line do |ctx|
         v = {}
         v = Marshal.load(ctx.stored.value) if ctx.stored
@@ -56,7 +67,12 @@ module Roma
       # mapcount_get <key> 0 <sub_keys_str_len>\r\n
       # <sub_keys>\r\n
       #
-      # TODO: comment for return value
+      # (
+      # (VALUE <key> 0 <length of json string>\r\n
+      # <json string>\r\n
+      # |NOT_FOUND\r\n)
+      # END\r\n
+      # |SERVER_ERROR <error message>\r\n)
       def_read_command_with_key_value :mapcount_get, 3, :multi_line do |ctx|
         ret = nil
         if ctx.stored
@@ -73,8 +89,6 @@ module Roma
               end
               ret = return_str(ret)
             end
-          else
-            send_data("NOT_COLLECT_TYPE_DATA\r\n")
           end
         else
           send_data("NOT_FOUND\r\n")
