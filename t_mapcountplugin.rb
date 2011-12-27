@@ -47,6 +47,10 @@ class MapCountPluginTest < Test::Unit::TestCase
     assert_equal ret, @rc.mapcount_get('key1', 'subkey0,subkey1')
   end
 
+  def test_mapcount_nil
+    assert_equal 'NOT_FOUND', @rc.mapcount_get('key1', 'subkey1')
+  end
+
   def test_mapcount_countup_expt
     k = "subkey1"
     lt = Time.parse(Time.now.gmtime.strftime(DATE_FORMAT))

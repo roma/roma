@@ -90,8 +90,6 @@ module Roma
               ret = return_str(ret)
             end
           end
-        else
-          send_data("NOT_FOUND\r\n")
         end
 
         send_data("VALUE #{ctx.params.key} 0 #{ret.length}\r\n#{ret}\r\n") if ret
