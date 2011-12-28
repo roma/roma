@@ -47,8 +47,9 @@ class MapCountPluginTest < Test::Unit::TestCase
     assert_equal ret, @rc.mapcount_get('key1', 'subkey0,subkey1')
   end
 
-  def test_mapcount_nil
-    assert_equal 'NOT_FOUND', @rc.mapcount_get('key1', 'subkey1')
+  def test_get
+    assert_equal 'STORED', @rc.set('key', 0, 'value')
+    assert_equal 'STORED', @rc.get('key', 'value')
   end
 
   def test_mapcount_countup_expt
@@ -56,15 +57,11 @@ class MapCountPluginTest < Test::Unit::TestCase
     lt = Time.parse(Time.now.gmtime.strftime(DATE_FORMAT))
     ret = {"last_updated_date"=>lt, k=>1}
 
-    # RunTimeError occur..
-    #assert_equal 'NOT_FOUND', @rc.mapcount_get('key1', k)
+    assert_nil @rc.mapcount_get('key1', k)
     assert_equal ret, @rc.mapcount_countup('key1', k, 1)
     assert_equal ret, @rc.mapcount_get('key1', k)
-    # Following codes are work but include failer
-    #sleep 1
-    #assert_equal 'NOT_FOUND', @rc.mapcount_get('key1', k)
-    #sleep 1
-    #assert_equal 'NOT_FOUND', @rc.mapcount_get('key1', k)
+    sleep 2
+    assert_nil @rc.mapcount_get('key1', k)
   end
 end # MapCountPluginTest
 
