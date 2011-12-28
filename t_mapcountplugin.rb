@@ -47,11 +47,6 @@ class MapCountPluginTest < Test::Unit::TestCase
     assert_equal ret, @rc.mapcount_get('key1', 'subkey0,subkey1')
   end
 
-  def test_get
-    assert_equal 'STORED', @rc.set('key', 0, 'value')
-    assert_equal 'STORED', @rc.get('key', 'value')
-  end
-
   def test_mapcount_countup_expt
     k = "subkey1"
     lt = Time.parse(Time.now.gmtime.strftime(DATE_FORMAT))

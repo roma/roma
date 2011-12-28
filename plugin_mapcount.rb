@@ -49,18 +49,29 @@ module Roma
       # END\r\n
       # |SERVER_ERROR <error message>\r\n)
       #
-      # TODO: handle sub_keys for following format?
-      # mapcount_update <key> <expt> <sub_keys_length>\r\n
-      # <sub_keys>\r\n
-      def_write_command_with_key :mapcount_update, :multi_line do |ctx|
+      # TODO: do not update when key is empty 
+      def_write_command_with_key_value :mapcount_update, 3, :multi_line do |ctx|
         v = {}
         v = marshal_load(ctx.stored.value) if ctx.stored
+
+        if v.is_a?(Hash)
+          args = ctx.params.value.split(/\s*,\s*/)
+          if args.count == 0
+            ret = return_str(v)
+          else
+            ret = {}
+            ret[:last_updated_date] = v[:last_updated_date]
+            args.each do |arg|
+              ret[arg] = v[arg] if v[arg] != nil
+            end
+            ret = return_str(ret)
+          end
+        end
 
         v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
         expt = chg_time_expt(ctx.argv[2].to_i)
 
-        ret_str = return_str(v)
-        ret_msg = "VALUE #{ctx.params.key} 0 #{ret_str.length}\r\n#{ret_str}\r\nEND"
+        ret_msg = "VALUE #{ctx.params.key} 0 #{ret.length}\r\n#{ret}\r\nEND"
         [0, expt, Marshal.dump(v), :write, ret_msg]
       end
 
