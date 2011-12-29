@@ -45,15 +45,15 @@ module Roma
       # <sub_keys>\r\n
       #
       # (
-      # VALUE <key> 0 <length of json string>\r\n
-      # <json string>\r\n
+      # [VALUE <key> 0 <length of json string>\r\n
+      # <json string>\r\n]
       # END\r\n
       # |SERVER_ERROR <error message>\r\n)
-      #
-      # TODO: do not update when key is empty 
       def_write_command_with_key_value :mapcount_update, 3, :multi_line do |ctx|
+        next send_data("END\r\n") unless ctx.stored
+
         v = {}
-        v = marshal_load(ctx.stored.value) if ctx.stored
+        v = marshal_load(ctx.stored.value)
 
         if v.is_a?(Hash)
           args = ctx.params.value.split(/\s*,\s*/)
@@ -80,9 +80,8 @@ module Roma
       # <sub_keys>\r\n
       #
       # (
-      # (VALUE <key> 0 <length of json string>\r\n
-      # <json string>\r\n
-      # |NOT_FOUND\r\n)
+      # [VALUE <key> 0 <length of json string>\r\n
+      # <json string>\r\n]
       # END\r\n
       # |SERVER_ERROR <error message>\r\n)
       def_read_command_with_key_value :mapcount_get, 3, :multi_line do |ctx|
@@ -125,6 +124,6 @@ module Roma
       end
 
       DATE_FORMAT = "%Y-%m-%dT%H:%M:%S +00"
-    end # PluginCount
+    end # PluginMapCount
   end # CommandPlugin
 end # Roma
