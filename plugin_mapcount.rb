@@ -41,7 +41,8 @@ module Roma
         [0, expt, Marshal.dump(v), :write, ret_msg]
       end
 
-      # mapcount_update <key> <expt>\r\n
+      # mapcount_update <key> <expt> <sub_keys_length>\r\n
+      # <sub_keys>\r\n
       #
       # (
       # VALUE <key> 0 <length of json string>\r\n

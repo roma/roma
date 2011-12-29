@@ -58,5 +58,20 @@ class MapCountPluginTest < Test::Unit::TestCase
     sleep 2
     assert_nil @rc.mapcount_get('key1', k)
   end
-end # MapCountPluginTest
 
+  def test_mapcount_update
+    k = "subkey1"
+    lt = Time.parse(Time.now.gmtime.strftime(DATE_FORMAT))
+    ret_time = {"last_updated_date"=>lt}
+    ret_all = {"last_updated_date"=>lt, k=>1}
+
+    assert_nil @rc.mapcount_get('key1', k)
+    assert_equal ret_all, @rc.mapcount_countup('key1', k, 0)
+    assert_equal ret_all, @rc.mapcount_update('key1', )
+    assert_equal ret, @rc.mapcount_update('key1', 'subkey2')
+
+    assert_equal ret, @rc.mapcount_countup('key1', k, 1)
+    assert_equal ret, @rc.mapcount_get('key1', k)
+    sleep 2
+    assert_nil @rc.mapcount_get('key1', k)nd
+  end # MapCountPluginTest
