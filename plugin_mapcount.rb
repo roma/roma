@@ -34,7 +34,7 @@ module Roma
           end
         end
 
-        v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
+        v["last_updated_date"] = Time.now.gmtime.strftime(DATE_FORMAT)
         expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_str = return_str(v)
@@ -62,7 +62,7 @@ module Roma
             ret = return_str(v)
           else
             ret = {}
-            ret[:last_updated_date] = v["last_updated_date"]
+            ret["last_updated_date"] = v["last_updated_date"]
             args.each do |arg|
               ret[arg] = v[arg] if v[arg] != nil
             end
@@ -70,7 +70,7 @@ module Roma
           end
         end
 
-        v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
+        v["last_updated_date"] = Time.now.gmtime.strftime(DATE_FORMAT)
         expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_msg = "VALUE #{ctx.params.key} 0 #{ret.length}\r\n#{ret}\r\nEND"
@@ -96,7 +96,7 @@ module Roma
               ret = return_str(ret_val)
             else
               ret = {}
-              ret[:last_updated_date] = ret_val["last_updated_date"]
+              ret["last_updated_date"] = ret_val["last_updated_date"]
               args.each do |arg|
                 ret[arg] = ret_val[arg] if ret_val[arg] != nil
               end
