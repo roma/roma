@@ -19,7 +19,7 @@ module Roma
       # |SERVER_ERROR <error message>\r\n)
       def_write_command_with_key_value :mapcount_countup, 3, :multi_line do |ctx|
         v = {}
-        v = marshal_load(ctx.stored.value) if ctx.stored
+        v = data_load(ctx.stored.value) if ctx.stored
 
         args = ctx.params.value.split(/\s*,\s*/)
         args.each do |arg|
@@ -54,7 +54,7 @@ module Roma
         next send_data("END\r\n") unless ctx.stored
 
         v = {}
-        v = marshal_load(ctx.stored.value)
+        v = data_load(ctx.stored.value)
 
         if v.is_a?(Hash)
           args = ctx.params.value.split(/\s*,\s*/)
@@ -88,7 +88,7 @@ module Roma
       def_read_command_with_key_value :mapcount_get, 3, :multi_line do |ctx|
         ret = nil
         if ctx.stored
-          ret_val = marshal_load(ctx.stored.value)
+          ret_val = data_load(ctx.stored.value)
 
           if ret_val.is_a?(Hash)
             args = ctx.params.value.split(/\s*,\s*/)
@@ -114,7 +114,7 @@ module Roma
         data.to_json
       end
 
-      def marshal_load(data)
+      def data_load(data)
         begin
           MessagePack.unpack(data)
         rescue => e
