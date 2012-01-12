@@ -81,4 +81,42 @@ class MapCountPluginTest < Test::Unit::TestCase
     sleep 2
     assert_nil @rc.mapcount_get('key1')
   end
+
+  def test_counts
+    conn = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    if conn
+      conn.write "stat read_count\n"
+      r = conn.gets.split(" ")
+      assert_equal 0, r[1].to_i
+      conn.gets
+
+      @rc.mapcount_get('key')
+      sleep 10
+      conn.write "stat read_count\n"
+      r = conn.gets.split(" ")
+      assert_equal 1, r[1].to_i
+      conn.gets
+
+      conn.write "stat write_count\n"
+      r = conn.gets.split(" ")
+      assert_equal 0, r[1].to_i
+      conn.gets
+
+      @rc.mapcount_countup('key', 'subkey', 0)
+      sleep 10
+      conn.write "stat write_count\n"
+      r = conn.gets.split(" ")
+      assert_equal 1, r[1].to_i
+      conn.gets
+
+      @rc.mapcount_update('key')
+      sleep 10
+      conn.write "stat write_count\n"
+      r = conn.gets.split(" ")
+      assert_equal 2, r[1].to_i
+      conn.gets
+
+      conn.close
+    end
+  end
 end # MapCountPluginTest

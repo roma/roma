@@ -1,5 +1,4 @@
 require 'roma/command/command_definition'
-require 'msgpack'
 
 module Roma
   module CommandPlugin
@@ -34,12 +33,12 @@ module Roma
           end
         end
 
-        v["last_updated_date"] = Time.now.gmtime.strftime(DATE_FORMAT)
+        v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
         expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_str = return_str(v)
         ret_msg = "VALUE #{ctx.params.key} 0 #{ret_str.length}\r\n#{ret_str}\r\nEND"
-        [0, expt, MessagePack.pack(v), :write, ret_msg]
+        [0, expt, Marshal.dump(v), :write, ret_msg]
       end
 
       # mapcount_update <key> <expt> <sub_keys_length>\r\n
@@ -62,7 +61,7 @@ module Roma
             ret = return_str(v)
           else
             ret = {}
-            ret["last_updated_date"] = v["last_updated_date"]
+            ret[:last_updated_date] = v[:last_updated_date]
             args.each do |arg|
               ret[arg] = v[arg] if v[arg] != nil
             end
@@ -70,11 +69,11 @@ module Roma
           end
         end
 
-        v["last_updated_date"] = Time.now.gmtime.strftime(DATE_FORMAT)
+        v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
         expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_msg = "VALUE #{ctx.params.key} 0 #{ret.length}\r\n#{ret}\r\nEND"
-        [0, expt, MessagePack.pack(v), :write, ret_msg]
+        [0, expt, Marshal.dump(v), :write, ret_msg]
       end
 
       # mapcount_get <key> 0 <sub_keys_str_len>\r\n
@@ -96,7 +95,7 @@ module Roma
               ret = return_str(ret_val)
             else
               ret = {}
-              ret["last_updated_date"] = ret_val["last_updated_date"]
+              ret[:last_updated_date] = ret_val[:last_updated_date]
               args.each do |arg|
                 ret[arg] = ret_val[arg] if ret_val[arg] != nil
               end
@@ -116,7 +115,7 @@ module Roma
 
       def data_load(data)
         begin
-          MessagePack.unpack(data)
+          Marshal.load(data)
         rescue => e
           msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
           send_data("#{msg}\r\n")
