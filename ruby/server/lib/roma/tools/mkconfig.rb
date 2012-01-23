@@ -468,11 +468,11 @@ module Roma
           body = ch_assign(body, "require", " ", "roma\/storage\/#{req}")
           body = ch_assign(body, "STORAGE_CLASS", "Roma::Storage::#{storage}")
 
-          if req == "rh"
-            body = ch_assign(body, "STORAGE_OPTION", "")
+          if req == "rh_storage"
+            body = ch_assign(body, "STORAGE_OPTION","")
           end
 
-          if req == "tc"
+          if req == "tc_storage"
             body = ch_assign(body, "STORAGE_OPTION", "bnum=#{bnum}\#xmsiz=#{xmsiz}\#opts=d#dfunit=10")
           end
         end

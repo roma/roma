@@ -1,21 +1,13 @@
 #!/usr/bin/env ruby
 
-path =  File.dirname(File.expand_path($PROGRAM_NAME))
-$LOAD_PATH << path + "/../lib"
-$LOAD_PATH << path  + "/../../commons/lib"
+$:.unshift(File.expand_path(File.join('..', 'lib'), File.dirname(__FILE__)))
+$:.unshift(File.expand_path(File.join('..', '..', 'commons', 'lib'), File.dirname(__FILE__)))
 
 require 'optparse'
 require 'roma/tools/mkconfig'
 
-usage = <<USAGE
-Usage: bin/mkconfig [option]
-  -h|--help:       This text.
-  -m|--with_menu:  Show menu to setup configurations individually.
-USAGE
-
 opt = OptionParser.new
-opt.on("-h","--help") { |v| puts(usage)}
-opt.on("-m","--with_menu") { |v| Roma::Mkconfig.new(:with_menu)}
+opt.on("-m","--with_menu", "Show menu to setup configurations individually.") { |v| Roma::Mkconfig.new(:with_menu)}
 
 if ARGV.count == 0
   Roma::Mkconfig.new
@@ -23,6 +15,6 @@ elsif
   begin
     opt.parse!(ARGV)
   rescue OptionParser::InvalidOption
-    puts(usage)
+    puts opt.help
   end
 end
