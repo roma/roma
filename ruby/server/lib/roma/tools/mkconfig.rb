@@ -1,3 +1,4 @@
+require 'pathname'
 require 'yaml'
 require 'fileutils'
 
@@ -5,9 +6,10 @@ module Roma
 
   class Mkconfig
     TREE_TOP = "menu"
-    CONFIG_PATH = "lib/roma/config.rb"
-    PLUGIN_DIR = "lib/roma/plugin/"
-    ROMA_DIRECTORY = "./roma"
+    LIB_PATH = Pathname(__FILE__).dirname.parent.parent
+    CONFIG_PATH = File.join("roma", "config.rb")
+    CONFIG_FULL_PATH = File.expand_path(File.join(LIB_PATH, CONFIG_PATH))
+    PLUGIN_DIR = File.expand_path(File.join(LIB_PATH, File.join("roma", "plugin")))
     BNUM_COEFFICIENT = 2 #reccomend1-4.
     TC_FILE = 10
     REDUNDANCY = 2
@@ -140,7 +142,8 @@ module Roma
         ret = Array.new
         files = Dir::entries(path)
         files.each do |file|
-          ret << file if File::ftype(path + file) == "file"
+p file
+          ret << file if File::ftype(File.join(path, file)) == "file"
         end
         ret
       end
@@ -299,7 +302,7 @@ module Roma
     end
 
     def load_config(targets)
-      require 'roma/config'
+      require CONFIG_PATH
       d_value = Hash.new
       Config.constants.each do |cnst|
         if targets.include?(cnst)
@@ -458,9 +461,9 @@ module Roma
         print "\r\nPlease set FD bigger than #{fd}.\r\n\r\n" 
       end
 
-      FileUtils.copy(CONFIG_PATH, CONFIG_PATH+".org") if !File.exist?(CONFIG_PATH+".org")
-      FileUtils.copy(CONFIG_PATH, CONFIG_PATH+".old")
-      open(CONFIG_PATH, "r+") do |f|
+      FileUtils.copy(CONFIG_FULL_PATH, CONFIG_FULL_PATH+".org") if !File.exist?(CONFIG_FULL_PATH+".org")
+      FileUtils.copy(CONFIG_FULL_PATH, CONFIG_FULL_PATH+".old")
+      open(CONFIG_FULL_PATH, "r+") do |f|
         f.flock(File::LOCK_EX)
         body = f.read
 
@@ -490,7 +493,7 @@ module Roma
       puts "Before"
       Box.print_with_box(@defaults)
 
-      re_require('roma/config', CONFIG_PATH, Config)
+      re_require(CONFIG_PATH, CONFIG_FULL_PATH, Config)
       results = load_config([:STORAGE_CLASS, :STORAGE_OPTION, :PLUGIN_FILES])
       print "\r\nAfter\r\n"
       Box.print_with_box(results)
@@ -500,10 +503,15 @@ module Roma
     def ch_assign(text, exp, sep = " = ", str)
       sep = " = " if sep == "="
       text = text.gsub(/(\s*#{exp}).*/) do |s|
+        name = $1
         if str.class == String
-          $1 + sep + str.inspect
+          if str =~ /::/ || str =~ /^\d+$/
+            name + sep + str
+          else
+            name + sep + str.inspect
+          end
         else
-          $1 + sep + str.to_s.sub("\\", "")
+          name + sep + str.to_s.sub("\\", "")
         end
       end
     end
