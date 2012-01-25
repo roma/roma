@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# -*- coding: undecided -*-
+# -*- coding: utf-8 -*-
 require 'date'
 require 'roma/client/rclient'
 
@@ -43,7 +43,7 @@ module Roma
         count.times { |c|
           i = rand count
           ts = DateTime.now
-          res　=　rc.get(i.to_s)
+          res = rc.get(i.to_s)
           puts "get k=#{i} #{res}" if res == :error
         }
       end
