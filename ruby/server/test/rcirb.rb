@@ -6,7 +6,6 @@ require 'irb'
 
 path =  File.dirname(File.expand_path($PROGRAM_NAME))
 $LOAD_PATH << path + "/../lib"
-$LOAD_PATH << path  + "/../../commons/lib"
 $LOAD_PATH << path  + "/../../client/lib"
 
 require 'roma/client/rclient'
