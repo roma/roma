@@ -15,7 +15,7 @@ RDOC_OPTIONS = [
 PKG_FILES = FileList[
   '[A-Z]*',
   'bin/**/*',
-  'lib/**/*.rb',
+  'lib/**/*',
   'test/**/*.rb',
   'spec/**/*.rb',
   'doc/**/*',
