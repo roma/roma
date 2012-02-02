@@ -110,7 +110,7 @@ module Roma
 
       private
       def return_str(data)
-        data.to_json
+        Marshal.dump(data)
       end
 
       def data_load(data)
