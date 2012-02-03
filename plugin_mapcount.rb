@@ -100,7 +100,7 @@ module Roma
           end
         end
 
-        v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
+        v["last_updated_date"] = Time.now.gmtime.strftime(DATE_FORMAT)
         expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_str = return_str(v, stype)
@@ -111,10 +111,12 @@ module Roma
       def update(ctx, stype)
         if !ctx.stored
           send_data("END\r\n")
+          return
         end
 
         v = {}
         v = data_load(ctx.stored.value)
+        v["last_updated_date"] = Time.now.gmtime.strftime(DATE_FORMAT)
 
         if v.is_a?(Hash)
           args = ctx.params.value.split(/\s*,\s*/)
@@ -122,7 +124,7 @@ module Roma
             ret = return_str(v, stype)
           else
             ret = {}
-            ret[:last_updated_date] = v[:last_updated_date]
+            ret["last_updated_date"] = v["last_updated_date"]
             args.each do |arg|
               ret[arg] = v[arg] if v[arg] != nil
             end
@@ -130,7 +132,6 @@ module Roma
           end
         end
 
-        v[:last_updated_date] = Time.now.gmtime.strftime(DATE_FORMAT)
         expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_msg = "VALUE #{ctx.params.key} 0 #{ret.length}\r\n#{ret}\r\nEND"
@@ -148,7 +149,7 @@ module Roma
               ret = return_str(ret_val, stype)
             else
               ret = {}
-              ret[:last_updated_date] = ret_val[:last_updated_date]
+              ret["last_updated_date"] = ret_val["last_updated_date"]
               args.each do |arg|
                 ret[arg] = ret_val[arg] if ret_val[arg] != nil
               end
