@@ -424,7 +424,7 @@ class TCStorageTest < Test::Unit::TestCase
 
   def test_close_after_each_clean_up
     h={}
-    1000.times{|i|
+    100.times{|i|
       h[i.to_s]=[i%10,Time.now.to_i,0,Time.now.to_i].pack('NNNN')+'old data'
     }
     dmp=Marshal.dump(h)
