@@ -1,8 +1,20 @@
 # -*- coding: utf-8 -*-
 require 'rubygems'
 require 'rake'
-require 'rake/gempackagetask'
-require 'rake/rdoctask'
+
+begin
+  require 'rubygems/package_task'
+  PackageTask = Gem::PackageTask
+rescue LoadError
+  require 'rake/gempackagetask'
+  PackageTask = Rake::GemPackageTask
+end
+
+begin
+  require 'rdoc/task'
+rescue LoadError
+  require 'rake/rdoctask'
+end
 
 RDOC_OPTIONS = [
                 '--line-numbers',
@@ -58,7 +70,7 @@ SPEC = Gem::Specification.new do |s|
   s.add_dependency('eventmachine')
 end
 
-package_task = Rake::GemPackageTask.new(SPEC) do |pkg|
+package_task = PackageTask.new(SPEC) do |pkg|
 end
 
 
