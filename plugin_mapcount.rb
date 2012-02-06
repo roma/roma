@@ -178,6 +178,8 @@ module Roma
       end
 
       DATE_FORMAT = "%Y-%m-%dT%H:%M:%S +00"
+
+      PLUGIN_MAPCOUNT_VERSION = "1.0.1"
     end # PluginMapCount
   end # CommandPlugin
 end # Roma
