@@ -36,7 +36,7 @@ module Roma
     # 'start:rate:full'
     CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
     # expired time(sec) for accepted connections
-    CONNECTION_EXPTIME = 60
+    CONNECTION_EXPTIME = 0
 
     # expired time(sec) for an async connection in the connection pool
     # CONNECTION_POOL_EXPTIME should be less than CONNECTION_EXPTIME
