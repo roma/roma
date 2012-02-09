@@ -64,7 +64,7 @@ module Roma
     STORAGE_DELMARK_EXPTIME = 60 * 60 * 24 * 5
 
     # data copy setting
-    DATACOPY_STREAM_COPY_WAIT_PARAM = 0.0001
+    DATACOPY_STREAM_COPY_WAIT_PARAM = 0.001
 
     # plugin setting
     PLUGIN_FILES = ['plugin_storage.rb']

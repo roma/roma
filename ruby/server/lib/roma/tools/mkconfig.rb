@@ -17,7 +17,9 @@ module Roma
     RUBY_CONNECTION = 10
     JAVA_CONNECTION = 30
     PHP_CONNECTION = 256
-    OS_MEMORY_SIZE = 2 * 1024 * 1024 * 1024
+    KB = 1024
+    GB = 1024 * 1024 * 1024
+    OS_MEMORY_SIZE = 2 * GB
     END_MSG = ["exit", "quit", "balse"]
 
     class Base
@@ -254,15 +256,20 @@ p file
 
     class Calculate
       def self.get_bnum(res)
-        ans = res["data"].value.to_i * BNUM_COEFFICIENT * REDUNDANCY / TC_FILE
+        ans = res["data"].value.to_i * BNUM_COEFFICIENT * REDUNDANCY / res["server"].value.to_i / TC_FILE
         return ans
       end
+
       def self.get_xmsize_max(res)
-        ans = (res["memory"].value.to_i - OS_MEMORY_SIZE) / res["process"].value.to_i / TC_FILE
+        ans = (res["memory"].value.to_i * GB - OS_MEMORY_SIZE) / res["process"].value.to_i / TC_FILE
+        if ans <= 0
+          ans = res["memory"].value.to_i * GB / 2 / res["process"].value.to_i / TC_FILE
+        end
         return ans
       end
+
       def self.get_xmsize_min(res)
-        ans = (res["key"].value.to_i + res["value"].value.to_i) * res["data"].value.to_i * REDUNDANCY / res["server"].value.to_i/ res["process"].value.to_i/ TC_FILE
+        ans = (res["key"].value.to_i * KB + res["value"].value.to_i * KB) * res["data"].value.to_i * REDUNDANCY / res["server"].value.to_i / res["process"].value.to_i / TC_FILE
         ans = ans
       end
 
