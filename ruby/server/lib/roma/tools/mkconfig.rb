@@ -9,6 +9,7 @@ module Roma
     LIB_PATH = Pathname(__FILE__).dirname.parent.parent
     CONFIG_PATH = File.join("roma", "config.rb")
     CONFIG_FULL_PATH = File.expand_path(File.join(LIB_PATH, CONFIG_PATH))
+    CONFIG_OUT_PATH = File.expand_path(File.join(Pathname.pwd, "config.rb"))
     PLUGIN_DIR = File.expand_path(File.join(LIB_PATH, File.join("roma", "plugin")))
     BNUM_COEFFICIENT = 2 #reccomend1-4.
     TC_FILE = 10
@@ -144,7 +145,6 @@ module Roma
         ret = Array.new
         files = Dir::entries(path)
         files.each do |file|
-p file
           ret << file if File::ftype(File.join(path, file)) == "file"
         end
         ret
@@ -468,30 +468,30 @@ p file
         print "\r\nPlease set FD bigger than #{fd}.\r\n\r\n" 
       end
 
-      FileUtils.copy(CONFIG_FULL_PATH, CONFIG_FULL_PATH+".org") if !File.exist?(CONFIG_FULL_PATH+".org")
-      FileUtils.copy(CONFIG_FULL_PATH, CONFIG_FULL_PATH+".old")
-      open(CONFIG_FULL_PATH, "r+") do |f|
-        f.flock(File::LOCK_EX)
+      body = ""
+      open(CONFIG_FULL_PATH, "r") do |f|
         body = f.read
+      end
 
-        if req
-          body = ch_assign(body, "require", " ", "roma\/storage\/#{req}")
-          body = ch_assign(body, "STORAGE_CLASS", "Roma::Storage::#{storage}")
+      if req
+        body = ch_assign(body, "require", " ", "roma\/storage\/#{req}")
+        body = ch_assign(body, "STORAGE_CLASS", "Roma::Storage::#{storage}")
 
-          if req == "rh_storage"
-            body = ch_assign(body, "STORAGE_OPTION","")
-          end
-
-          if req == "tc_storage"
-            body = ch_assign(body, "STORAGE_OPTION", "bnum=#{bnum}\#xmsiz=#{xmsiz}\#opts=d#dfunit=10")
-          end
+        if req == "rh_storage"
+          body = ch_assign(body, "STORAGE_OPTION","")
         end
 
-        if res.key?("plugin")
-          body = ch_assign(body, "PLUGIN_FILES", res["plugin"].value)
+        if req == "tc_storage"
+          body = ch_assign(body, "STORAGE_OPTION", "bnum=#{bnum}\#xmsiz=#{xmsiz}\#opts=d#dfunit=10")
         end
+      end
 
-        f.rewind
+      if res.key?("plugin")
+        body = ch_assign(body, "PLUGIN_FILES", res["plugin"].value)
+      end
+
+      open(CONFIG_OUT_PATH, "w") do |f|
+        f.flock(File::LOCK_EX)
         f.puts body
         f.truncate(f.tell)
         f.flock(File::LOCK_UN)
