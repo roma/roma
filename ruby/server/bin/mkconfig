@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+$:.unshift(File.expand_path(File.join('..', 'lib'), File.dirname(__FILE__)))
+
+require 'optparse'
+require 'roma/tools/mkconfig'
+
+opt = OptionParser.new
+opt.on("-m","--with_menu", "Show menu to setup configurations individually.") { |v| Roma::Mkconfig.new(:with_menu)}
+
+if ARGV.count == 0
+  Roma::Mkconfig.new
+elsif
+  begin
+    opt.parse!(ARGV)
+  rescue OptionParser::InvalidOption
+    puts opt.help
+  end
+end

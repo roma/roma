@@ -5,7 +5,6 @@ require 'pathname'
 
 base_path = Pathname(__FILE__).dirname.parent.parent.expand_path
 $LOAD_PATH.unshift("#{base_path}/server/lib")
-$LOAD_PATH.unshift("#{base_path}/commons/lib")
 $LOAD_PATH.unshift("#{base_path}/server/test")
 
 client_base_path = Pathname(__FILE__).dirname.parent.parent.parent.parent.expand_path
