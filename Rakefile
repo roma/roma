@@ -47,6 +47,8 @@ else
 end
 
 SPEC = Gem::Specification.new do |s|
+  s.authors = ["Junji Torii", "Hiroki Matsue"]
+  s.homepage = 'http://code.google.com/p/roma-prj/'
   s.name = "roma"
   s.version = CURRENT_VERSION
   s.summary = "ROMA server"
