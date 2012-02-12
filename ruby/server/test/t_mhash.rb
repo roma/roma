@@ -189,7 +189,7 @@ class MHashTest < Test::Unit::TestCase
     assert_equal 'UNMOUNTED', ret['localhost_11212']
 
     @rc.default_hash_name='test'
-    assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash dose not exists.') do
+    assert_raise(RuntimeError,'SERVER_ERROR test dose not exists.') do
       @rc.set "key", "value"
     end
 
