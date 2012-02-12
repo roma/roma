@@ -5,6 +5,8 @@ require 'stringio'
 require 'roma/write_behind'
 require 'roma/client/rclient'
 require 'roma/messaging/con_pool'
+require 'roma/client/plugin/alist'
+require 'roma/client/plugin/map'
 
 class FileWriterTest < Test::Unit::TestCase
   
@@ -203,8 +205,8 @@ class WriteBehindTest < FileWriterTest
   def setup
     start_roma
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"],
-                                     [::Roma::ClientPlugin::PluginAshiatoList,
-                                     ::Roma::ClientPlugin::PluginMap])
+                                     [Roma::Client::Plugin::Alist,
+                                      Roma::Client::Plugin::Map])
     system('rm -rf wb')
   end
 

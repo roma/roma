@@ -1,10 +1,9 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
-
 require 'roma/client/rclient'
 require 'roma/plugin/plugin_alist'
 require 'roma/storage/tc_storage'
 require 'roma/messaging/con_pool'
+require 'roma/client/plugin/alist'
 
 Roma::Client::RomaClient.class_eval{
   def init_sync_routing_proc
@@ -18,7 +17,7 @@ class ListPluginTest < Test::Unit::TestCase
     start_roma
     @rc=Roma::Client::RomaClient.new(
                                      ["localhost_11211","localhost_11212"],
-                                     [::Roma::ClientPlugin::PluginAshiatoList])
+                                     [Roma::Client::Plugin::Alist])
   end
 
   def teardown
@@ -289,7 +288,7 @@ class ListPluginTest < Test::Unit::TestCase
     t = Time.now.to_i
     assert( @rc.alist_push("aa","11")=='STORED' )
     assert( @rc.alist_join("aa","|")[1]=="11" )
-    # 挿入時間を取得、おそらく1秒以内
+    # get a time of insert, maybe in 1 sec
     assert_operator(1,:>,t - @rc.alist_join_with_time("aa","|")[2].to_i)
     assert_equal('STORED', @rc.alist_push("aa","22"))
     assert_equal("11|22", @rc.alist_join("aa","|")[1])
@@ -553,9 +552,7 @@ class ListPluginTest < Test::Unit::TestCase
 
     st, nid, vn = create_storage_and_calc_vn('aa')
 
-    # 過去のデータを作成
-    # 時刻は適当で OK 
-    # リストの結合ロジックは delete and push
+    # create a data ,it's a past time
     pt =Time.now.to_i
     st.set(vn,'aa',0,0xffffffff,Marshal.dump([['11','22','33','44','55'],[pt,pt,pt,pt,pt]]))
 
@@ -568,18 +565,18 @@ class ListPluginTest < Test::Unit::TestCase
     
     assert_equal(["55", "33", "11", "22", "44"], @rc.alist_to_s("aa")[1])
     
-    # list 以外のデータを作成
+    # create a data out of list
     st.set(vn,'aa',0,0xffffffff,'val-aa')
     push_a_vnode_stream(st, vn, nid)
-    # 論クロックが小さいので上書きされない
+    # do not write a value
     assert_equal(["55", "33", "11", "22", "44"], @rc.alist_to_s("aa")[1])
 
-    # 論理クロックを進める
+    # increases to logical clock
     10.times{
       st.set(vn,'aa',0,0xffffffff,'val-aa')
     }
     push_a_vnode_stream(st, vn, nid)
-    # 論クロックが大きいので上書きされる
+    # write over a value, cause increased a logical clock
     assert_equal('val-aa', @rc.get("aa",true))
   end
 

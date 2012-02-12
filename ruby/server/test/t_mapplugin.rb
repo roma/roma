@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 require 'roma/client/rclient'
 require 'roma/plugin/plugin_map'
-# require 'roma/messaging/con_pool'
+require 'roma/client/plugin/map'
 
 Roma::Client::RomaClient.class_eval{
   def init_sync_routing_proc
@@ -15,7 +15,7 @@ class MapPluginTest < Test::Unit::TestCase
     start_roma
     @rc=Roma::Client::RomaClient.new(
                                      ["localhost_11211","localhost_11212"],
-                                     [::Roma::ClientPlugin::PluginMap])
+                                     [Roma::Client::Plugin::Map])
   end
 
   def teardown

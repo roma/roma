@@ -1,9 +1,6 @@
 #!/usr/bin/env ruby
-
-#require 'roma/messaging/con_pool'
-#require 'roma/plugin/plugin_mapcount'
 require 'roma/client'
-require '../../../roma-client-plugin-mapcount/lib/roma/client/plugin/mapcount.rb'
+require 'roma/client/plugin/mapcount'
 
 Roma::Client::RomaClient.class_eval{
   def init_sync_routing_proc
