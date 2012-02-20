@@ -1,3 +1,31 @@
+*0.8.10 (Feb 20 2012)*
+
+* Add authors and homepage info to gem. [Hiroki Matsue] 35c5db4
+* Change default number of CONNECTION_EXPTIME. [Hiroki Matsue] 48933ca
+* Allocate mapcount plugin. [Hiroki Matsue] 5cc9d6b
+* Fix calculate part. [Hiroki Matsue] a9e0642
+* Fit DATACOPY_STREAM_COPY_WAIT_PARAM to dcnice. [Hiroki Matsue] ac6a2df
+* Adjust Rakefile to multi ruby version. [Hiroki Matsue] d5ae69e
+* Adjust Rakefile to new directory composition. [Hiroki Matsue] 8897920
+* Change simbol key to string to commonalize. [Hiroki Matsue] 0f42743
+* Add methods *_ms to return serialized value by Marshal. [Hiroki Matsue] 9596207
+* Change serialize format json to marshal. [Hiroki Matsue] 1cd1f9b
+* Remove commons directory. [Hiroki Matsue] fd235e5
+* Relocate files of commons directory to server directory. [Hiroki Matsue] 3e3f017
+* Fix filelist to make gem. [Hiroki Matsue] 28e901f
+* Fix path handling way. [Hiroki Matsue] 9ce3f5a
+* Remove double-byte space and change encoding. [Hiroki Matsue] adeed9c
+* Refactor mkconfig tool. [Hiroki Matsue] f88f78f
+* Add a tool for setting cofigurations. [Hiroki Matsue] adb1a6c
+* Change data unpack method name. [Hiroki Matsue] c810b4c
+* Change Symbol keys to String keys for MessagePack. [Hiroki Matsue] 854566c
+* Change serialize format Marshal to Message pack. [Hiroki Matsue] 297260a
+* Fix mapcount_update method to handle empty key. [Hiroki Matsue] a50cb28
+* Activate subkeys at update method. [Hiroki Matsue] 36c6372
+* Add test for mapcount_get method. [Hiroki Matsue] bb6ea7c
+* implement mapcount_get to support sub_keys. [Hiroki Matsue] 4c9be9a
+* fix module name [yukio.goto] 3c0e21c
+
 *0.8.9 (Dec 16 2011)*
 
 * add chg_time_expt() method [junji torii] 305cefc
