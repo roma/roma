@@ -19,6 +19,30 @@ module Roma
         }
       end
 
+      if RUBY_VERSION >= '1.9.2'
+        def each_clean_up(t, vnhash)
+          @do_clean_up = true
+          nt = Time.now.to_i
+          @hdb.each{ |hdb|
+            keys = hdb.keys
+            keys.each{ |k|
+              v = hdb[k]
+              return unless @do_clean_up
+              vn, last, clk, expt = unpack_header(v)
+              vn_stat = vnhash[vn]
+              if vn_stat == :primary && ( (expt != 0 && nt > expt) || (expt == 0 && t > last) )
+                yield k, vn
+                hdb.out(k) if hdb.get(k) == v
+              elsif vn_stat == nil && t > last
+                yield k, vn
+                hdb.out(k) if hdb.get(k) == v
+              end
+              sleep @each_clean_up_sleep
+            }
+          }
+        end
+      end
+
       private
 
       def open_db(fname)
