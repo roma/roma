@@ -500,7 +500,7 @@ module Roma
       puts "Before"
       Box.print_with_box(@defaults)
 
-      re_require(CONFIG_PATH, CONFIG_FULL_PATH, Config)
+      re_require(CONFIG_OUT_PATH, Config)
       results = load_config([:STORAGE_CLASS, :STORAGE_OPTION, :PLUGIN_FILES])
       print "\r\nAfter\r\n"
       Box.print_with_box(results)
@@ -523,12 +523,12 @@ module Roma
       end
     end
 
-    def re_require(lib_path, path, c_obj)
+    def re_require(path, c_obj)
       $".delete(File.expand_path(path))
       c_obj.constants.each do |cnst|
         c_obj.class_eval { remove_const cnst }
       end
-      require lib_path
+      require path
     end
 
   end # Mkconfig
