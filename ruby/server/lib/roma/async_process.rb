@@ -259,7 +259,7 @@ module Roma
         rescue => e
           @log.error("asyncev_start_release_process:#{e.inspect} #{$@}")
         end
-        @stats.run_relase = false
+        @stats.run_release = false
       }
       t[:name] = __method__
     end
