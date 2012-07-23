@@ -259,7 +259,7 @@ module Roma
         rescue => e
           @log.error("asyncev_start_release_process:#{e.inspect} #{$@}")
         end
-        @stats.run_relase = false
+        @stats.run_release = false
       }
       t[:name] = __method__
     end
@@ -443,16 +443,20 @@ module Roma
     def release_process
       @log.info("release_process:start.")
       nodes = @rttable.nodes
-      
+      nodes.delete(@stats.ap_str)
+      hosts = []
+
       unless @stats.enabled_repetition_host_in_routing
-        host = @stats.ap_str.split(/[:_]/)[0]
-        nodes.delete_if{|nid| nid.split(/[:_]/)[0] == host }
+        nodes.each{ |node|
+          host = node.split(/[:_]/)[0]
+          hosts << host unless hosts.include?(host)
+        }
       else
-        nodes.delete(@stats.ap_str)
+        hosts = nodes
       end
-      
-      if nodes.length < @rttable.rn
-        @log.error("Physcal node dose not found.")
+           
+      if hosts.length < @rttable.rn
+        @log.error("Sufficient nodes do not found.")
         return
       end
 
@@ -463,9 +467,12 @@ module Roma
           buf = nodes.clone
 
           unless @stats.enabled_repetition_host_in_routing
-            hosts = []
-            nids.each{|nid| hosts << nid.split(/[:_]/)[0]}
-            buf.delete_if{|nid| hosts.include?(nid.split(/[:_]/)[0])}
+            deny_hosts = []
+            nids.each{ |nid|
+              host = nid.split(/[:_]/)[0]
+              deny_hosts << host if host != @stats.ap_str.split(/[:_]/)[0]
+            }
+            buf.delete_if{|nid| deny_hosts.include?(nid.split(/[:_]/)[0])}
           else
             nids.each{|nid| buf.delete(nid) }
           end
