@@ -39,6 +39,7 @@ module Roma
         @ext_name = 'tc'
       end
 
+      alias get_stat_org get_stat
       def get_stat
         ret = super
         @hdb.each_with_index{|hdb,idx|
@@ -174,14 +175,47 @@ module Roma
     end # class TCAsyncStorage
 
 
-    class TCMemStorage < BasicStorage
+    class TCMemStorage < TCStorage
       include TokyoCabinet
+
+      def get_stat
+        ret = get_stat_org
+        @hdb.each_with_index{|hdb,idx|
+          ret["storage[#{idx}].rnum"] = hdb.rnum
+          ret["storage[#{idx}].size"] = hdb.size
+        }
+        ret
+      end
+
+      protected
+
+      def get_options(hdb)
+        prop = parse_options
+
+        prop.each_key{|k|
+          unless /^(bnum|capnum|capsiz)$/ =~ k
+            raise RuntimeError.new("Syntax error, unexpected option #{k}")
+          end
+        }
+        
+        opts = ""
+        opts += "#bnum=#{prop['bnum']}" if prop.key?('bnum')
+        opts += "#capnum=#{prop['capnum']}" if prop.key?('capnum')
+        opts += "#capsiz=#{prop['capsiz']}" if prop.key?('capsiz')
+        opts = nil unless opts.length > 0
+        opts
+      end
 
       private
 
       def open_db(fname)
         hdb = ADB::new
-        hdb.open("*")
+
+        options = get_options(hdb)
+        dbname = "*"
+        dbname += options if options
+
+        hdb.open(dbname)
         hdb
       end
 
