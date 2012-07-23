@@ -100,7 +100,7 @@ module Roma
           end
         end
 
-        v["last_updated_date"] = Time.now.gmtime.strftime(DATE_FORMAT)
+        v["last_updated_date"] = Time.now.strftime(DATE_FORMAT)
         expt = chg_time_expt(ctx.argv[2].to_i)
 
         ret_str = return_str(v, stype)
@@ -116,7 +116,7 @@ module Roma
 
         v = {}
         v = data_load(ctx.stored.value)
-        v["last_updated_date"] = Time.now.gmtime.strftime(DATE_FORMAT)
+        v["last_updated_date"] = Time.now.strftime(DATE_FORMAT)
 
         if v.is_a?(Hash)
           args = ctx.params.value.split(/\s*,\s*/)
