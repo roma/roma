@@ -2,7 +2,7 @@
 module Roma
   module CommandPlugin
 
-    module PluginTest
+    module PluginCommandAliases
       include ::Roma::CommandPlugin
 
       # shutdown [reason]
