@@ -1,3 +1,14 @@
+*0.8.11 (Aug 8 2012)*
+
+* Allocate cmd_aliases plugin. [firejun] f7555c2
+* Add a tool for log. [firejun] bea6c87
+* Fix timezone of mapcount plugin and add tests. [Hiroki Matsue] 11f36b8
+* Make TCMemStorage available to set options. [Hiroki Matsue] 0fef58b
+* Correct end status of release command. [Hiroki Matsue] fc9a4bc
+* Fix release command feature in a small nodes. [Hiroki Matsue] c765358
+* fix:[can't add a new key into hash during iteration] occurring in leter then ruby 1.9.1 fixed. [junji torii] 2987536
+* Fix result view of mkconfig. [Hiroki Matsue] bfb0f4a
+
 *0.8.10 (Feb 20 2012)*
 
 * Add authors and homepage info to gem. [Hiroki Matsue] 35c5db4
