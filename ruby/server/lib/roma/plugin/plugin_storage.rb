@@ -490,6 +490,11 @@ module Roma
       end
 
       def set(fnc,s)
+        if s.length != 5
+          @log.error("set:wrong number of arguments(#{s})")
+          return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+
         key,hname = s[1].split("\e")
         hname ||= @defhash
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
