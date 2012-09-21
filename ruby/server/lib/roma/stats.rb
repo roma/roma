@@ -29,6 +29,7 @@ module Roma
     attr_accessor :run_storage_clean_up
     attr_accessor :run_receive_a_vnode
     attr_accessor :run_release
+    attr_accessor :run_join
 
     # proc param
     attr_accessor :stream_copy_wait_param
@@ -59,6 +60,7 @@ module Roma
       @run_storage_clean_up = false
       @run_receive_a_vnode = false
       @run_release = false
+      @run_join = false
       @stream_copy_wait_param = 0.0001
       @dcnice = 3
       @enabled_vnodes_balance = nil
@@ -92,6 +94,7 @@ module Roma
       ret['stats.run_iterate_storage'] = @run_iterate_storage
       ret['stats.run_storage_clean_up'] = @run_storage_clean_up
       ret['stats.run_release'] = @run_release
+      ret['stats.run_join'] = @run_join
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
       ret['stats.dcnice'] = @dcnice
       ret['stats.size_of_zredundant'] = @size_of_zredundant

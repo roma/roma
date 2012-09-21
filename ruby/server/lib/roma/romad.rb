@@ -53,6 +53,10 @@ module Roma
       start_wb_process
       timer
 
+       if @stats.join_ap
+        AsyncProcess::queue.push(AsyncMessage.new('start_join_process'))
+      end
+
       # select a kind of system call
       if Config.const_defined?(:CONNECTION_USE_EPOLL) && Config::CONNECTION_USE_EPOLL
         @log.info("use an epoll")
@@ -522,9 +526,9 @@ module Roma
         start_sync_routing_process
       end
 
-      if @stats.join_ap || @stats.enabled_vnodes_balance
-        acquire_vnodes
-      end
+      #if @stats.join_ap || @stats.enabled_vnodes_balance
+      #  acquire_vnodes
+      #end
 
       if (@rttable.enabled_failover &&
           @stats.run_storage_clean_up == false &&
