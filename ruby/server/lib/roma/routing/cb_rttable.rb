@@ -5,6 +5,8 @@ module Roma
 
     class ChurnbasedRoutingTable < RoutingTable
 
+      include Routing::RandomPartitioner
+
       attr :fname
       attr :log_fd
       attr :log_name
