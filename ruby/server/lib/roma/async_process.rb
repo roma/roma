@@ -116,6 +116,31 @@ module Roma
       true
     end
 
+    def asyncev_start_join_process(args)
+      @log.debug(__method__)
+      if @stats.run_acquire_vnodes
+        @log.error("#{__method__}:acquire_vnodes process running")
+        return true
+      end
+      if @stats.run_join
+        @log.error("#{__method__}:join process running")
+        return true
+      end
+      @stats.run_join = true
+      t = Thread::new{
+        begin
+          join_process
+        rescue =>e
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
+        ensure
+          @stats.run_join = false
+          @stats.join_ap = nil
+        end
+      }
+      t[:name] = __method__
+      true      
+    end
+
     def asyncev_start_dumpfile_process(args)
       @log.debug("asyncev_start_dumpfile_process #{args.inspect}")
       key, path, cmd = args
@@ -331,6 +356,48 @@ module Roma
       @do_acquired_recover_process = false
     end
  
+    def join_process
+      count = 0
+      nv = @rttable.v_idx.length
+      @do_join_process = true
+      while (@rttable.vnode_balance(@stats.ap_str) == :less && count < nv) do
+        break unless @do_join_process
+        ret = join
+        if ret == :rejected
+          sleep 5
+          next
+        elsif ret == false
+          break
+        end
+        sleep 1
+        count += 1
+      end
+      @log.info("#{__method__} has done.")
+    rescue => e
+      @log.error("#{e.inspect} #{$@}")
+    ensure
+      @do_join_process = false
+    end
+
+    def join
+      widthout_nodes = @rttable.nodes
+      
+      if @stats.enabled_repetition_host_in_routing
+        widthout_nodes = [@stats.ap_str]
+      else
+        myhost = @stats.ap_str.split(/[:_]/)[0]
+        widthout_nodes.delete_if{|nid| nid.split(/[:_]/)[0] != myhost }
+      end
+
+      vn, nodes = @rttable.select_vn_for_join(widthout_nodes)
+      unless vn
+        @log.warn("#{__method__}:select_vn_for_join dose not found")
+        return false
+      end
+
+      req_push_a_vnode(vn, nodes[0], rand(@rttable.rn) == 0)      
+    end
+
     def acquire_vnodes_process
       count = 0
       nv = @rttable.v_idx.length
