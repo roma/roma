@@ -654,12 +654,6 @@ module Roma
 
       @do_push_a_vnode_stream = true
       
-      while(@stats.run_storage_clean_up)
-        @log.info("#{__method__}:stop_clean_up")
-        @storages.each_value{|st| st.stop_clean_up}
-        sleep 0.5
-      end
-
       con.write("spushv #{hname} #{vn}\r\n")
 
       res = con.gets # READY\r\n or error string
@@ -714,10 +708,10 @@ module Roma
     end
 
     def storage_clean_up_process
-#      @log.info("#{__method__}:start")
+      # @log.info("#{__method__}:start")
       me = @stats.ap_str
       vnhash={}
-      @rttable.each_vnode{|vn, nids|
+      @rttable.each_vnode do |vn, nids|
         if nids.include?(me)
           if nids[0] == me
             vnhash[vn] = :primary
@@ -725,25 +719,31 @@ module Roma
             vnhash[vn] = :secondary
           end
         end
-      }
+      end
       t = Time.now.to_i - Roma::Config::STORAGE_DELMARK_EXPTIME
       count = 0
-      @storages.each_pair{|hname,st|
-        st.each_clean_up(t, vnhash){|key, vn|
-          count += 1
-          @stats.out_count += 1
-#          @log.debug("#{__method__}:key=#{key} vn=#{vn}")
-          nodes = @rttable.search_nodes_for_write(vn)
-          next if(nodes == nil || nodes.length <= 1)
-          nodes[1..-1].each{|nid|
-            res = async_send_cmd(nid,"out #{key}\e#{hname} #{vn}\r\n")
-            unless res
-              @log.warn("send out command failed:#{key}\e#{hname} #{vn} -> #{nid}")
+      @storages.each_pair do |hname,st|
+        st.each_clean_up(t, vnhash) do |key, vn|
+          # @log.debug("#{__method__}:key=#{key} vn=#{vn}")
+          if @stats.run_receive_a_vnode.key?("#{hname}_#{vn}")
+            false
+          else
+            nodes = @rttable.search_nodes_for_write(vn)
+            if nodes && nodes.length > 1
+              nodes[1..-1].each do |nid|
+                res = async_send_cmd(nid,"out #{key}\e#{hname} #{vn}\r\n")
+                unless res
+                  @log.warn("send out command failed:#{key}\e#{hname} #{vn} -> #{nid}")
+                end
+                # @log.debug("#{__method__}:res=#{res}")
+              end
             end
-#            @log.debug("#{__method__}:res=#{res}")
-          }
-        }
-      }
+            count += 1
+            @stats.out_count += 1
+            true
+          end
+        end
+      end
       if count>0
         @log.info("#{__method__}:#{count} keys deleted.")
       end

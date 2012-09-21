@@ -530,7 +530,8 @@ module Roma
           @stats.run_storage_clean_up == false &&
           @stats.run_acquire_vnodes == false &&
           @stats.run_recover == false &&
-          @stats.run_iterate_storage == false)
+          @stats.run_iterate_storage == false &&
+          @stats.run_receive_a_vnode.empty?)
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_clean_up_process'))
       end
 

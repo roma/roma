@@ -57,7 +57,7 @@ module Roma
       @run_sync_routing = false
       @run_iterate_storage = false
       @run_storage_clean_up = false
-      @run_receive_a_vnode = false
+      @run_receive_a_vnode = {}
       @run_release = false
       @stream_copy_wait_param = 0.0001
       @dcnice = 3
@@ -91,6 +91,7 @@ module Roma
       ret['stats.run_sync_routing'] = @run_sync_routing
       ret['stats.run_iterate_storage'] = @run_iterate_storage
       ret['stats.run_storage_clean_up'] = @run_storage_clean_up
+      ret['stats.run_receive_a_vnode'] = @run_receive_a_vnode.inspect
       ret['stats.run_release'] = @run_release
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
       ret['stats.dcnice'] = @dcnice

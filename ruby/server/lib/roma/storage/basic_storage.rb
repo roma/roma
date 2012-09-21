@@ -370,11 +370,13 @@ module Roma
             vn, last, clk, expt = unpack_header(v)
             vn_stat = vnhash[vn]
             if vn_stat == :primary && ( (expt != 0 && nt > expt) || (expt == 0 && t > last) )
-              yield k, vn
-              hdb.out(k) if hdb.get(k) == v
+              if yield k, vn
+                hdb.out(k) if hdb.get(k) == v
+              end
             elsif vn_stat == nil && t > last
-              yield k, vn
-              hdb.out(k) if hdb.get(k) == v
+              if yield k, vn
+                hdb.out(k) if hdb.get(k) == v
+              end
             end
             sleep @each_clean_up_sleep
           }

@@ -1248,8 +1248,20 @@ module Roma
       #  |                    [<end of dump>]->|
       #  |<-['STORED'\r\n]                     |
       def ev_alist_spushv(s)
+        if s.length != 3
+          @log.error("#{__method__}:wrong number of arguments(#{s})")
+          return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+        @stats.run_receive_a_vnode["#{s[1]}_#{s[2]}"] = true
+
+        while(@stats.run_storage_clean_up)
+          @log.info("#{__method__}:stop clean up storage process")
+          @storages.each_value{|st| st.stop_clean_up}
+          sleep 0.01
+        end
+
         send_data("READY\r\n")
-        @stats.run_receive_a_vnode = true
+
         count = 0
         loop {
           context_bin = read_bytes(20, 100)
@@ -1270,10 +1282,18 @@ module Roma
         }
         send_data("STORED\r\n")
         @log.debug("alist #{count} keys loaded.")
+      rescue Storage::StorageException => e
+        @log.error("#{e.inspect} #{$@}")
+        close_connection
+        if Config.const_defined?(:STORAGE_EXCEPTION_ACTION) &&
+            Config::STORAGE_EXCEPTION_ACTION == :shutdown
+          @log.error("#{__method__}:Romad will stop")
+          @stop_event_loop = true
+        end
       rescue => e
         @log.error("#{e}\n#{$@}")
       ensure
-        @stats.run_receive_a_vnode = false
+        @stats.run_receive_a_vnode.delete("#{s[1]}_#{s[2]}") if s.length == 3
       end      
 
       private
