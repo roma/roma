@@ -1254,11 +1254,7 @@ module Roma
         end
         @stats.run_receive_a_vnode["#{s[1]}_#{s[2]}"] = true
 
-        while(@stats.run_storage_clean_up)
-          @log.info("#{__method__}:stop clean up storage process")
-          @storages.each_value{|st| st.stop_clean_up}
-          sleep 0.01
-        end
+        $roma.stop_clean_up
 
         send_data("READY\r\n")
 

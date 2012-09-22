@@ -366,7 +366,7 @@ module Roma
         nt = Time.now.to_i
         @hdb.each{ |hdb|
           hdb.each{ |k, v|
-            return unless @do_clean_up
+            return unless @do_clean_up # 1st check
             vn, last, clk, expt = unpack_header(v)
             vn_stat = vnhash[vn]
             if vn_stat == :primary && ( (expt != 0 && nt > expt) || (expt == 0 && t > last) )
@@ -378,6 +378,7 @@ module Roma
                 hdb.out(k) if hdb.get(k) == v
               end
             end
+            return unless @do_clean_up # 2nd ckeck 
             sleep @each_clean_up_sleep
           }
         }

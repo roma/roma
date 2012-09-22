@@ -644,11 +644,7 @@ module Roma
       @stats.run_iterate_storage = true
       @log.info("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
 
-      while(@stats.run_storage_clean_up)
-        @log.info("#{__method__}:stop clean up storage process")
-        @storages.each_value{|st| st.stop_clean_up}
-        sleep 0.1
-      end
+      stop_clean_up
 
       con = Roma::Messaging::ConPool.instance.get_connection(nid)
 
@@ -701,6 +697,7 @@ module Roma
         rescue =>e
           @log.error("#{__method__}:#{e.inspect} #{$@}")
         ensure
+          @stats.last_clean_up = Time.now
           @stats.run_storage_clean_up = false
         end
       }
@@ -708,7 +705,7 @@ module Roma
     end
 
     def storage_clean_up_process
-      # @log.info("#{__method__}:start")
+      @log.info("#{__method__}:start")
       me = @stats.ap_str
       vnhash={}
       @rttable.each_vnode do |vn, nids|
@@ -723,6 +720,7 @@ module Roma
       t = Time.now.to_i - Roma::Config::STORAGE_DELMARK_EXPTIME
       count = 0
       @storages.each_pair do |hname,st|
+        break unless @stats.do_clean_up?
         st.each_clean_up(t, vnhash) do |key, vn|
           # @log.debug("#{__method__}:key=#{key} vn=#{vn}")
           if @stats.run_receive_a_vnode.key?("#{hname}_#{vn}")
@@ -747,6 +745,8 @@ module Roma
       if count>0
         @log.info("#{__method__}:#{count} keys deleted.")
       end
+    ensure
+      @log.info("#{__method__}:stop")
     end
 
 

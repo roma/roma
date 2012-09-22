@@ -43,11 +43,7 @@ module Roma
         end
         @stats.run_receive_a_vnode["#{s[1]}_#{s[2]}"] = true
 
-        while(@stats.run_storage_clean_up)
-          @log.info("#{__method__}:stop clean up storage process")
-          @storages.each_value{|st| st.stop_clean_up}
-          sleep 0.01
-        end
+        $roma.stop_clean_up
 
         send_data("READY\r\n")
 
@@ -97,6 +93,7 @@ module Roma
         @log.error("#{e} #{$@}")
       ensure
         @stats.run_receive_a_vnode.delete("#{s[1]}_#{s[2]}") if s.length == 3
+        @stats.last_clean_up = Time.now
       end      
 
       # reqpushv <vnode-id> <node-id> <is primary?>
