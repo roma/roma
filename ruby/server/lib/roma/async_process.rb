@@ -86,7 +86,7 @@ module Roma
     end
 
     def asyncev_broadcast_cmd(args)
-      @log.debug("asyncev_broadcast_cmd #{args.inspect}")
+      @log.debug("#{__method__} #{args.inspect}")
       cmd, nids, tout = args
       t = Thread::new{
         async_broadcast_cmd("#{cmd}\r\n", nids, tout)
@@ -96,9 +96,9 @@ module Roma
     end
 
     def asyncev_start_acquire_vnodes_process(args)
-      @log.debug("asyncev_start_acquire_vnodes_process")
+      @log.debug("#{__method__}")
       if @stats.run_acquire_vnodes
-        @log.error("asyncev_start_acquire_vnodes_process:already in being")
+        @log.error("#{__method__}:already in being")
         return true
       end
       @stats.run_acquire_vnodes = true
@@ -106,7 +106,7 @@ module Roma
         begin
           acquire_vnodes_process
         rescue =>e
-          @log.error("asyncev_start_acquire_vnodes_process:#{e.inspect} #{$@}")
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
         ensure
           @stats.run_acquire_vnodes = false
           @stats.join_ap = nil
@@ -117,7 +117,7 @@ module Roma
     end
 
     def asyncev_start_dumpfile_process(args)
-      @log.debug("asyncev_start_dumpfile_process #{args.inspect}")
+      @log.debug("#{__method__} #{args.inspect}")
       key, path, cmd = args
       path = Roma::Config::STORAGE_DUMP_PATH + '/' + path
       t = Thread.new{
@@ -136,9 +136,9 @@ module Roma
           }
           ret = set_to_end_of_dump(key,@stats.ap_str)
           if ret==nil || ret!="STORED"
-            @log.error("asyncev_start_dumpfile_process:result of set_to_end_of_dump was #{ret.inspect}")
+            @log.error("#{__method__}:result of set_to_end_of_dump was #{ret.inspect}")
           end
-          @log.info("asyncev_start_dumpfile_process has done.")
+          @log.info("#{__method__} has done.")
         rescue =>e
           @log.error("#{e}\n#{$@}")
         end
@@ -176,7 +176,7 @@ module Roma
 
     def asyncev_redundant(args)
       nid,hname,k,d,clk,expt,v = args
-      @log.debug("asyncev_redundant #{args.inspect}")
+      @log.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
         @log.warn("async redundant failed:#{nid} dose not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}")
         return true # no retry
@@ -191,7 +191,7 @@ module Roma
 
     def asyncev_zredundant(args)
       nid,hname,k,d,clk,expt,zv = args
-      @log.debug("asyncev_zredundant #{args.inspect}")
+      @log.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
         @log.warn("async zredundant failed:#{nid} dose not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}")
         return true # no retry
@@ -206,7 +206,7 @@ module Roma
 
     def asyncev_rdelete(args)
       nid,hname,k,clk = args
-      @log.debug("asyncev_rdelete #{args.inspect}")
+      @log.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
         @log.warn("async rdelete failed:#{nid} dose not found in routing table.#{k}\e#{hname} #{clk}")
         return true # no retry
@@ -221,7 +221,7 @@ module Roma
 
     def asyncev_reqpushv(args)
       vn, nid, p = args
-      @log.debug("asyncev_reqpushv #{args.inspect}")
+      @log.debug("#{__method__} #{args.inspect}")
       t = Thread::new{
         sync_a_vnode(vn.to_i, nid, p == 'true')
       }
@@ -229,7 +229,7 @@ module Roma
     end
 
     def asyncev_start_recover_process(args)
-      @log.debug("asyncev_start_recover_process #{args.inspect}")
+      @log.debug("#{__method__} #{args.inspect}")
       @stats.run_recover = true
       t = Thread::new{
         begin
@@ -240,10 +240,10 @@ module Roma
           elsif args[0] == '-r' || args[0] == nil
             acquired_recover_process
           else
-            @log.error("asyncev_start_recover_process:argument error #{args.inspect}")
+            @log.error("#{__method__}:argument error #{args.inspect}")
           end
         rescue => e
-          @log.error("asyncev_start_recover_process:#{e.inspect} #{$@}")
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
         end
         @stats.run_recover = false
       }
@@ -251,13 +251,13 @@ module Roma
     end
 
     def asyncev_start_release_process(args)
-      @log.debug("asyncev_start_release_process #{args}")
+      @log.debug("#{__method__} #{args}")
       @stats.run_release = true
       t = Thread::new{
         begin
           release_process
         rescue => e
-          @log.error("asyncev_start_release_process:#{e.inspect} #{$@}")
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
         end
         @stats.run_release = false
       }
@@ -265,7 +265,7 @@ module Roma
     end
 
     def asyncev_start_sync_process(args)
-      @log.debug("asyncev_start_sync_process")
+      @log.debug("#{__method__}")
       @stats.run_recover = true
       t = Thread::new{
         sync_process(args)
@@ -283,12 +283,12 @@ module Roma
         if nids[0] == own_nid
           nids[1..-1].each{ |nid|
             unless sync_a_vnode(vn, nid)
-              @log.warn("sync_process:error at vn=#{vn} nid=#{nid}")
+              @log.warn("#{__method__}:error at vn=#{vn} nid=#{nid}")
             end
           }
         end
       }
-      @log.info("Sync process has done.")
+      @log.info("#{__method__} has done.")
     rescue =>e
       @log.error("#{e.inspect} #{$@}")
     ensure
@@ -297,7 +297,7 @@ module Roma
     end
 
     def acquired_recover_process
-      @log.info("acquired_recover_process:start")
+      @log.info("#{__method__}:start")
       exclude_nodes = @rttable.nodes
       
       if @stats.enabled_repetition_host_in_routing
@@ -311,7 +311,7 @@ module Roma
       loop {
         break unless @do_acquired_recover_process
         vnodes = @rttable.select_a_short_vnodes(exclude_nodes)
-        @log.info("acquired_recover_process:#{vnodes.length} short vnodes found.")
+        @log.info("#{__method__}:#{vnodes.length} short vnodes found.")
         break if vnodes.length == 0
         vn, nodes = vnodes[rand(vnodes.length)]
         if nodes.length != 0
@@ -324,7 +324,7 @@ module Roma
           sleep 1
         end
       }
-      @log.info("acquired_recover_process has done.")
+      @log.info("#{__method__} has done.")
     rescue => e
       @log.error("#{e.inspect} #{$@}")
     ensure
@@ -347,7 +347,7 @@ module Roma
         sleep 1
         count += 1
       end
-      @log.info("acquire_vnodes_prosess has done.")
+      @log.info("#{__method__} has done.")
     rescue => e
       @log.error("#{e.inspect} #{$@}")
     ensure
@@ -366,7 +366,7 @@ module Roma
 
       vn, nodes = @rttable.sample_vnode(widthout_nodes)
       unless vn
-        @log.warn("acquire_vnode:sample_vnode dose not found")
+        @log.warn("#{__method__}:sample_vnode dose not found")
         return false
       end
       #
@@ -381,11 +381,11 @@ module Roma
       con.write("reqpushv #{vn} #{@stats.ap_str} #{is_primary}\r\n")
       res = con.gets # receive 'PUSHED\r\n' | 'REJECTED\r\n' | 'ERROR\r\n'
       if res == "REJECTED\r\n"
-        @log.warn("req_push_a_vnode:request was rejected from #{src_nid}.")
+        @log.warn("#{__method__}:request was rejected from #{src_nid}.")
         Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
         return :rejected
       elsif res.start_with?("ERROR")
-        @log.warn("req_push_a_vnode:#{src_nid} busy.")
+        @log.warn("#{__method__}:#{src_nid} busy.")
         return :rejected
       end
       Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
@@ -396,18 +396,18 @@ module Roma
         count += 1
       end
       if count >= 300
-        @log.warn("req_push_a_vnode:request has been time-out.vn=#{vn} nid=#{src_nid}")
+        @log.warn("#{__method__}:request has been time-out.vn=#{vn} nid=#{src_nid}")
         return :timeout
       end
       true
     rescue =>e
-      @log.error("req_push_a_vnode:#{e.inspect} #{$@}")
+      @log.error("#{__method__}:#{e.inspect} #{$@}")
       @rttable.proc_failed(src_nid)
       false
     end
  
     def recover_process
-      @log.info("recover_process:start.")
+      @log.info("#{__method__}:start.")
       nodes = @rttable.nodes
       
       unless @stats.enabled_repetition_host_in_routing
@@ -418,7 +418,7 @@ module Roma
       end
       
       if nodes.length == 0
-        @log.error("New redundant node dose not found.")
+        @log.error("#{__method__}:New redundant node dose not found.")
         return
       end
 
@@ -428,11 +428,11 @@ module Roma
         # my process charges of a primary node and it's short of redundant
         if nids[0] == @stats.ap_str && nids.length < @rttable.rn
           unless sync_a_vnode(vn, nodes[rand(nodes.length)])
-            @log.warn("recover_process:error at hname=#{hname} vn=#{vn}")
+            @log.warn("#{__method__}:error at hname=#{hname} vn=#{vn}")
           end
         end
       }
-      @log.info("Recover process has done.")
+      @log.info("#{__method__} has done.")
     rescue =>e
       @log.error("#{e}\n#{$@}")
     ensure
@@ -441,7 +441,7 @@ module Roma
     end
 
     def release_process
-      @log.info("release_process:start.")
+      @log.info("#{__method__}:start.")
       nodes = @rttable.nodes
       nodes.delete(@stats.ap_str)
       hosts = []
@@ -456,7 +456,7 @@ module Roma
       end
            
       if hosts.length < @rttable.rn
-        @log.error("Sufficient nodes do not found.")
+        @log.error("#{__method__}:Sufficient nodes do not found.")
         return
       end
 
@@ -480,11 +480,11 @@ module Roma
           new_nid = buf[rand(buf.length)]
           new_nids = nids.map{|n| n == @stats.ap_str ? new_nid : n }
           unless sync_a_vnode_for_release(vn, new_nid, new_nids)
-            @log.warn("release_process:error at hname=#{hname} vn=#{vn}")
+            @log.warn("#{__method__}:error at hname=#{hname} vn=#{vn}")
           end
         end
       }
-      @log.info("Release process has done.")
+      @log.info("#{__method__} has done.")
     rescue =>e
       @log.error("#{e}\n#{$@}")
     ensure
@@ -494,13 +494,13 @@ module Roma
  
     def sync_a_vnode_for_release(vn, to_nid, new_nids)
       if @stats.run_iterate_storage == true
-        @log.warn("sync_a_vnode:already in being.#{vn} #{to_nid}")
+        @log.warn("#{__method__}:already in being.#{vn} #{to_nid}")
         return false
       end
       nids = @rttable.search_nodes(vn)
       
       if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
-@log.debug("sync_a_vnode_for_release:#{vn} #{to_nid}")
+        @log.debug("#{__method__}:#{vn} #{to_nid}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid
         return false unless @rttable.transaction(vn, nids)
@@ -511,14 +511,14 @@ module Roma
 
           if res != "STORED"
             @rttable.rollback(vn)
-            @log.error("push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+            @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
             return false
           end
         }
 
         if (clk = @rttable.commit(vn)) == false
           @rttable.rollback(vn)
-          @log.error("sync_a_vnode:routing table commit failed")
+          @log.error("#{__method__}:routing table commit failed")
           return false
         end
 
@@ -530,7 +530,7 @@ module Roma
         cmd = "setroute #{vn} #{clk - 1}"
         new_nids.each{ |nn| cmd << " #{nn}"}
         res = async_broadcast_cmd("#{cmd}\r\n")
-@log.debug("async_a_vnode_for_release:async_broadcast_cmd(#{cmd}) #{res}")
+        @log.debug("#{__method__}:async_broadcast_cmd(#{cmd}) #{res}")
       end
 
       return true
@@ -541,13 +541,13 @@ module Roma
 
     def sync_a_vnode(vn, to_nid, is_primary=nil)
       if @stats.run_iterate_storage == true
-        @log.warn("sync_a_vnode:already in being.#{vn} #{to_nid} #{is_primary}")
+        @log.warn("#{__method__}:already in being.#{vn} #{to_nid} #{is_primary}")
         return false
       end
       nids = @rttable.search_nodes(vn)
       
       if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
-@log.debug("sync_a_vnode:#{vn} #{to_nid} #{is_primary}")
+        @log.debug("#{__method__}:#{vn} #{to_nid} #{is_primary}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid
         return false unless @rttable.transaction(vn, nids)
@@ -558,14 +558,14 @@ module Roma
 
           if res != "STORED"
             @rttable.rollback(vn)
-            @log.error("push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+            @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
             return false
           end
         }
 
         if (clk = @rttable.commit(vn)) == false
           @rttable.rollback(vn)
-          @log.error("sync_a_vnode:routing table commit failed")
+          @log.error("#{__method__}:routing table commit failed")
           return false
         end
 
@@ -578,13 +578,13 @@ module Roma
         cmd = "setroute #{vn} #{clk - 1}"
         nids.each{ |nn| cmd << " #{nn}"}
         res = async_broadcast_cmd("#{cmd}\r\n")
-@log.debug("sync_a_vnode:async_broadcast_cmd(#{cmd}) #{res}")
+        @log.debug("#{__method__}:async_broadcast_cmd(#{cmd}) #{res}")
       else
         # synchronize a data
         @storages.each_key{ |hname|
           res = push_a_vnode_stream(hname, vn, to_nid)
           if res != "STORED"
-            @log.error("push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+            @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
             return false
           end
         }
