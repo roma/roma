@@ -45,15 +45,13 @@ module Roma
         end
       end
 
-      # recover [-r|-s]
+      # recover
       def ev_recover(s)
-        option = s[1] if s.length == 2
         if @rttable.can_i_recover?
           cmd = "rrecover"
-          cmd << " #{option}" if option
           res = broadcast_cmd("#{cmd}\r\n")
           unless @stats.run_recover
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_recover_process',[option]))
+            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_recover_process'))
             res[@nid] = "STARTED"
           else
             res[@nid] = "SERVER_ERROR Recover/Sync process is already running."
@@ -64,12 +62,11 @@ module Roma
         end
       end
 
-      # rrecover [-r|-s]
+      # rrecover
       def ev_rrecover(s)
-        option = s[1] if s.length == 2
         if @rttable.can_i_recover?
           unless @stats.run_recover
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_recover_process',[option]))
+            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_recover_process'))
             send_data("STARTED\r\n")
           else
             send_data("SERVER_ERROR Recover process is already running.\r\n")
