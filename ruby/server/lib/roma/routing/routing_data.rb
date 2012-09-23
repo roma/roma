@@ -70,6 +70,7 @@ module Roma
           bin = bin[2..-1]
           nid, = bin.unpack("a#{len}")
           bin = bin[len..-1]
+          nid.encode!("utf-8") if RUBY_VERSION >= "1.9.3"
           rd.nodes << nid 
         }
         (2**div_bits).times{|i|
