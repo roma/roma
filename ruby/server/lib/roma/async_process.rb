@@ -222,10 +222,21 @@ module Roma
     def asyncev_reqpushv(args)
       vn, nid, p = args
       @log.debug("#{__method__} #{args.inspect}")
-      t = Thread::new{
-        sync_a_vnode(vn.to_i, nid, p == 'true')
-      }
-      t[:name] = __method__
+      if @stats.run_iterate_storage
+        @log.warn("#{__method__}:already be iterated storage process.")
+      else
+        @stats.run_iterate_storage = true
+        t = Thread::new do
+          begin
+            sync_a_vnode(vn.to_i, nid, p == 'true')
+          rescue =>e
+            @log.error("#{__method__}:#{e.inspect} #{$@}")
+          ensure
+            @stats.run_iterate_storage = false
+          end
+        end
+        t[:name] = __method__
+      end
     end
 
     def asyncev_start_recover_process(args)
@@ -252,16 +263,23 @@ module Roma
 
     def asyncev_start_release_process(args)
       @log.debug("#{__method__} #{args}")
-      @stats.run_release = true
-      t = Thread::new{
-        begin
-          release_process
-        rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$@}")
+      if @stats.run_iterate_storage
+        @log.warn("#{__method__}:already be iterated storage process.")
+      else
+        @stats.run_release = true
+        @stats.run_iterate_storage = true
+        t = Thread::new do
+          begin
+            release_process
+          rescue => e
+            @log.error("#{__method__}:#{e.inspect} #{$@}")
+          ensure
+            @stats.run_iterate_storage = false
+            @stats.run_release = false
+          end
         end
-        @stats.run_release = false
-      }
-      t[:name] = __method__
+        t[:name] = __method__
+      end
     end
 
     def asyncev_start_sync_process(args)
@@ -493,10 +511,6 @@ module Roma
     end
  
     def sync_a_vnode_for_release(vn, to_nid, new_nids)
-      if @stats.run_iterate_storage == true
-        @log.warn("#{__method__}:already in being.#{vn} #{to_nid}")
-        return false
-      end
       nids = @rttable.search_nodes(vn)
       
       if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
@@ -540,10 +554,6 @@ module Roma
     end
 
     def sync_a_vnode(vn, to_nid, is_primary=nil)
-      if @stats.run_iterate_storage == true
-        @log.warn("#{__method__}:already in being.#{vn} #{to_nid} #{is_primary}")
-        return false
-      end
       nids = @rttable.search_nodes(vn)
       
       if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
@@ -613,7 +623,6 @@ module Roma
     end
 
     def push_a_vnode_stream(hname, vn, nid)
-      @stats.run_iterate_storage = true
       @log.info("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
 
       stop_clean_up
@@ -638,7 +647,6 @@ module Roma
           return "CANCELED"
         end
 
-        @stats.run_iterate_storage = true
         con.write(data)
         sleep @stats.stream_copy_wait_param
       }
@@ -651,8 +659,6 @@ module Roma
     rescue =>e
       @log.error("#{e}\n#{$@}")
       e.to_s
-    ensure
-      @stats.run_iterate_storage = false
     end
 
 
