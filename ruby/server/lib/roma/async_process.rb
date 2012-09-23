@@ -242,22 +242,14 @@ module Roma
     def asyncev_start_recover_process(args)
       @log.debug("#{__method__} #{args.inspect}")
       @stats.run_recover = true
-      t = Thread::new{
+      t = Thread::new do
         begin
-          if args == nil || args.length == 0
-            acquired_recover_process
-          elsif args[0] == '-s'
-            recover_process
-          elsif args[0] == '-r' || args[0] == nil
-            acquired_recover_process
-          else
-            @log.error("#{__method__}:argument error #{args.inspect}")
-          end
+          acquired_recover_process
         rescue => e
           @log.error("#{__method__}:#{e.inspect} #{$@}")
         end
         @stats.run_recover = false
-      }
+      end
       t[:name] = __method__
     end
 
@@ -424,40 +416,6 @@ module Roma
       false
     end
  
-    def recover_process
-      @log.info("#{__method__}:start.")
-      nodes = @rttable.nodes
-      
-      unless @stats.enabled_repetition_host_in_routing
-        host = @stats.ap_str.split(/[:_]/)[0]
-        nodes.delete_if{|nid| nid.split(/[:_]/)[0] == host }
-      else
-        nodes.delete(@stats.ap_str)
-      end
-      
-      if nodes.length == 0
-        @log.error("#{__method__}:New redundant node dose not found.")
-        return
-      end
-
-      @do_recover_process = true
-      @rttable.each_vnode{ |vn, nids|
-        break unless @do_recover_process
-        # my process charges of a primary node and it's short of redundant
-        if nids[0] == @stats.ap_str && nids.length < @rttable.rn
-          unless sync_a_vnode(vn, nodes[rand(nodes.length)])
-            @log.warn("#{__method__}:error at hname=#{hname} vn=#{vn}")
-          end
-        end
-      }
-      @log.info("#{__method__} has done.")
-    rescue =>e
-      @log.error("#{e}\n#{$@}")
-    ensure
-      @do_recover_process = false
-      Roma::Messaging::ConPool.instance.close_all
-    end
-
     def release_process
       @log.info("#{__method__}:start.")
       nodes = @rttable.nodes
