@@ -53,7 +53,7 @@ module Roma
       start_wb_process
       timer
 
-       if @stats.join_ap
+      if @stats.join_ap
         AsyncProcess::queue.push(AsyncMessage.new('start_join_process'))
       end
 
@@ -137,6 +137,15 @@ module Roma
 
     def daemon?; @stats.daemon; end
 
+    def stop_clean_up
+      @stats.last_clean_up = Time.now
+      while(@stats.run_storage_clean_up)
+        @log.info("Storage clean up process will be stop.")
+        @storages.each_value{|st| st.stop_clean_up}
+        sleep 0.005
+      end
+    end
+
     private
 
     def initialize_stats
@@ -148,7 +157,10 @@ module Roma
       end
       if Config.const_defined?(:WB_COMMAND_MAP)
         @stats.wb_command_map = Config::WB_COMMAND_MAP
-      end      
+      end
+      if Config.const_defined?(:STORAGE_CLEAN_UP_INTERVAL)
+        @stats.clean_up_interval = Config::STORAGE_CLEAN_UP_INTERVAL
+      end
     end
 
     def initialize_connection
@@ -501,8 +513,7 @@ module Roma
 
       if (@stats.run_acquire_vnodes || @stats.run_recover) &&
           @stats.run_storage_clean_up
-        @storages.each_value{|st| st.stop_clean_up}
-        @log.info("stop a storage clean up process")
+        stop_clean_up
       end
     end
 
@@ -534,7 +545,10 @@ module Roma
           @stats.run_storage_clean_up == false &&
           @stats.run_acquire_vnodes == false &&
           @stats.run_recover == false &&
-          @stats.run_iterate_storage == false)
+          @stats.run_iterate_storage == false &&
+          @stats.run_join == false &&
+          @stats.run_receive_a_vnode.empty? &&
+          @stats.do_clean_up?)
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_clean_up_process'))
       end
 

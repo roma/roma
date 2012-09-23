@@ -9,18 +9,3 @@ $LOAD_PATH.unshift("#{client_base_path}/roma-ruby-client/lib")
 
 require 'roma/tools/simple_bench'
 
-if ARGV.length == 0
-  STDERR.puts "usage:simple_bench addr:port"
-  exit
-end
-
-tn=10
-t=[]
-tn.times{
-  t << Thread.new{
-    random_rquest_sender(ARGV)
-  }
-}
-
-t[0].join
-

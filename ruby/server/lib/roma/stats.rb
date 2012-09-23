@@ -31,9 +31,12 @@ module Roma
     attr_accessor :run_release
     attr_accessor :run_join
 
+    attr_accessor :last_clean_up
+
     # proc param
     attr_accessor :stream_copy_wait_param
     attr_accessor :dcnice
+    attr_accessor :clean_up_interval
 
     # compressed redundant param
     attr_accessor :size_of_zredundant
@@ -58,11 +61,13 @@ module Roma
       @run_sync_routing = false
       @run_iterate_storage = false
       @run_storage_clean_up = false
-      @run_receive_a_vnode = false
+      @run_receive_a_vnode = {}
       @run_release = false
       @run_join = false
+      @last_clean_up = Time.now
       @stream_copy_wait_param = 0.0001
       @dcnice = 3
+      @clean_up_interval = 300
       @enabled_vnodes_balance = nil
       @write_count = 0
       @read_count = 0
@@ -93,10 +98,13 @@ module Roma
       ret['stats.run_sync_routing'] = @run_sync_routing
       ret['stats.run_iterate_storage'] = @run_iterate_storage
       ret['stats.run_storage_clean_up'] = @run_storage_clean_up
+      ret['stats.run_receive_a_vnode'] = @run_receive_a_vnode.inspect
       ret['stats.run_release'] = @run_release
       ret['stats.run_join'] = @run_join
+      ret['stats.last_clean_up'] = @last_clean_up
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
       ret['stats.dcnice'] = @dcnice
+      ret['stats.clean_up_interval'] = @clean_up_interval
       ret['stats.size_of_zredundant'] = @size_of_zredundant
       ret['stats.write_count'] = @write_count
       ret['stats.read_count'] = @read_count
@@ -116,6 +124,10 @@ module Roma
       clear_count(:@out_count)
       clear_count(:@out_message_count)
       clear_count(:@redundant_count)
+    end
+
+    def do_clean_up?
+      @last_clean_up.to_i + @clean_up_interval < Time.now.to_i
     end
 
     private

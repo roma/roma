@@ -37,8 +37,16 @@ module Roma
       #  |              [<end of dump>]->|
       #  |<-['STORED'\r\n]               |
       def ev_spushv(s)
+        if s.length != 3
+          @log.error("#{__method__}:wrong number of arguments(#{s})")
+          return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+        @stats.run_receive_a_vnode["#{s[1]}_#{s[2]}"] = true
+
+        $roma.stop_clean_up
+
         send_data("READY\r\n")
-        @stats.run_receive_a_vnode = true
+
         count = rcount = 0
         @log.debug("#{__method__}:#{s.inspect} received.")
         loop {
@@ -71,19 +79,21 @@ module Roma
           end
         }
         send_data("STORED\r\n")
-        @log.debug("#{__method__}:#{s[2]} #{count} keys loaded. #{rcount} keys rejected.")
+        @log.debug("#{__method__}:#{s[1]}_#{s[2]} #{count} keys loaded.")
+        @log.debug("#{__method__}:#{s[1]}_#{s[2]} #{rcount} keys rejected.") if rcount > 0
       rescue Storage::StorageException => e
         @log.error("#{e.inspect} #{$@}")
         close_connection
         if Config.const_defined?(:STORAGE_EXCEPTION_ACTION) &&
             Config::STORAGE_EXCEPTION_ACTION == :shutdown
-          @log.error("Romad will stop")
+          @log.error("#{__method__}:Romad will be stop.")
           @stop_event_loop = true
         end
       rescue => e
         @log.error("#{e} #{$@}")
       ensure
-        @stats.run_receive_a_vnode = false
+        @stats.run_receive_a_vnode.delete("#{s[1]}_#{s[2]}") if s.length == 3
+        @stats.last_clean_up = Time.now
       end      
 
       # reqpushv <vnode-id> <node-id> <is primary?>

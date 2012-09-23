@@ -357,6 +357,7 @@ module Roma
     end
  
     def join_process
+      @log.info("#{__method__}:start")
       count = 0
       nv = @rttable.v_idx.length
       @do_join_process = true
@@ -399,6 +400,7 @@ module Roma
     end
 
     def acquire_vnodes_process
+      @log.info("#{__method__}:start")
       count = 0
       nv = @rttable.v_idx.length
       @do_acquire_vnodes_process = true
@@ -414,7 +416,7 @@ module Roma
         sleep 1
         count += 1
       end
-      @log.info("acquire_vnodes_prosess has done.")
+      @log.info("#{__method__} has done.")
     rescue => e
       @log.error("#{e.inspect} #{$@}")
     ensure
@@ -448,11 +450,11 @@ module Roma
       con.write("reqpushv #{vn} #{@stats.ap_str} #{is_primary}\r\n")
       res = con.gets # receive 'PUSHED\r\n' | 'REJECTED\r\n' | 'ERROR\r\n'
       if res == "REJECTED\r\n"
-        @log.warn("req_push_a_vnode:request was rejected from #{src_nid}.")
+        @log.warn("#{__method__}:request was rejected from #{src_nid}.")
         Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
         return :rejected
       elsif res.start_with?("ERROR")
-        @log.warn("req_push_a_vnode:#{src_nid} busy.")
+        @log.warn("#{__method__}:#{src_nid} busy.")
         return :rejected
       end
       Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
@@ -463,12 +465,12 @@ module Roma
         count += 1
       end
       if count >= 300
-        @log.warn("req_push_a_vnode:request has been time-out.vn=#{vn} nid=#{src_nid}")
+        @log.warn("#{__method__}:request has been time-out.vn=#{vn} nid=#{src_nid}")
         return :timeout
       end
       true
     rescue =>e
-      @log.error("req_push_a_vnode:#{e.inspect} #{$@}")
+      @log.error("#{__method__}:#{e.inspect} #{$@}")
       @rttable.proc_failed(src_nid)
       false
     end
@@ -711,22 +713,12 @@ module Roma
       @stats.run_iterate_storage = true
       @log.info("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
 
-      while(@stats.run_storage_clean_up)
-        @log.info("#{__method__}:stop clean up storage process")
-        @storages.each_value{|st| st.stop_clean_up}
-        sleep 0.1
-      end
+      stop_clean_up
 
       con = Roma::Messaging::ConPool.instance.get_connection(nid)
 
       @do_push_a_vnode_stream = true
       
-      while(@stats.run_storage_clean_up)
-        @log.info("#{__method__}:stop_clean_up")
-        @storages.each_value{|st| st.stop_clean_up}
-        sleep 0.5
-      end
-
       con.write("spushv #{hname} #{vn}\r\n")
 
       res = con.gets # READY\r\n or error string
@@ -774,6 +766,7 @@ module Roma
         rescue =>e
           @log.error("#{__method__}:#{e.inspect} #{$@}")
         ensure
+          @stats.last_clean_up = Time.now
           @stats.run_storage_clean_up = false
         end
       }
@@ -781,10 +774,10 @@ module Roma
     end
 
     def storage_clean_up_process
-#      @log.info("#{__method__}:start")
+      @log.info("#{__method__}:start")
       me = @stats.ap_str
       vnhash={}
-      @rttable.each_vnode{|vn, nids|
+      @rttable.each_vnode do |vn, nids|
         if nids.include?(me)
           if nids[0] == me
             vnhash[vn] = :primary
@@ -792,28 +785,37 @@ module Roma
             vnhash[vn] = :secondary
           end
         end
-      }
+      end
       t = Time.now.to_i - Roma::Config::STORAGE_DELMARK_EXPTIME
       count = 0
-      @storages.each_pair{|hname,st|
-        st.each_clean_up(t, vnhash){|key, vn|
-          count += 1
-          @stats.out_count += 1
-#          @log.debug("#{__method__}:key=#{key} vn=#{vn}")
-          nodes = @rttable.search_nodes_for_write(vn)
-          next if(nodes == nil || nodes.length <= 1)
-          nodes[1..-1].each{|nid|
-            res = async_send_cmd(nid,"out #{key}\e#{hname} #{vn}\r\n")
-            unless res
-              @log.warn("send out command failed:#{key}\e#{hname} #{vn} -> #{nid}")
+      @storages.each_pair do |hname,st|
+        break unless @stats.do_clean_up?
+        st.each_clean_up(t, vnhash) do |key, vn|
+          # @log.debug("#{__method__}:key=#{key} vn=#{vn}")
+          if @stats.run_receive_a_vnode.key?("#{hname}_#{vn}")
+            false
+          else
+            nodes = @rttable.search_nodes_for_write(vn)
+            if nodes && nodes.length > 1
+              nodes[1..-1].each do |nid|
+                res = async_send_cmd(nid,"out #{key}\e#{hname} #{vn}\r\n")
+                unless res
+                  @log.warn("send out command failed:#{key}\e#{hname} #{vn} -> #{nid}")
+                end
+                # @log.debug("#{__method__}:res=#{res}")
+              end
             end
-#            @log.debug("#{__method__}:res=#{res}")
-          }
-        }
-      }
+            count += 1
+            @stats.out_count += 1
+            true
+          end
+        end
+      end
       if count>0
         @log.info("#{__method__}:#{count} keys deleted.")
       end
+    ensure
+      @log.info("#{__method__}:stop")
     end
 
 

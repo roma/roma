@@ -1,4 +1,5 @@
 require 'roma/routing/rttable'
+require 'roma/routing/random_partitioner'
 
 module Roma
   module Routing
@@ -310,7 +311,7 @@ module Roma
           end
         }
 
-        @log.debug("#{__FILE__}:#{__LINE__}:n=#{n} pcount=#{pcount} scount=#{scount}")
+        @log.debug("#{__method__}:n=#{n} pcount=#{pcount} scount=#{scount}")
 
         if pcount > n
           return :over
