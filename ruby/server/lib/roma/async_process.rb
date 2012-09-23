@@ -612,34 +612,6 @@ module Roma
       nodes
     end
 
-    def push_a_vnode(hname, vn, nid)
-      dmp = @storages[hname].dump(vn)
-      unless dmp
-        @log.info("hname=#{hname} vn=#{vn} has a empty data.")
-        return "STORED"
-      end
-      con = Roma::Messaging::ConPool.instance.get_connection(nid)
-
-      con.write("pushv #{hname} #{vn}\r\n")
-      res = con.gets # READY\r\n or error string
-      if res != "READY\r\n"
-        con.close
-        return res.chomp
-      end
-      con.write("#{dmp.length}\r\n#{dmp}\r\nEND\r\n")
-      res = con.gets # STORED\r\n or error string
-
-      Roma::Messaging::ConPool.instance.return_connection(nid,con)
-      res.chomp! if res
-      res
-    rescue Errno::EPIPE
-      @log.debug("Errno::EPIPE retry")
-      retry
-    rescue =>e
-      @log.error("#{e.inspect}\n#{$@}")
-      "#{e}"
-    end
- 
     def push_a_vnode_stream(hname, vn, nid)
       @stats.run_iterate_storage = true
       @log.info("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
