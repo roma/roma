@@ -100,6 +100,23 @@ module Roma
         @rd.nodes.length >= @rd.rn
       end
 
+      def can_i_release?(ap_str, rep_host)
+        buf = self.nodes
+        buf.delete(ap_str)
+        hosts = []
+        
+        unless rep_host
+          buf.each{ |node|
+            host = node.split(/[:_]/)[0]
+            hosts << host unless hosts.include?(host)
+          }
+        else
+          hosts = buf
+        end
+        
+        hosts.length < @rd.rn
+      end
+
       # Retuens the list of losted-data vnode newer than argument time.
       def search_lost_vnodes(t)
         ret = []

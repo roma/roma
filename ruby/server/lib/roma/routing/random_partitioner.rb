@@ -3,7 +3,7 @@ module Roma
     module RandomPartitioner
 
       def exclude_nodes(ap_str, rep_host)
-        exclude_nodes = nodes
+        exclude_nodes = self.nodes
         if rep_host
           exclude_nodes = [ap_str]
         else
@@ -51,8 +51,23 @@ module Roma
         end
       end
 
-      def select_vn_for_release(exclued_nodes)
-        # TODO
+      def select_node_for_release(ap_str, rep_host, nids)
+        buf = self.nodes
+
+        unless rep_host
+          deny_hosts = []
+          nids.each{ |nid|
+            host = nid.split(/[:_]/)[0]
+            deny_hosts << host if host != ap_str.split(/[:_]/)[0]
+          }
+          buf.delete_if{|nid| deny_hosts.include?(nid.split(/[:_]/)[0])}
+        else
+          nids.each{|nid| buf.delete(nid) }
+        end
+        
+        to_nid = buf[rand(buf.length)]
+        new_nids = nids.map{|n| n == ap_str ? to_nid : n }
+        [to_nid, new_nids]
       end
 
     end

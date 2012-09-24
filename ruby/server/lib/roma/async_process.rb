@@ -349,7 +349,6 @@ module Roma
         break unless vn
 
         if nodes.length != 0
-          #ret = req_push_a_vnode(vn, nodes[0], rand(@rttable.rn) == 0)
           ret = req_push_a_vnode(vn, nodes[0], is_primary)
           if ret == :rejected
             sleep 1
@@ -474,20 +473,8 @@ module Roma
  
     def release_process
       @log.info("#{__method__}:start.")
-      nodes = @rttable.nodes
-      nodes.delete(@stats.ap_str)
-      hosts = []
 
-      unless @stats.enabled_repetition_host_in_routing
-        nodes.each{ |node|
-          host = node.split(/[:_]/)[0]
-          hosts << host unless hosts.include?(host)
-        }
-      else
-        hosts = nodes
-      end
-           
-      if hosts.length < @rttable.rn
+      if @rttable.can_i_release?(@stats.ap_str, @stats.rep_host)
         @log.error("#{__method__}:Sufficient nodes do not found.")
         return
       end
@@ -496,22 +483,9 @@ module Roma
       @rttable.each_vnode{ |vn, nids|
         break unless @do_release_process
         if nids.include?(@stats.ap_str)
-          buf = nodes.clone
 
-          unless @stats.enabled_repetition_host_in_routing
-            deny_hosts = []
-            nids.each{ |nid|
-              host = nid.split(/[:_]/)[0]
-              deny_hosts << host if host != @stats.ap_str.split(/[:_]/)[0]
-            }
-            buf.delete_if{|nid| deny_hosts.include?(nid.split(/[:_]/)[0])}
-          else
-            nids.each{|nid| buf.delete(nid) }
-          end
-
-          new_nid = buf[rand(buf.length)]
-          new_nids = nids.map{|n| n == @stats.ap_str ? new_nid : n }
-          unless sync_a_vnode_for_release(vn, new_nid, new_nids)
+          to_nid, new_nids = @rttable.select_node_for_release(@stats.ap_str, @stats.rep_host, nids)
+          unless sync_a_vnode_for_release(vn, to_nid, new_nids)
             @log.warn("#{__method__}:error at hname=#{hname} vn=#{vn}")
           end
         end
