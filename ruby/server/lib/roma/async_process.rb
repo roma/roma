@@ -290,6 +290,7 @@ module Roma
       else
         @stats.run_release = true
         @stats.run_iterate_storage = true
+        @stats.spushv_protection = true
         t = Thread::new do
           begin
             release_process
@@ -480,16 +481,19 @@ module Roma
       end
 
       @do_release_process = true
-      @rttable.each_vnode{ |vn, nids|
-        break unless @do_release_process
-        if nids.include?(@stats.ap_str)
-
-          to_nid, new_nids = @rttable.select_node_for_release(@stats.ap_str, @stats.rep_host, nids)
-          unless sync_a_vnode_for_release(vn, to_nid, new_nids)
-            @log.warn("#{__method__}:error at hname=#{hname} vn=#{vn}")
+      while(@rttable.has_node?(@stats.ap_str)) do
+        @rttable.each_vnode do |vn, nids|
+          break unless @do_release_process
+          if nids.include?(@stats.ap_str)
+            
+            to_nid, new_nids = @rttable.select_node_for_release(@stats.ap_str, @stats.rep_host, nids)
+            unless sync_a_vnode_for_release(vn, to_nid, new_nids)
+              @log.warn("#{__method__}:error at vn=#{vn} to_nid=#{to_nid} new_nid=#{new_nids}")
+              redo
+            end
           end
         end
-      }
+      end
       @log.info("#{__method__} has done.")
     rescue =>e
       @log.error("#{e}\n#{$@}")

@@ -27,6 +27,18 @@ module Roma
         @log.error("#{e}\n#{$@}")
       end
 
+      # spushv <true/false>
+      def ev_spushv_protection(s)
+        if s.length == 1
+          send_data("#{@stats.spushv_protection}\r\n")
+        elsif s.length == 2
+          @stats.spushv_protection = (s[1] == 'true')
+          send_data("#{@stats.spushv_protection}\r\n")
+        else
+          send_data("COMMAND ERROR\r\n")
+        end
+      end
+
       # spushv <hash-name> <vnode-id>
       # src                             dst
       #  |  ['spushv' <hname> <vn>\r\n]->|
@@ -40,6 +52,10 @@ module Roma
         if s.length != 3
           @log.error("#{__method__}:wrong number of arguments(#{s})")
           return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+        if @stats.spushv_protection
+          @log.info("#{__method__}:In spushv_protection")
+          return send_data("SERVER_ERROR In spushv_protection.\r\n")          
         end
         @stats.run_receive_a_vnode["#{s[1]}_#{s[2]}"] = true
 
@@ -78,7 +94,12 @@ module Roma
             end
           end
         }
-        send_data("STORED\r\n")
+        if @stats.spushv_protection
+          @log.info("#{__method__}:Canceled because of spushv_protection")
+          send_data("CANCELED\r\n")
+        else
+          send_data("STORED\r\n")
+        end
         @log.debug("#{__method__}:#{s[1]}_#{s[2]} #{count} keys loaded.")
         @log.debug("#{__method__}:#{s[1]}_#{s[2]} #{rcount} keys rejected.") if rcount > 0
       rescue Storage::StorageException => e

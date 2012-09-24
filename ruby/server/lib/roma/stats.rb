@@ -33,6 +33,7 @@ module Roma
     attr_accessor :run_join
 
     attr_accessor :last_clean_up
+    attr_accessor :spushv_protection
 
     # proc param
     attr_accessor :stream_copy_wait_param
@@ -66,6 +67,7 @@ module Roma
       @run_release = false
       @run_join = false
       @last_clean_up = Time.now
+      @spushv_protection = false
       @stream_copy_wait_param = 0.0001
       @dcnice = 3
       @clean_up_interval = 300
@@ -103,6 +105,7 @@ module Roma
       ret['stats.run_release'] = @run_release
       ret['stats.run_join'] = @run_join
       ret['stats.last_clean_up'] = @last_clean_up
+      ret['stats.spushv_protection'] = @spushv_protection
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
       ret['stats.dcnice'] = @dcnice
       ret['stats.clean_up_interval'] = @clean_up_interval

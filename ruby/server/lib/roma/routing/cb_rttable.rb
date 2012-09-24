@@ -338,6 +338,13 @@ module Roma
         :even
       end
 
+      def has_node?(ap_str)
+        self.each_vnode do |vn, nids|
+          return true if nids.include?(ap_str)
+        end
+        false
+      end
+
     end # class ChurnbasedRoutingTable
 
   end # module Routing
