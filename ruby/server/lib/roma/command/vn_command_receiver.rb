@@ -6,27 +6,6 @@ module Roma
 
     module VnodeCommandReceiver
 
-      # pushv <hash-name> <vnode-id>
-      # src                             dst
-      #  |   ['pushv' <hname> <vn>\r\n]->|
-      #  |<-['READY'\r\n]                |
-      #  |               [<length>\r\n]->|
-      #  |                 [<dump>\r\n]->|
-      #  |                  ['END'\r\n]->|
-      #  |<-['STORED'\r\n]               |
-      def ev_pushv(s)
-        send_data("READY\r\n")
-        len = gets
-        res = em_receive_dump(s[1], len.to_i)
-        if res == true
-          send_data("STORED\r\n")
-        else
-          send_data("SERVER_ERROR #{res}\r\n")
-        end
-      rescue => e
-        @log.error("#{e}\n#{$@}")
-      end
-
       # spushv <true/false>
       def ev_spushv_protection(s)
         if s.length == 1
@@ -153,28 +132,6 @@ module Roma
         @rttable.proc_failed(src_nid)
         false
       end
-
-      def em_receive_dump(hname, len)
-        dmp = read_bytes(len)
-        read_bytes(2)
-        if gets == "END\r\n"
-          if @storages.key?(hname)
-            n = @storages[hname].load(dmp)
-            @log.debug("#{dmp.length} bytes received.(#{n} keys loaded.)")
-            return true
-          else
-            @log.error("receive_dump:@storages[#{hname}] dose not found.")
-            return "@storages[#{hname}] dose not found."
-          end
-        else
-          @log.error("receive_dump:END was not able to be received.")
-          return "END was not able to be received."
-        end
-      rescue =>e
-        @log.error("#{e}\n#{$@}")
-        "#{e}"
-      end
-      private :em_receive_dump
 
     end # module VnodeCommandReceiver
 
