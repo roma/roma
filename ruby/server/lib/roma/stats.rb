@@ -16,6 +16,7 @@ module Roma
     attr_accessor :name
     attr_accessor :verbose
     attr_accessor :enabled_repetition_host_in_routing
+    alias :rep_host :enabled_repetition_host_in_routing
     attr_accessor :disabled_cmd_protect
 
     # proc mode
@@ -92,7 +93,7 @@ module Roma
       ret['stats.daemon'] = @daemon
       ret['stats.name'] = @name
       ret['stats.verbose'] = @verbose
-      ret['stats.enabled_repetition_host_in_routing'] = @enabled_repetition_host_in_routing
+      ret['stats.enabled_repetition_host_in_routing'] = rep_host
       ret['stats.run_acquire_vnodes'] = @run_acquire_vnodes
       ret['stats.run_recover'] = @run_recover
       ret['stats.run_sync_routing'] = @run_sync_routing
