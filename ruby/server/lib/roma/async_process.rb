@@ -266,16 +266,21 @@ module Roma
 
     def asyncev_start_recover_process(args)
       @log.debug("#{__method__} #{args.inspect}")
-      @stats.run_recover = true
-      t = Thread::new do
-        begin
-          acquired_recover_process
-        rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$@}")
+      if @stats.run_recover
+        @log.warn("#{__method__}:already be recover process.")
+      else
+        @stats.run_recover = true
+        t = Thread::new do
+          begin
+            acquired_recover_process
+          rescue => e
+            @log.error("#{__method__}:#{e.inspect} #{$@}")
+          ensure
+            @stats.run_recover = false
+          end
         end
-        @stats.run_recover = false
+        t[:name] = __method__
       end
-      t[:name] = __method__
     end
 
     def asyncev_start_release_process(args)
@@ -333,24 +338,19 @@ module Roma
 
     def acquired_recover_process
       @log.info("#{__method__}:start")
-      exclude_nodes = @rttable.nodes
-      
-      if @stats.enabled_repetition_host_in_routing
-        exclude_nodes = [@stats.ap_str]
-      else
-        myhost = @stats.ap_str.split(/[:_]/)[0]
-        exclude_nodes.delete_if{|nid| nid.split(/[:_]/)[0] != myhost }
-      end
+
+      exclude_nodes = @rttable.exclude_nodes_for_recover(@stats.ap_str, @stats.rep_host)
       
       @do_acquired_recover_process = true
-      loop {
+      loop do
         break unless @do_acquired_recover_process
-        vnodes = @rttable.select_a_short_vnodes(exclude_nodes)
-        @log.info("#{__method__}:#{vnodes.length} short vnodes found.")
-        break if vnodes.length == 0
-        vn, nodes = vnodes[rand(vnodes.length)]
+
+        vn, nodes, is_primary = @rttable.select_vn_for_recover(exclude_nodes)
+        break unless vn
+
         if nodes.length != 0
-          ret = req_push_a_vnode(vn, nodes[0], rand(@rttable.rn) == 0)
+          #ret = req_push_a_vnode(vn, nodes[0], rand(@rttable.rn) == 0)
+          ret = req_push_a_vnode(vn, nodes[0], is_primary)
           if ret == :rejected
             sleep 1
           elsif ret == false
@@ -358,7 +358,7 @@ module Roma
           end
           sleep 1
         end
-      }
+      end
       @log.info("#{__method__} has done.")
     rescue => e
       @log.error("#{e.inspect} #{$@}")
@@ -463,8 +463,8 @@ module Roma
         @log.warn("#{__method__}:request was rejected from #{src_nid}.")
         Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
         return :rejected
-      elsif res.start_with?("ERROR")
-        @log.warn("#{__method__}:#{src_nid} busy.")
+      elsif res != "PUSHED\r\n"
+        @log.warn("#{__method__}:#{res}")
         return :rejected
       end
       Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
