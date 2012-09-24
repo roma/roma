@@ -32,7 +32,7 @@ module Roma
         return nil if ks.length == 0
         vn = ks[rand(ks.length)]
         nids = idx[vn]
-        [vn, nids]
+        [vn, nids, rand(@rd.rn) == 0]
       end
 
       # select a vnodes where short of redundancy.

@@ -370,43 +370,30 @@ module Roma
       @log.info("#{__method__}:start")
       count = 0
       nv = @rttable.v_idx.length
+      exclude_nodes = @rttable.exclude_nodes_for_join(@stats.ap_str, @stats.rep_host)
+
       @do_join_process = true
       while (@rttable.vnode_balance(@stats.ap_str) == :less && count < nv) do
         break unless @do_join_process
-        ret = join
+
+        vn, nodes, is_primary = @rttable.select_vn_for_join(exclude_nodes)
+        unless vn
+          @log.warn("#{__method__}:vnode dose not found")
+          return false
+        end
+        ret = req_push_a_vnode(vn, nodes[0], is_primary)      
         if ret == :rejected
           sleep 5
-          next
-        elsif ret == false
-          break
+        else
+          sleep 1
+          count += 1
         end
-        sleep 1
-        count += 1
       end
       @log.info("#{__method__} has done.")
     rescue => e
       @log.error("#{e.inspect} #{$@}")
     ensure
       @do_join_process = false
-    end
-
-    def join
-      widthout_nodes = @rttable.nodes
-      
-      if @stats.enabled_repetition_host_in_routing
-        widthout_nodes = [@stats.ap_str]
-      else
-        myhost = @stats.ap_str.split(/[:_]/)[0]
-        widthout_nodes.delete_if{|nid| nid.split(/[:_]/)[0] != myhost }
-      end
-
-      vn, nodes = @rttable.select_vn_for_join(widthout_nodes)
-      unless vn
-        @log.warn("#{__method__}:select_vn_for_join dose not found")
-        return false
-      end
-
-      req_push_a_vnode(vn, nodes[0], rand(@rttable.rn) == 0)      
     end
 
     def acquire_vnodes_process
