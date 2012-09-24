@@ -1252,6 +1252,10 @@ module Roma
           @log.error("#{__method__}:wrong number of arguments(#{s})")
           return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
         end
+        if @stats.spushv_protection
+          @log.info("#{__method__}:In spushv_protection")
+          return send_data("SERVER_ERROR In spushv_protection.\r\n")          
+        end
         @stats.run_receive_a_vnode["#{s[1]}_#{s[2]}"] = true
 
         $roma.stop_clean_up
@@ -1276,7 +1280,12 @@ module Roma
             count += 1 if @storages[s[1]].load_stream_dump(vn, last, clk, expt, k, v)
           end
         }
-        send_data("STORED\r\n")
+        if @stats.spushv_protection
+          @log.info("#{__method__}:Canceled because of spushv_protection")
+          send_data("CANCELED\r\n")
+        else
+          send_data("STORED\r\n")
+        end
         @log.debug("alist #{count} keys loaded.")
       rescue Storage::StorageException => e
         @log.error("#{e.inspect} #{$@}")
