@@ -141,64 +141,6 @@ module Roma
       true      
     end
 
-    def asyncev_start_dumpfile_process(args)
-      @log.debug("#{__method__} #{args.inspect}")
-      key, path, cmd = args
-      path = Roma::Config::STORAGE_DUMP_PATH + '/' + path
-      t = Thread.new{
-        begin
-          except_vnh = {}
-          @rttable.each_vnode{|vn,nids|
-            if nids[0]!=@stats.ap_str
-              except_vnh[vn]=vn
-            end
-          }
-          # cmd expect the :dumpfile or :rdumpfile. 
-          delete_to_end_of_dump(key) if cmd == :dumpfile
-          sleep 0.1
-          @storages.each_pair{|hname,st|
-            st.dump_file("#{path}/#{@stats.ap_str}/#{hname}",except_vnh)
-          }
-          ret = set_to_end_of_dump(key,@stats.ap_str)
-          if ret==nil || ret!="STORED"
-            @log.error("#{__method__}:result of set_to_end_of_dump was #{ret.inspect}")
-          end
-          @log.info("#{__method__} has done.")
-        rescue =>e
-          @log.error("#{e}\n#{$@}")
-        end
-      }
-      t[:name] = __method__
-      true
-    end
-
-    def delete_to_end_of_dump(key)
-      con = Roma::Messaging::ConPool.instance.get_connection(@stats.ap_str)
-      con.write("delete #{key}\eroma\r\n")
-      res = con.gets
-      res.chomp! if res
-      Roma::Messaging::ConPool.instance.return_connection(@stats.ap_str,con)
-      res
-    end
-
-    def set_to_end_of_dump(key,nid)
-      count = 0
-      begin
-        sleep 0.1
-        con = Roma::Messaging::ConPool.instance.get_connection(nid)
-        con.write("add #{key}\eroma 0 86400 #{nid.length}\r\n#{nid}\r\n")
-        res = con.gets
-        unless res=="STORED\r\n"
-          con.write("append #{key}\eroma 0 86400 #{nid.length+1}\r\n,#{nid}\r\n")
-          res = con.gets
-        end
-        Roma::Messaging::ConPool.instance.return_connection(nid,con)
-        count += 1
-      end while(res!="STORED\r\n" && count < 5)
-      res.chomp! if res
-      res
-    end
-
     def asyncev_redundant(args)
       nid,hname,k,d,clk,expt,v = args
       @log.debug("#{__method__} #{args.inspect}")
