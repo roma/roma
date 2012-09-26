@@ -247,38 +247,6 @@ module Roma
       end
     end
 
-    def asyncev_start_sync_process(args)
-      @log.debug("#{__method__}")
-      @stats.run_recover = true
-      t = Thread::new{
-        sync_process(args)
-        @stats.run_recover = false
-      }
-      t[:name] = __method__
-    end
-
-    def sync_process(st)
-      own_nid = @stats.ap_str
-      @do_sync_process = true
-      @rttable.each_vnode{ |vn, nids|
-        break unless @do_sync_process
-        # my process charges of the primary node
-        if nids[0] == own_nid
-          nids[1..-1].each{ |nid|
-            unless sync_a_vnode(vn, nid)
-              @log.warn("#{__method__}:error at vn=#{vn} nid=#{nid}")
-            end
-          }
-        end
-      }
-      @log.info("#{__method__} has done.")
-    rescue =>e
-      @log.error("#{e.inspect} #{$@}")
-    ensure
-      @do_sync_process = false
-      Roma::Messaging::ConPool.instance.close_all
-    end
-
     def acquired_recover_process
       @log.info("#{__method__}:start")
 

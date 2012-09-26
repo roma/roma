@@ -76,45 +76,6 @@ module Roma
         end
       end
 
-      # sync <hname>
-      def ev_sync(s)
-        res = nil
-        if s.length==1
-          res = broadcast_cmd("rsync\r\n")
-        else
-          res = broadcast_cmd("rsync #{s[1]}\r\n")
-        end
-        unless @stats.run_recover
-          if s.length==1
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_sync_process',@storages.keys))
-          else
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_sync_process',[s[1]]))
-          end
-          res[@nid] = "STARTED"
-        else
-          res[@nid] = "SERVER_ERROR Recover/Sync process is already running."
-        end
-        send_data("#{res}\r\n")
-      rescue => e
-        @log.error("#{e}\n#{$@}")
-      end
-
-      # rsync <hname>
-      def ev_rsync(s)
-        unless @stats.run_recover
-          if s.length==1
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_sync_process',@storages.keys))
-          else
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_sync_process',[s[1]]))
-          end
-          send_data("STARTED\r\n")
-        else
-          send_data("SERVER_ERROR Recover/Sync process is already running.\r\n")
-        end
-      rescue => e
-        @log.error("#{e}\n#{$@}")
-      end
-
     end # module BackgroundCommandReceiver
 
   end # module Command
