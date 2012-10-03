@@ -23,7 +23,6 @@ module Roma
     attr_accessor :enabled_vnodes_balance
 
     # proc status
-    attr_accessor :run_acquire_vnodes
     attr_accessor :run_recover
     attr_accessor :run_sync_routing
     attr_accessor :run_iterate_storage
@@ -31,6 +30,7 @@ module Roma
     attr_accessor :run_receive_a_vnode
     attr_accessor :run_release
     attr_accessor :run_join
+    attr_accessor :run_balance
 
     attr_accessor :last_clean_up
     attr_accessor :spushv_protection
@@ -58,7 +58,6 @@ module Roma
 
     def initialize
       @config_path = nil
-      @run_acquire_vnodes = false
       @run_recover = false
       @run_sync_routing = false
       @run_iterate_storage = false
@@ -66,6 +65,7 @@ module Roma
       @run_receive_a_vnode = {}
       @run_release = false
       @run_join = false
+      @run_balance = false
       @last_clean_up = Time.now
       @spushv_protection = false
       @stream_copy_wait_param = 0.0001
@@ -96,7 +96,6 @@ module Roma
       ret['stats.name'] = @name
       ret['stats.verbose'] = @verbose
       ret['stats.enabled_repetition_host_in_routing'] = rep_host
-      ret['stats.run_acquire_vnodes'] = @run_acquire_vnodes
       ret['stats.run_recover'] = @run_recover
       ret['stats.run_sync_routing'] = @run_sync_routing
       ret['stats.run_iterate_storage'] = @run_iterate_storage
@@ -104,6 +103,7 @@ module Roma
       ret['stats.run_receive_a_vnode'] = @run_receive_a_vnode.inspect
       ret['stats.run_release'] = @run_release
       ret['stats.run_join'] = @run_join
+      ret['stats.run_balance'] = @run_balance
       ret['stats.last_clean_up'] = @last_clean_up
       ret['stats.spushv_protection'] = @spushv_protection
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param

@@ -479,14 +479,6 @@ module Roma
       nil      
     end
 
-    def acquire_vnodes
-      return if @stats.run_acquire_vnodes || @rttable.nodes.length < 2
-
-      if @rttable.vnode_balance(@stats.ap_str)==:less
-        Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_acquire_vnodes_process'))
-      end
-    end
-
     def timer
       t = Thread.new do
         loop do
@@ -511,7 +503,7 @@ module Roma
         nodes_check(nodes)
       end
 
-      if (@stats.run_acquire_vnodes || @stats.run_recover) &&
+      if (@stats.run_join || @stats.run_recover || @stats.run_balance) &&
           @stats.run_storage_clean_up
         stop_clean_up
       end
@@ -537,13 +529,9 @@ module Roma
         start_sync_routing_process
       end
 
-      #if @stats.join_ap || @stats.enabled_vnodes_balance
-      #  acquire_vnodes
-      #end
-
       if (@rttable.enabled_failover &&
           @stats.run_storage_clean_up == false &&
-          @stats.run_acquire_vnodes == false &&
+          @stats.run_balance == false &&
           @stats.run_recover == false &&
           @stats.run_iterate_storage == false &&
           @stats.run_join == false &&
@@ -588,7 +576,7 @@ module Roma
     end
 
     def start_sync_routing_process
-      return if @stats.run_acquire_vnodes || @stats.run_recover || @stats.run_sync_routing
+      return if @stats.run_join || @stats.run_recover || @stats.run_balance || @stats.run_sync_routing
 
       nodes = @rttable.nodes
       return if nodes.length == 1 && nodes[0] == @stats.ap_str
@@ -630,7 +618,7 @@ module Roma
     end    
 
     def routing_hash_comparison(nid,id='0')
-      return :skip if @stats.run_acquire_vnodes || @stats.run_recover
+      return :skip if @stats.run_join || @stats.run_recover || @stats.run_balance
       
       h = async_send_cmd(nid,"mklhash #{id}\r\n")
       if h && h.start_with?("ERROR") == false && @rttable.mtree.get(id) != h

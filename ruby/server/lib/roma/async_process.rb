@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 require 'thread'
 require 'digest/sha1'
@@ -95,39 +94,22 @@ module Roma
       true
     end
 
-    def asyncev_start_acquire_vnodes_process(args)
-      @log.debug("#{__method__}")
-      if @stats.run_acquire_vnodes
-        @log.error("#{__method__}:already in being")
-        return true
-      end
-      @stats.run_acquire_vnodes = true
-      t = Thread::new{
-        begin
-          acquire_vnodes_process
-        rescue =>e
-          @log.error("#{__method__}:#{e.inspect} #{$@}")
-        ensure
-          @stats.run_acquire_vnodes = false
-          @stats.join_ap = nil
-        end
-      }
-      t[:name] = __method__
-      true
-    end
-
     def asyncev_start_join_process(args)
       @log.debug(__method__)
-      if @stats.run_acquire_vnodes
-        @log.error("#{__method__}:acquire_vnodes process running")
-        return true
-      end
       if @stats.run_join
         @log.error("#{__method__}:join process running")
         return true
       end
+      if @stats.run_recover
+        @log.error("#{__method__}:recover process running")
+        return true
+      end
+      if @stats.run_balance
+        @log.error("#{__method__}:balance process running")
+        return true
+      end
       @stats.run_join = true
-      t = Thread::new{
+      t = Thread::new do
         begin
           join_process
         rescue =>e
@@ -136,7 +118,35 @@ module Roma
           @stats.run_join = false
           @stats.join_ap = nil
         end
-      }
+      end
+      t[:name] = __method__
+      true      
+    end
+
+    def asyncev_start_balance_process(args)
+      @log.debug(__method__)
+      if @stats.run_join
+        @log.error("#{__method__}:join process running")
+        return true
+      end
+      if @stats.run_recover
+        @log.error("#{__method__}:recover process running")
+        return true
+      end
+      if @stats.run_balance
+        @log.error("#{__method__}:balance process running")
+        return true
+      end
+      @stats.run_balance = true
+      t = Thread::new do
+        begin
+          balance_process
+        rescue =>e
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
+        ensure
+          @stats.run_balance = false
+        end
+      end
       t[:name] = __method__
       true      
     end
@@ -208,21 +218,29 @@ module Roma
 
     def asyncev_start_recover_process(args)
       @log.debug("#{__method__} #{args.inspect}")
-      if @stats.run_recover
-        @log.warn("#{__method__}:already be recover process.")
-      else
-        @stats.run_recover = true
-        t = Thread::new do
-          begin
-            acquired_recover_process
-          rescue => e
-            @log.error("#{__method__}:#{e.inspect} #{$@}")
-          ensure
-            @stats.run_recover = false
-          end
-        end
-        t[:name] = __method__
+      if @stats.run_join
+        @log.error("#{__method__}:join process running")
+        return true
       end
+      if @stats.run_recover
+        @log.error("#{__method__}:recover process running.")
+        return false
+      end
+      if @stats.run_balance
+        @log.error("#{__method__}:balance process running")
+        return true
+      end
+      @stats.run_recover = true
+      t = Thread::new do
+        begin
+          acquired_recover_process
+        rescue => e
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
+        ensure
+          @stats.run_recover = false
+        end
+      end
+      t[:name] = __method__
     end
 
     def asyncev_start_release_process(args)
@@ -306,52 +324,36 @@ module Roma
       @do_join_process = false
     end
 
-    def acquire_vnodes_process
+    def balance_process
       @log.info("#{__method__}:start")
       count = 0
       nv = @rttable.v_idx.length
-      @do_acquire_vnodes_process = true
+      exclude_nodes = @rttable.exclude_nodes_for_balance(@stats.ap_str, @stats.rep_host)
+
+      @do_balance_process = true
       while (@rttable.vnode_balance(@stats.ap_str) == :less && count < nv) do
-        break unless @do_acquire_vnodes_process
-        ret = acquire_vnode
+        break unless @do_balance_process
+
+        vn, nodes, is_primary = @rttable.select_vn_for_balance(exclude_nodes)
+        unless vn
+          @log.warn("#{__method__}:vnode dose not found")
+          return false
+        end
+        ret = req_push_a_vnode(vn, nodes[0], is_primary)      
         if ret == :rejected
           sleep 5
-          next
-        elsif ret == false
-          break
+        else
+          sleep 1
+          count += 1
         end
-        sleep 1
-        count += 1
       end
       @log.info("#{__method__} has done.")
     rescue => e
       @log.error("#{e.inspect} #{$@}")
     ensure
-      @do_acquire_vnodes_process = false
+      @do_balance_process = false
     end
- 
-    def acquire_vnode
-      widthout_nodes = @rttable.nodes
-      
-      if @stats.enabled_repetition_host_in_routing
-        widthout_nodes = [@stats.ap_str]
-      else
-        myhost = @stats.ap_str.split(/[:_]/)[0]
-        widthout_nodes.delete_if{|nid| nid.split(/[:_]/)[0] != myhost }
-      end
 
-      vn, nodes = @rttable.sample_vnode(widthout_nodes)
-      unless vn
-        @log.warn("#{__method__}:sample_vnode dose not found")
-        return false
-      end
-      #
-      # tunning point
-      # sleep 0.1
-      #
-      req_push_a_vnode(vn, nodes[0], rand(@rttable.rn) == 0)
-    end
- 
     def req_push_a_vnode(vn, src_nid, is_primary)
       con = Roma::Messaging::ConPool.instance.get_connection(src_nid)
       con.write("reqpushv #{vn} #{@stats.ap_str} #{is_primary}\r\n")

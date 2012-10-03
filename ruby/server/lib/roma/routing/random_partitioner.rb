@@ -15,6 +15,7 @@ module Roma
       
       alias :exclude_nodes_for_join :exclude_nodes
       alias :exclude_nodes_for_recover :exclude_nodes
+      alias :exclude_nodes_for_balance :exclude_nodes
 
       # vnode sampling exclude +exclude_nodes+
       def select_vn_for_join(exclude_nodes)
@@ -68,6 +69,25 @@ module Roma
         to_nid = buf[rand(buf.length)]
         new_nids = nids.map{|n| n == ap_str ? to_nid : n }
         [to_nid, new_nids]
+      end
+
+      # vnode sampling exclude +exclude_nodes+
+      def select_vn_for_balance(exclude_nodes)
+        short_idx = {}
+        idx = {}
+        @rd.v_idx.each_pair do |vn, nids|
+          unless list_include?(nids, exclude_nodes)
+            idx[vn] = nids
+            short_idx[vn] = nids if nids.length < @rd.rn
+          end
+        end
+        idx = short_idx if short_idx.length > 0
+      
+        ks = idx.keys
+        return nil if ks.length == 0
+        vn = ks[rand(ks.length)]
+        nids = idx[vn]
+        [vn, nids, rand(@rd.rn) == 0]
       end
 
     end

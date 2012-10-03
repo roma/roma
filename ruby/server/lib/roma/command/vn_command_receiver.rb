@@ -105,7 +105,7 @@ module Roma
           send_data("CLIENT_ERROR usage:reqpushv vnode-id node-id primary-flag(true/false)\r\n")
           return
         end
-        if(@stats.run_iterate_storage || @stats.run_join)
+        if(@stats.run_iterate_storage || @stats.run_join || @stats.run_balance)
           @log.warn("reqpushv rejected:#{s}")
           send_data("REJECTED\r\n")
           return
