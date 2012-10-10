@@ -460,21 +460,19 @@ module Roma
 
       def each_vn_dump(target_vn)
         count = 0
-        @divnum.times{|i|
-          tn =  Time.now.to_i
-          @hdb[i].each{|k,v|
-            vn, last, clk, expt, val = unpack_data(v)
-            if vn != target_vn || (expt != 0 && tn > expt)
-              count += 1              
-              sleep @each_vn_dump_sleep if count % @each_vn_dump_sleep_count == 0
-              next
-            end
-            if val
-              yield [vn, last, clk, expt, k.length, k, val.length, val].pack("NNNNNa#{k.length}Na#{val.length}")
-            else
-              yield [vn, last, clk, expt, k.length, k, 0].pack("NNNNNa#{k.length}N")
-            end
-          }
+        tn =  Time.now.to_i
+        @hdb[@hdiv[target_vn]].each{|k,v|
+          vn, last, clk, expt, val = unpack_data(v)
+          if vn != target_vn || (expt != 0 && tn > expt)
+            count += 1
+            sleep @each_vn_dump_sleep if count % @each_vn_dump_sleep_count == 0
+            next
+          end
+          if val
+            yield [vn, last, clk, expt, k.length, k, val.length, val].pack("NNNNNa#{k.length}Na#{val.length}")
+          else
+            yield [vn, last, clk, expt, k.length, k, 0].pack("NNNNNa#{k.length}N")
+          end
         }
       end
 
