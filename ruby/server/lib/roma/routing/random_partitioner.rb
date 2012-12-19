@@ -37,10 +37,10 @@ module Roma
       end
 
       # select a vnodes where short of redundancy.
-      def select_vn_for_recover(exclued_nodes)
+      def select_vn_for_recover(exclude_nodes)
         ret = []
         @rd.v_idx.each_pair do |vn, nids|
-          if nids.length < @rd.rn && list_include?(nids,exclued_nodes) == false
+          if nids.length < @rd.rn && list_include?(nids,exclude_nodes) == false
             ret << [vn,nids]
           end
         end
