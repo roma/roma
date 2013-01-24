@@ -47,6 +47,15 @@ class RoutingDataTest < Test::Unit::TestCase
     assert( 0x56000000 == rd.next_vnode(0x55000000) )
   end
 
+  def test_saved_format
+    rd=Roma::Routing::RoutingData.create(32,8,1,['roma0_3300'])
+    decoded_rd=Roma::Routing::RoutingData.decode_binary(rd.dump_binary)
+    decoded_rd.save("routing_data.test.route")
+    rd_text=File.open("routing_data.test.route"){|f| f.read }
+    assert( /\!binary \|\-/ !~ rd_text )
+    File::unlink("routing_data.test.route")
+  end
+
   def test_create_nodes_from_v_idx
     rd=Roma::Routing::RoutingData.create(32,8,1,['roma0','roma1','roma2'])
     rd.nodes.clear
