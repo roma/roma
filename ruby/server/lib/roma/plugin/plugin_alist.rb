@@ -25,6 +25,7 @@ module Roma
           v = Marshal.load(ddata)[0]
           return send_data("END\r\n") if v.length <= s[2].to_i
           ret = v.at(s[2].to_i)
+          ret = "" unless ret
           return send_data("VALUE #{s[1]} 0 #{ret.length}\r\n#{ret}\r\nEND\r\n")
         else
           return send_data("END\r\n")
