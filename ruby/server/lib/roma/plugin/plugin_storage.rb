@@ -16,6 +16,11 @@ module Roma
 
       # get <key>*\r\n
       def ev_get(s)
+        if s.length < 2
+          @log.error("get:wrong number of arguments(#{s})")
+          return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+
         return ev_gets(s) if s.length > 2
 
         key,hname = s[1].split("\e")
@@ -111,6 +116,11 @@ module Roma
 
       # delete <key> [<time>] [noreply]\r\n
       def ev_delete(s)
+        if s.length < 2
+          @log.error("delete:wrong number of arguments(#{s})")
+          return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+
         key,hname = s[1].split("\e")
         hname ||= @defhash
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
@@ -495,16 +505,22 @@ module Roma
           return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
         end
 
+        bytes = s[4].to_i
+        if bytes < 0
+          @log.error("set:wrong key size(#{s})")
+          return send_data("CLIENT_ERROR Wrong key size.\r\n")
+        end
+
         key,hname = s[1].split("\e")
         hname ||= @defhash
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
-        v = read_bytes(s[4].to_i)
+        v = read_bytes(bytes)
         read_bytes(2)
         vn = @rttable.get_vnode_id(d)
         nodes = @rttable.search_nodes_for_write(vn)
         if nodes[0] != @nid
           @log.warn("forward #{fnc} key=#{key} vn=#{vn} to #{nodes[0]}")
-          res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[3]} #{v.length}\r\n#{v}\r\n")
+          res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[3]} #{s[4]}\r\n#{v}\r\n")
           if res == nil || res.start_with?("ERROR")
             return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
