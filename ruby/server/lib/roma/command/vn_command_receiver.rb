@@ -6,25 +6,16 @@ module Roma
 
     module VnodeCommandReceiver
 
-      # pushv <hash-name> <vnode-id>
-      # src                             dst
-      #  |   ['pushv' <hname> <vn>\r\n]->|
-      #  |<-['READY'\r\n]                |
-      #  |               [<length>\r\n]->|
-      #  |                 [<dump>\r\n]->|
-      #  |                  ['END'\r\n]->|
-      #  |<-['STORED'\r\n]               |
-      def ev_pushv(s)
-        send_data("READY\r\n")
-        len = gets
-        res = em_receive_dump(s[1], len.to_i)
-        if res == true
-          send_data("STORED\r\n")
+      # spushv <true/false>
+      def ev_spushv_protection(s)
+        if s.length == 1
+          send_data("#{@stats.spushv_protection}\r\n")
+        elsif s.length == 2
+          @stats.spushv_protection = (s[1] == 'true')
+          send_data("#{@stats.spushv_protection}\r\n")
         else
-          send_data("SERVER_ERROR #{res}\r\n")
+          send_data("COMMAND ERROR\r\n")
         end
-      rescue => e
-        @log.error("#{e}\n#{$@}")
       end
 
       # spushv <hash-name> <vnode-id>
@@ -37,8 +28,20 @@ module Roma
       #  |              [<end of dump>]->|
       #  |<-['STORED'\r\n]               |
       def ev_spushv(s)
+        if s.length != 3
+          @log.error("#{__method__}:wrong number of arguments(#{s})")
+          return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+        if @stats.spushv_protection
+          @log.info("#{__method__}:In spushv_protection")
+          return send_data("SERVER_ERROR In spushv_protection.\r\n")          
+        end
+        @stats.run_receive_a_vnode["#{s[1]}_#{s[2]}"] = true
+
+        $roma.stop_clean_up
+
         send_data("READY\r\n")
-        @stats.run_receive_a_vnode = true
+
         count = rcount = 0
         @log.debug("#{__method__}:#{s.inspect} received.")
         loop {
@@ -70,20 +73,27 @@ module Roma
             end
           end
         }
-        send_data("STORED\r\n")
-        @log.debug("#{__method__}:#{s[2]} #{count} keys loaded. #{rcount} keys rejected.")
+        if @stats.spushv_protection
+          @log.info("#{__method__}:Canceled because of spushv_protection")
+          send_data("CANCELED\r\n")
+        else
+          send_data("STORED\r\n")
+        end
+        @log.debug("#{__method__}:#{s[1]}_#{s[2]} #{count} keys loaded.")
+        @log.debug("#{__method__}:#{s[1]}_#{s[2]} #{rcount} keys rejected.") if rcount > 0
       rescue Storage::StorageException => e
         @log.error("#{e.inspect} #{$@}")
         close_connection
         if Config.const_defined?(:STORAGE_EXCEPTION_ACTION) &&
             Config::STORAGE_EXCEPTION_ACTION == :shutdown
-          @log.error("Romad will stop")
+          @log.error("#{__method__}:Romad will be stop.")
           @stop_event_loop = true
         end
       rescue => e
         @log.error("#{e} #{$@}")
       ensure
-        @stats.run_receive_a_vnode = false
+        @stats.run_receive_a_vnode.delete("#{s[1]}_#{s[2]}") if s.length == 3
+        @stats.last_clean_up = Time.now
       end      
 
       # reqpushv <vnode-id> <node-id> <is primary?>
@@ -95,7 +105,7 @@ module Roma
           send_data("CLIENT_ERROR usage:reqpushv vnode-id node-id primary-flag(true/false)\r\n")
           return
         end
-        if @stats.run_iterate_storage == true
+        if(@stats.run_iterate_storage || @stats.run_join || @stats.run_balance)
           @log.warn("reqpushv rejected:#{s}")
           send_data("REJECTED\r\n")
           return
@@ -122,28 +132,6 @@ module Roma
         @rttable.proc_failed(src_nid)
         false
       end
-
-      def em_receive_dump(hname, len)
-        dmp = read_bytes(len)
-        read_bytes(2)
-        if gets == "END\r\n"
-          if @storages.key?(hname)
-            n = @storages[hname].load(dmp)
-            @log.debug("#{dmp.length} bytes received.(#{n} keys loaded.)")
-            return true
-          else
-            @log.error("receive_dump:@storages[#{hname}] dose not found.")
-            return "@storages[#{hname}] dose not found."
-          end
-        else
-          @log.error("receive_dump:END was not able to be received.")
-          return "END was not able to be received."
-        end
-      rescue =>e
-        @log.error("#{e}\n#{$@}")
-        "#{e}"
-      end
-      private :em_receive_dump
 
     end # module VnodeCommandReceiver
 

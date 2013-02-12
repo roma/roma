@@ -1,9 +1,12 @@
 require 'roma/routing/rttable'
+require 'roma/routing/random_partitioner'
 
 module Roma
   module Routing
 
     class ChurnbasedRoutingTable < RoutingTable
+
+      include Routing::RandomPartitioner
 
       attr :fname
       attr :log_fd
@@ -95,6 +98,23 @@ module Roma
 
       def can_i_recover?
         @rd.nodes.length >= @rd.rn
+      end
+
+      def can_i_release?(ap_str, rep_host)
+        buf = self.nodes
+        buf.delete(ap_str)
+        hosts = []
+        
+        unless rep_host
+          buf.each{ |node|
+            host = node.split(/[:_]/)[0]
+            hosts << host unless hosts.include?(host)
+          }
+        else
+          hosts = buf
+        end
+        
+        hosts.length < @rd.rn
       end
 
       # Retuens the list of losted-data vnode newer than argument time.
@@ -308,7 +328,7 @@ module Roma
           end
         }
 
-        @log.debug("#{__FILE__}:#{__LINE__}:n=#{n} pcount=#{pcount} scount=#{scount}")
+        @log.debug("#{__method__}:n=#{n} pcount=#{pcount} scount=#{scount}")
 
         if pcount > n
           return :over
@@ -316,6 +336,13 @@ module Roma
           return :less
         end
         :even
+      end
+
+      def has_node?(ap_str)
+        self.each_vnode do |vn, nids|
+          return true if nids.include?(ap_str)
+        end
+        false
       end
 
     end # class ChurnbasedRoutingTable

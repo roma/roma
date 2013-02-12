@@ -16,23 +16,29 @@ module Roma
     attr_accessor :name
     attr_accessor :verbose
     attr_accessor :enabled_repetition_host_in_routing
+    alias :rep_host :enabled_repetition_host_in_routing
     attr_accessor :disabled_cmd_protect
 
     # proc mode
     attr_accessor :enabled_vnodes_balance
 
     # proc status
-    attr_accessor :run_acquire_vnodes
     attr_accessor :run_recover
     attr_accessor :run_sync_routing
     attr_accessor :run_iterate_storage
     attr_accessor :run_storage_clean_up
     attr_accessor :run_receive_a_vnode
     attr_accessor :run_release
+    attr_accessor :run_join
+    attr_accessor :run_balance
+
+    attr_accessor :last_clean_up
+    attr_accessor :spushv_protection
 
     # proc param
     attr_accessor :stream_copy_wait_param
     attr_accessor :dcnice
+    attr_accessor :clean_up_interval
 
     # compressed redundant param
     attr_accessor :size_of_zredundant
@@ -52,15 +58,19 @@ module Roma
 
     def initialize
       @config_path = nil
-      @run_acquire_vnodes = false
       @run_recover = false
       @run_sync_routing = false
       @run_iterate_storage = false
       @run_storage_clean_up = false
-      @run_receive_a_vnode = false
+      @run_receive_a_vnode = {}
       @run_release = false
+      @run_join = false
+      @run_balance = false
+      @last_clean_up = Time.now
+      @spushv_protection = false
       @stream_copy_wait_param = 0.0001
       @dcnice = 3
+      @clean_up_interval = 300
       @enabled_vnodes_balance = nil
       @write_count = 0
       @read_count = 0
@@ -85,15 +95,20 @@ module Roma
       ret['stats.daemon'] = @daemon
       ret['stats.name'] = @name
       ret['stats.verbose'] = @verbose
-      ret['stats.enabled_repetition_host_in_routing'] = @enabled_repetition_host_in_routing
-      ret['stats.run_acquire_vnodes'] = @run_acquire_vnodes
+      ret['stats.enabled_repetition_host_in_routing'] = rep_host
       ret['stats.run_recover'] = @run_recover
       ret['stats.run_sync_routing'] = @run_sync_routing
       ret['stats.run_iterate_storage'] = @run_iterate_storage
       ret['stats.run_storage_clean_up'] = @run_storage_clean_up
+      ret['stats.run_receive_a_vnode'] = @run_receive_a_vnode.inspect
       ret['stats.run_release'] = @run_release
+      ret['stats.run_join'] = @run_join
+      ret['stats.run_balance'] = @run_balance
+      ret['stats.last_clean_up'] = @last_clean_up
+      ret['stats.spushv_protection'] = @spushv_protection
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
       ret['stats.dcnice'] = @dcnice
+      ret['stats.clean_up_interval'] = @clean_up_interval
       ret['stats.size_of_zredundant'] = @size_of_zredundant
       ret['stats.write_count'] = @write_count
       ret['stats.read_count'] = @read_count
@@ -113,6 +128,10 @@ module Roma
       clear_count(:@out_count)
       clear_count(:@out_message_count)
       clear_count(:@redundant_count)
+    end
+
+    def do_clean_up?
+      @last_clean_up.to_i + @clean_up_interval < Time.now.to_i
     end
 
     private

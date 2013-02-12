@@ -53,6 +53,10 @@ module Roma
       start_wb_process
       timer
 
+      if @stats.join_ap
+        AsyncProcess::queue.push(AsyncMessage.new('start_join_process'))
+      end
+
       # select a kind of system call
       if Config.const_defined?(:CONNECTION_USE_EPOLL) && Config::CONNECTION_USE_EPOLL
         @log.info("use an epoll")
@@ -133,6 +137,15 @@ module Roma
 
     def daemon?; @stats.daemon; end
 
+    def stop_clean_up
+      @stats.last_clean_up = Time.now
+      while(@stats.run_storage_clean_up)
+        @log.info("Storage clean up process will be stop.")
+        @storages.each_value{|st| st.stop_clean_up}
+        sleep 0.005
+      end
+    end
+
     private
 
     def initialize_stats
@@ -144,7 +157,10 @@ module Roma
       end
       if Config.const_defined?(:WB_COMMAND_MAP)
         @stats.wb_command_map = Config::WB_COMMAND_MAP
-      end      
+      end
+      if Config.const_defined?(:STORAGE_CLEAN_UP_INTERVAL)
+        @stats.clean_up_interval = Config::STORAGE_CLEAN_UP_INTERVAL
+      end
     end
 
     def initialize_connection
@@ -463,14 +479,6 @@ module Roma
       nil      
     end
 
-    def acquire_vnodes
-      return if @stats.run_acquire_vnodes || @rttable.nodes.length < 2
-
-      if @rttable.vnode_balance(@stats.ap_str)==:less
-        Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_acquire_vnodes_process'))
-      end
-    end
-
     def timer
       t = Thread.new do
         loop do
@@ -495,10 +503,9 @@ module Roma
         nodes_check(nodes)
       end
 
-      if (@stats.run_acquire_vnodes || @stats.run_recover) &&
+      if (@stats.run_join || @stats.run_recover || @stats.run_balance) &&
           @stats.run_storage_clean_up
-        @storages.each_value{|st| st.stop_clean_up}
-        @log.info("stop a storage clean up process")
+        stop_clean_up
       end
     end
 
@@ -522,15 +529,14 @@ module Roma
         start_sync_routing_process
       end
 
-      if @stats.join_ap || @stats.enabled_vnodes_balance
-        acquire_vnodes
-      end
-
       if (@rttable.enabled_failover &&
           @stats.run_storage_clean_up == false &&
-          @stats.run_acquire_vnodes == false &&
+          @stats.run_balance == false &&
           @stats.run_recover == false &&
-          @stats.run_iterate_storage == false)
+          @stats.run_iterate_storage == false &&
+          @stats.run_join == false &&
+          @stats.run_receive_a_vnode.empty? &&
+          @stats.do_clean_up?)
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_clean_up_process'))
       end
 
@@ -570,7 +576,7 @@ module Roma
     end
 
     def start_sync_routing_process
-      return if @stats.run_acquire_vnodes || @stats.run_recover || @stats.run_sync_routing
+      return if @stats.run_join || @stats.run_recover || @stats.run_balance || @stats.run_sync_routing
 
       nodes = @rttable.nodes
       return if nodes.length == 1 && nodes[0] == @stats.ap_str
@@ -612,7 +618,7 @@ module Roma
     end    
 
     def routing_hash_comparison(nid,id='0')
-      return :skip if @stats.run_acquire_vnodes || @stats.run_recover
+      return :skip if @stats.run_join || @stats.run_recover || @stats.run_balance
       
       h = async_send_cmd(nid,"mklhash #{id}\r\n")
       if h && h.start_with?("ERROR") == false && @rttable.mtree.get(id) != h

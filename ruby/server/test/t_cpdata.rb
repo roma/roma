@@ -98,56 +98,7 @@ class CopyDataTest < Test::Unit::TestCase
     @th.kill
     $gs.close
     Roma::Messaging::ConPool::instance.close_all
-  end
-
-  def test_pushv
-    make_dummy(1000)
-    dat = reqpushv('roma',0)
-    assert_not_nil( dat )
-    # 正常ケース
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
-    assert_equal("STORED", push_a_vnode('roma',0,con,Marshal.dump(dat)))
-
-    # 存在しない仮想ストレージ
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
-    assert_equal("SERVER_ERROR @storages[roma1] dose not found.",
-                 push_a_vnode('roma1',0,con,Marshal.dump(dat)))
-
-    # END を送らない
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
-    assert_equal("SERVER_ERROR END was not able to be received.",
-                 push_a_vnode('roma',0,con,Marshal.dump(dat),true))
-    
-    # 壊れたデータを送る
-    dat['abc']="ajjkdlfsoifulwkejrweorlkjflksjflskaf"
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
-    assert_equal(
-      "SERVER_ERROR An invalid vnode number is include.key=abc vn=1634364011",
-       push_a_vnode('roma',2,con,Marshal.dump(dat)))
-  end
-
-  def push_a_vnode(hname ,vn, con, dmp, nonend=false)
-    con.write("pushv #{hname} #{vn}\r\n")
-    res = con.gets # READY\r\n or error string
-    if res != "READY\r\n"
-      con.close
-      return res.chomp
-    end
-    if nonend
-      con.write("#{dmp.length}\r\n#{dmp}\r\n\r\n")
-    else
-      con.write("#{dmp.length}\r\n#{dmp}\r\nEND\r\n")
-    end
-    res = con.gets # STORED\r\n or error string
-    con.close
-    res.chomp! if res
-    res
-  rescue =>e
-    con.close if con
-    "#{e}"
-  end
-  private :push_a_vnode
-  
+  end  
 
   def test_spushv
     # vn = 0 のキー

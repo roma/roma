@@ -203,20 +203,3 @@ class MHashTest < Test::Unit::TestCase
     assert_equal("STORED", @rc.set("key", "value"))
   end
 end
-
-class MHashTestForward < RClientTest
-  def setup
-    super
-    @rc.rttable.instance_eval{
-      undef search_node
-
-      def search_node(key); search_node2(key); end
-
-      def search_node2(key)
-        d = Digest::SHA1.hexdigest(key).hex % @hbits
-        @rd.v_idx[d & @search_mask][1]
-      end
-    }
-  end  
-
-end
