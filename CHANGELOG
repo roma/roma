@@ -1,3 +1,34 @@
+*0.8.12 (Feb 12 2013)*
+
+* refactor: for protocol [Hiroki Matsue] a6f9152
+* Add test for context switch with eventmachine. [Hiroki Matsue] 50d0a84
+* bugfix : Fixed when null is included in a list. [junji torii] 5436d3a
+* Delete duplicated tests. [Hiroki Matsue] 3ba6a12
+* refactor:for balance command [junji torii] 2216d61
+* Modify each_vn_dump method. [Hiroki Matsue] 267fed9
+* Delete sync command. [junji torii] 51daf17
+* Delete dumpfile command. [junji torii] a6d8697
+* refactor:Delete old command. [junji torii] 5595060
+* refactor: for spushv_protection flag [junji torii] d6eaece
+* Add spushv_protection flag [junji torii] e9efa79
+* refactor:for release process [junji torii] 076228b
+* refactor:join process [junji torii] f920dbc
+* Add recover function in the partitioner module. [junji torii] 6a79cff
+* refactor:Add alias. [junji torii] 7f31cb3
+* fix:Protects the 'reqpushv' request in the join process. [junji torii] 0f7f106
+* Delete a deprecated option and method in recover command. [junji torii] 8490094
+* fix:run_iterate_storage flag is used in one thread. [junji torii] c273bcc
+* refactor:Add new functions. [junji torii] debb5f6
+* refactor:Delete a unused method. [junji torii] 5aae744
+* refactor:Use the __method__ in log messages. [junji torii] a36fa0c
+* refactor:Starting and stopping timing of cleanup process. [junji torii] 307bf73
+* refactor:Unused code deleted. [junji torii] 7e4bbe7
+* fix:Starting and stopping timing of cleanup process [junji torii] 0e1fc0d
+* add random partitioner [junji torii] 190f58e
+* add join_process [junji torii] 7879674
+* Modify set command safer. [Hiroki Matsue] 91de5a8
+* fix:for a problem of encording on 1.9.3 [junji torii] 0c68a58
+
 *0.8.11 (Aug 8 2012)*
 
 * Allocate cmd_aliases plugin. [firejun] f7555c2
