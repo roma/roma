@@ -3,13 +3,13 @@
 require 'optparse'
 require 'roma/routing/routing_data'
 
-# ダイジェストのビット数
+# digest bit count
 dgst_bits=32
-# 分割ビット数 (dgst_bits >= div_bits)
+# dividing bit count (dgst_bits >= div_bits)
 div_bits=9
-# 冗長度 (nodes.length >= rn)
+# redundancy (nodes.length >= rn)
 rn=2
-# ホスト名の重複許可
+# permit redundant on single host
 repeathost=false
 
 opts = OptionParser.new

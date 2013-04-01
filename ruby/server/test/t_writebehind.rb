@@ -24,7 +24,7 @@ class FileWriterTest < Test::Unit::TestCase
     system('rm -rf wb_test')
   end
 
-  # 作成と write のテスト
+  # making and writing test
   def test_wb_write
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, Logger.new(nil))
@@ -55,7 +55,7 @@ class FileWriterTest < Test::Unit::TestCase
     assert_equal(1,wb1.length )
   end
 
-  # サイズによるローテーションのテスト
+  # rotation test per data
   def test_wb_rotation
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 900, Logger.new(nil))
@@ -74,56 +74,56 @@ class FileWriterTest < Test::Unit::TestCase
     assert(!File.exist?("#{path}/4.wb"))
   end
 
-  # 時間によるローテーションのテスト
+  # rotation test per time
   def test_rotation2
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, Logger.new(nil))
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
 
-    # インスタンス生成直後の rottime の時分秒usecは何かの値を持っている
+    # rottime's usec have some value,from instance was created
     rt = fw.instance_eval{ @rottime }
     assert_not_equal(0, rt.hour + rt.min + rt.sec+ rt.usec)
-    # 初期化は今日の日付で行われる
+    # formatting execute in today's date
     assert_equal(Time.now.day, rt.day)
-    # ファイルは存在しない
+    # confirming the file do not exist
     assert(!File.exist?("#{path}/0.wb"))
     fw.write('roma',1,"key","val")
-    # 何かを書き込むとオープンされ、そのタイミングで rottime が更新される
+    # Open when somenthing to write,and in same timing rottime is updated
     rt = fw.instance_eval{ @rottime }
-    # この時、日付以下は 0 となる
+    # In this time, under of date become "0"
     assert_equal(0, rt.hour + rt.min + rt.sec+ rt.usec)
-    # 日付は明日になる
+    # date become tomorrow
     assert_not_equal(Time.now.day, rt.day)
     10.times{|i|
       fw.write('roma',i,"key-#{i}","val-#{i}")
     }
-    # ファイルは1つ
+    # confirming file is only 1 not over 2
     assert(File.exist?("#{path}/0.wb"))
     assert(!File.exist?("#{path}/1.wb"))
     
-    # ローテーションの時刻を強制的に今にする
+    # set rottime to now forcibly
     fw.instance_eval{ @rottime=Time.now }
-    # rottime の変更を確認
+    # confriming to change rottime
     assert_not_equal(rt, fw.instance_eval{ @rottime })
-    # 何かを書き込むとローテーションが発生する
+    # When something write, rotation is occured
     fw.write('roma',1,"key","val")
     assert(File.exist?("#{path}/1.wb"))
-    # テストは日をまたがないので rottime は元に戻る
+    # rottime turn back because of test shold not step over the day.
     assert_equal(rt, fw.instance_eval{ @rottime })
   end
 
-  # 外部からローテーションするテスト
+  # rotation test from outside
   def test_wb_rotation3
     system('rm -rf wb_test')
     fw = Roma::WriteBehind::FileWriter.new("wb_test", 1024 * 1024, Logger.new(nil))
     path = "wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/"
 
-    # ファイルはない
+    # confirming file don't exist
     assert(!File.exist?("#{path}/0.wb"))
     10.times{|i|
       fw.write('roma',i,"key-#{i}","val-#{i}")
     }
-    # ファイルは1つ
+    # confirming file is only 1 not over 2
     assert(File.exist?("#{path}/0.wb"))
     assert(!File.exist?("#{path}/1.wb"))
 
@@ -131,23 +131,23 @@ class FileWriterTest < Test::Unit::TestCase
     10.times{|i|
       fw.write('roma',i,"key-#{i}","val-#{i}")
     }
-    # ファイルは2つ
+    # confirming files are 2 not over 3
     assert(File.exist?("#{path}/0.wb"))
     assert(File.exist?("#{path}/1.wb"))
     assert(!File.exist?("#{path}/2.wb"))
 
-    # ローテーションの重複呼び出し
+    # test of do rotation continuously
     fw.rotate('roma')
     fw.rotate('roma')
     fw.rotate('roma')
-    # ファイルは2つで変化なし
+    # confimring file's count are still 2 (not changing).
     assert(File.exist?("#{path}/0.wb"))
     assert(File.exist?("#{path}/1.wb"))
     assert(!File.exist?("#{path}/2.wb"))
     10.times{|i|
       fw.write('roma',i,"key-#{i}","val-#{i}")
     }
-    # ファイルは3つ
+    # confirming files are 3 not over 4
     assert(File.exist?("#{path}/0.wb"))
     assert(File.exist?("#{path}/1.wb"))
     assert(File.exist?("#{path}/2.wb"))

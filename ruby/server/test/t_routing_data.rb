@@ -64,10 +64,10 @@ class RoutingDataTest < Test::Unit::TestCase
   end
 
   def test_create
-    # ダイジェストの総ビット数 32
-    # バーチャルノードのビット数 8
-    # 冗長度 1
-    # ノードIDの配列 [roma0_3300]
+    # digest bit count 32
+    # vn bit count 8
+    # redundancy 1
+    # array of node ID [roma0_3300]
     rd=Roma::Routing::RoutingData.create(32,8,1,['roma0_3300'])
     
     assert( rd.v_idx.length==256 )
@@ -77,10 +77,10 @@ class RoutingDataTest < Test::Unit::TestCase
     assert( rd.div_bits==8 )
     assert( rd.rn==1 )
 
-    # ダイジェストの総ビット数 32
-    # バーチャルノードのビット数 16
-    # 冗長度 2
-    # ノードIDの配列 ['roma0_3300','roma1_3300','roma2_3300']
+    # digest bit count 32
+    # vn bit count 16
+    # redundancy 2
+    # array of node ID ['roma0_3300','roma1_3300','roma2_3300']
     rd=Roma::Routing::RoutingData.create(32,16,2,['roma0_3300','roma1_3300','roma2_3300'])
 
     assert( rd.v_idx.length==65536 )
@@ -101,7 +101,7 @@ class RoutingDataTest < Test::Unit::TestCase
         c2+=1
       end
     }
-    # バラつきは10%より小さいでしょ
+    # confirming dispersion is lower than 10%
     assert( (c0-c1).abs < rd.v_idx.length/10 )
     assert( (c1-c2).abs < rd.v_idx.length/10 )
   end

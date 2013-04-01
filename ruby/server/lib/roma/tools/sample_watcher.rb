@@ -24,7 +24,7 @@ end # module Roma
 
 w = Roma::Watcher.new
 
-# 監視ノードの定義
+# define the watch list of node
 nodes = ['roma0:11211','roma0:11212','roma0:11213','roma0:11214']
 
 nodes.each{|nid|

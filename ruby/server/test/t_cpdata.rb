@@ -83,7 +83,7 @@ rescue =>e
   false
 end
 
-# vnode をコピーするテスト
+# test of copying vnode
 class CopyDataTest < Test::Unit::TestCase
   include RomaTestUtils
 
@@ -101,7 +101,7 @@ class CopyDataTest < Test::Unit::TestCase
   end  
 
   def test_spushv
-    # vn = 0 のキー
+    # key wihch's vn = 0
     keys = []
     n = 1000
     n.times{|i|
@@ -155,7 +155,7 @@ class CopyDataTest < Test::Unit::TestCase
     dat[0] = reqpushv('roma',0)
     assert_not_nil( dat[0] )
     dat[0] = reqpushv('roma',0)
-    assert_not_nil( dat[0] )  # 同じ vnode を2度アクセスしても良いことを確認
+    assert_not_nil( dat[0] )  # confirming twice access to same node
 
     dat[1] = reqpushv('roma',536870912)
     assert_not_nil( dat[1] )
@@ -184,7 +184,7 @@ class CopyDataTest < Test::Unit::TestCase
     $dat[vn]
   end
 
-  # n 個の dummy data を set
+  # set dummy data of n count
   def make_dummy(n)
     n.times{|i|
       assert( @rc.set(i.to_s,i.to_s)=="STORED" )
