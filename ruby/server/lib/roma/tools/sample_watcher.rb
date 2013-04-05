@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 require 'roma/logging/rlogger'
 require 'roma/messaging/con_pool'
 require 'roma/routing/routing_data'
 require 'roma/client/sender'
 
 module Roma
-  
+
   class Watcher
 
     def initialize
@@ -18,7 +17,7 @@ module Roma
     end
 
   end # class Watcher
-  
+
 end # module Roma
 
 

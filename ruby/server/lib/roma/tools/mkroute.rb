@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 require 'optparse'
 require 'roma/routing/routing_data'
 
@@ -30,12 +29,12 @@ end
 
 if dgst_bits < div_bits
   STDERR.puts "The hash bits should be divide bits or more."
-  exit!  
+  exit!
 end
 
 if div_bits > 32
   STDERR.puts "The upper bound of divide bits is 32."
-  exit!    
+  exit!
 end
 
 if nodes.length < rn

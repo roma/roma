@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 
 require 'roma/client/rclient'
 require 'roma/messaging/con_pool'
@@ -98,7 +97,7 @@ class CopyDataTest < Test::Unit::TestCase
     @th.kill
     $gs.close
     Roma::Messaging::ConPool::instance.close_all
-  end  
+  end
 
   def test_spushv
     # key wihch's vn = 0
@@ -124,7 +123,7 @@ class CopyDataTest < Test::Unit::TestCase
   def push_a_vnode_stream(hname, vn, nid, keys)
     con = Roma::Messaging::ConPool.instance.get_connection(nid)
     con.write("spushv #{hname} #{vn}\r\n")
-    
+
     res = con.gets # READY\r\n or error string
     if res != "READY\r\n"
       con.close
@@ -137,7 +136,7 @@ class CopyDataTest < Test::Unit::TestCase
       con.write(data)
     }
     con.write("\0"*20) # end of steram
-    
+
     res = con.gets # STORED\r\n or error string
     Roma::Messaging::ConPool.instance.return_connection(nid,con)
     res.chomp! if res
@@ -230,5 +229,5 @@ class CopyDataTest < Test::Unit::TestCase
     @log.error("#{e}\n#{$@}")
     false
   end
-  
+
 end

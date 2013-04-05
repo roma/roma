@@ -1,16 +1,15 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 require 'roma/logging/rlogger'
 require 'roma/messaging/con_pool'
 require 'roma/routing/routing_data'
 require 'roma/client/sender'
 
 module Roma
-  
+
   class MultiCommander
 
     Roma::Client::Sender.class_eval{
-      def multiplelines_receiver2(con) 
+      def multiplelines_receiver2(con)
         ret = []
         while select [con], nil, nil, 0.05
           ret << con.gets.chomp
@@ -41,5 +40,5 @@ module Roma
     end
 
   end # class MultiCommander
-  
+
 end # module Roma

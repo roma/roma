@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 require 'logger'
 require 'stringio'
 require 'roma/write_behind'
@@ -9,7 +8,7 @@ require 'roma/client/plugin/alist'
 require 'roma/client/plugin/map'
 
 class FileWriterTest < Test::Unit::TestCase
-  
+
   def initialize(arg)
     super(arg)
   end
@@ -100,7 +99,7 @@ class FileWriterTest < Test::Unit::TestCase
     # confirming file is only 1 not over 2
     assert(File.exist?("#{path}/0.wb"))
     assert(!File.exist?("#{path}/1.wb"))
-    
+
     # set rottime to now forcibly
     fw.instance_eval{ @rottime=Time.now }
     # confriming to change rottime
@@ -162,7 +161,7 @@ class FileWriterTest < Test::Unit::TestCase
     assert_nil( fw.get_current_file_path('roma') )
 
     fw.write('roma',0,"key","val")
-    
+
     path = File.expand_path("./wb_test/roma0_11211/roma/#{Time.now.strftime('%Y%m%d')}/")
     assert_equal(  File.join(path,"0.wb"), fw.get_current_file_path('roma'))
 
@@ -232,7 +231,7 @@ class WriteBehindTest < FileWriterTest
     send_cmd("localhost_11211", "wb_command_map {:set=>1}")
     assert_equal("STORED", @rc.set("abc","value abc",0,true))
     send_cmd("localhost_11211", "writebehind_rotate roma")
-    
+
     wb0 = read_wb("#{wb_path}/0.wb")
     assert_equal(1, wb0.length)
     wb0.each do |last, cmd, key, val|
@@ -259,8 +258,8 @@ class WriteBehindTest < FileWriterTest
     assert_equal(128, @rc.decr("abc"))
     ## test for set_expt TODO
     send_cmd("localhost_11211", "writebehind_rotate roma")
-    
-    
+
+
     res = {1=>'1',2=>'1',3=>'1',4=>'2',5=>'23',6=>'123',7=>'128',8=>'129',9=>'128'}
     wb0 = read_wb("#{wb_path}/0.wb")
     assert_equal(9, wb0.length)
@@ -307,7 +306,7 @@ class WriteBehindTest < FileWriterTest
     assert_equal('DELETED', @rc.alist_delete_at("abc",1)) #['13','5','4','2','1','8','9','10','12']
     assert_equal('CLEARED', @rc.alist_clear("abc"))
     send_cmd("localhost_11211", "writebehind_rotate roma")
-    
+
     res = {
       10=>'1',4=>'2',5=>'3',6=>'4',7=>'5',8=>'6',9=>'7',11=>'8',12=>'9',
       13=>'10',14=>'11',15=>'12',16=>'13',2=>'3',3=>'6',
@@ -336,7 +335,7 @@ class WriteBehindTest < FileWriterTest
     assert_equal('STORED', @rc.map_set('abc','mapkey1','value1'))
     assert_equal('CLEARED', @rc.map_clear("abc"))
     send_cmd("localhost_11211", "writebehind_rotate roma")
-    
+
     res = {1=>'value1',2=>{},3=>{}}
     wb0 = read_wb("#{wb_path}/0.wb")
     assert_equal(4, wb0.length)

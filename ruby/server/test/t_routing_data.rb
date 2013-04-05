@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 
 require 'roma/routing/routing_data'
 require 'yaml'
@@ -15,7 +14,7 @@ class RoutingDataTest < Test::Unit::TestCase
     GC.start
     n=0
     ObjectSpace.each_object{|o| n+=1 }
-    n    
+    n
   end
 
   def test_object_count
@@ -69,7 +68,7 @@ class RoutingDataTest < Test::Unit::TestCase
     # redundancy 1
     # array of node ID [roma0_3300]
     rd=Roma::Routing::RoutingData.create(32,8,1,['roma0_3300'])
-    
+
     assert( rd.v_idx.length==256 )
     assert( rd.nodes.length==1 )
     assert( rd.search_mask==0xff000000 )
@@ -108,7 +107,7 @@ class RoutingDataTest < Test::Unit::TestCase
 
   def test_dump_binary
     rd=Roma::Routing::RoutingData.create(32,9,2,['roma0_3300','roma1_3300'])
-    # set to a bummy clock 
+    # set to a bummy clock
     (2**rd.div_bits).times{|i|
       vn=i<<(rd.dgst_bits-rd.div_bits)
       rd.v_clk[vn] = i
@@ -151,7 +150,7 @@ class RoutingDataTest < Test::Unit::TestCase
 
   def test_dump_binary2
     rd=Roma::Routing::RoutingData.create(32,9,2,['roma0_3300','roma1_3300'])
-    # set to a bummy clock 
+    # set to a bummy clock
     (2**rd.div_bits).times{|i|
       vn=i<<(rd.dgst_bits-rd.div_bits)
       rd.v_clk[vn] = i

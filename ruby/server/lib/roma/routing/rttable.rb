@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 require 'roma/logging/rlogger'
 require 'roma/routing/routing_data'
 require 'roma/routing/merkle_tree'
@@ -46,7 +45,7 @@ module Roma
           elsif nids.include?(ap)
             sn += 1
           end
-          short += 1 if nids.length < @rd.rn 
+          short += 1 if nids.length < @rd.rn
         }
 
         ret = {}
