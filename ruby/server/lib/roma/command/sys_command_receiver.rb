@@ -472,6 +472,32 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_emconnection_pool_expire_time <sec>
+      def ev_set_emconnection_pool_expire_time(s)
+        # chcking s incude command and value (NOT check digit)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        #if ARGV is 0, expire time become infinity(NOT happen expire)
+        if s[1].to_i == 0
+          s[1] = "2147483647"
+        end
+        res = broadcast_cmd("rset_emconnection_pool_expire_time #{s[1]}\r\n")
+        Event::EMConPool::instance.expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_emconnection_pool_expire_time <sec>
+      def ev_rset_emconnection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Event::EMConPool::instance.expire_time = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
       # set_hilatency_warn_time <sec>
       # set to threshold of warn message into a log when hilatency occured in a command.
       def ev_set_hilatency_warn_time(s)
