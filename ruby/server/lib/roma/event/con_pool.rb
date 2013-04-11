@@ -4,6 +4,7 @@
 require 'singleton'
 require 'eventmachine'
 require 'roma/logging/rlogger'
+require 'roma/dns_cache'
 
 module Roma
   module Event
@@ -114,7 +115,8 @@ module Roma
       end
 
       def create_connection(ap)
-        addr,port = ap.split(/[:_]/)
+        host,port = ap.split(/[:_]/)
+        addr = DNSCache.resolve_name(host)
         con = EventMachine::connect(addr, port, Roma::Event::EMConnection)
         con.ap = ap
         con

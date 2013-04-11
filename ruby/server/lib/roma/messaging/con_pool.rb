@@ -1,6 +1,7 @@
 require 'thread'
 require 'socket'
 require 'singleton'
+require 'roma/dns_cache'
 
 module Roma
   module Messaging
@@ -53,7 +54,8 @@ module Roma
       end
 
       def create_connection(ap)
-        addr, port = ap.split(/[:_]/)
+        host, port = ap.split(/[:_]/)
+        addr = DNSCache.resolve_name(host)
         TCPSocket.new(addr, port)
       end
 
