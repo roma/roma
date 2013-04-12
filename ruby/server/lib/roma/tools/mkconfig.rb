@@ -50,7 +50,7 @@ module Roma
           choice:
             - Ruby Hash
             - Tokyo Cabinet
-          default: 2
+          default: 1
           next:
             - menu
             - memory
@@ -65,7 +65,7 @@ module Roma
           name: process_num
           path_name:
           message: How many run ROMA process per machine?
-          default: 1
+          default: 2
           next: server
         server:
           name: server_num
@@ -77,27 +77,13 @@ module Roma
           name: data_num
           path_name:
           message: How many data will you store?
-          default: 1000
-          next: key
-        key:
-          name: key_size_KB
-          path_name:
-          float_flg: on
-          message: How big average key size per data? Please measure in KB.
-          default: 1
-          next: value
-        value:
-          name: value_size_KB
-          path_name:
-          float_flg: on
-          message: How big average value size per data? Please measure in KB.
-          default: 1
+          default: 10000
           next: menu
 
         plugin:
           name: selected_plugin
           path_name: plugin
-          message: Please select which plugin will you use.(We recommend to use plugin_storage.rb at least.)
+          message: Please select which plugin will you use.(plugin_storage.rb was already set)
           choice:
             #{load_path(PLUGIN_DIR) << "Select all plugins"}
           default: 1
@@ -175,12 +161,12 @@ module Roma
         ret = Array.new
         files = Dir::entries(path)
         files.delete("plugin_stub.rb") if files.include?("plugin_stub.rb")
-        ret.unshift("plugin_storage.rb") if files.include?("plugin_storage.rb")
+        files.delete("plugin_storage.rb") if files.include?("plugin_storage.rb")
 
         files.each do |file|
           ret << file if File::ftype(File.join(path, file)) == "file"
         end
-        ret = ret.uniq
+
         ret
       end
 
@@ -295,10 +281,11 @@ module Roma
       end
 
       def self.get_xmsize_max(res)
-        ans = (res["memory"].value.to_i * GB - OS_MEMORY_SIZE) / res["process"].value.to_i / TC_FILE
+        ans = (res["memory"].value.to_f * GB - OS_MEMORY_SIZE) / res["process"].value.to_i / TC_FILE
         if ans <= 0
-          ans = res["memory"].value.to_i * GB / 2 / res["process"].value.to_i / TC_FILE
+          ans = res["memory"].value.to_f * GB / 2 / res["process"].value.to_i / TC_FILE
         end
+        ans = ans.to_i
         return ans
       end
 
@@ -372,6 +359,7 @@ module Roma
 
         skip.call if @next_hash == "menu" || @next_hash == "server" || @next_hash == "fd_server" || @next_hash == "check_plugin"
         break if end?(@base[@next_hash])
+        puts "if you dosen't input anything, default value is set."
         Box.print_with_box(@defaults)
         print_status(@results)
         @base.print_question(@next_hash)
@@ -448,7 +436,7 @@ module Roma
         input = receiver.get_line
         if input == ""
           #set defaults value
-          input = hash["default"] 
+          input = hash["default"]
         end
       end
 
@@ -554,6 +542,7 @@ module Roma
       end
 
       if res.key?("plugin")
+        res["plugin"].value.unshift("plugin_storage.rb")
         body = ch_assign(body, "PLUGIN_FILES", res["plugin"].value)
       end
 
@@ -575,18 +564,22 @@ module Roma
       print "\r\nIf you need, change directory path about LOG, RTTABLE, STORAGE, WB and other setting.\r\n\r\n"
     end
 
-    # sep means separating right and left part
+    # sep means separating right and left part(config.rb style)
     def ch_assign(text, exp, sep = " = ", str)
       sep = " = " if sep == "="
       text = text.gsub(/(\s*#{exp}).*/) do |s|
         name = $1
         if str.class == String
           if str =~ /::/ || str =~ /^\d+$/
-            name + sep + str
+            # storage type
+           name + sep + str
           else
-            name + sep + str.inspect
+            # require & storage option
+           name + sep + str.inspect
           end
         else
+          # plugin
+          # "to_s" equal "inspect" in Ruby 1.9
           name + sep + str.to_s.sub("\\", "")
         end
       end
