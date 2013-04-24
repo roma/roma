@@ -16,6 +16,8 @@ module Roma
       def self.ev_list; @@ev_list; end
       @@system_commands={}
       def self.system_commands; @@system_commands; end
+      @@ps=[]
+      def self.ps; @@ps; end
 
       @@ccl_start = 200
       @@ccl_rate = 30
@@ -96,6 +98,7 @@ module Roma
       end
 
       def unbind
+        @log.debug("Roma::Event::Handler.unbind called")
         @connected=false
         begin
           @fiber.resume
@@ -141,13 +144,52 @@ module Roma
         Roma::Event::EMConPool.instance.return_connection(ap,con)
       end
 
+      def self.set_latency_calc_rule(cmd, mode, count="0", *command)
+        #check support commands
+        command.each do |cmd|
+          return cmd if @@system_commands.include?(cmd)
+        end
+
+        if mode =="on"
+          @@latency_target_command = {}
+          @@latency_target_command = command
+          @@latency_calc_denominator = count.to_i
+          return "on"
+        elsif mode =="off"
+          @@latency_target_command = {}
+          @@latency_calc_denominator = 0
+          return "off"         
+        else
+          return false
+        end
+      end
+
+      def calc_latency_average(latency, tg)
+            @log.debug("Roma::Event::Handler.calc_latency_average called")
+            @@latency_chk_cnt = {} if !defined?(@@latency_chk_cnt)
+            @@sum = {} if !defined?(@@sum)
+
+            @@latency_chk_cnt.store(tg, 0) if !@@latency_chk_cnt.key?(tg)
+            @@sum.store(tg, 0) if !@@sum.key?(tg)
+
+            @@sum[tg] += latency
+            if (@@latency_chk_cnt[tg] += 1) == @@latency_calc_denominator
+              average = @@sum[tg] / @@latency_chk_cnt[tg]
+              @log.info("latency average about [#{@lastcmd[0]}] is #{average} seconds")
+              @@latency_chk_cnt[tg] = 0
+              @@sum[tg] = 0
+            end
+      end
+
       def dispatcher
         @stats = Roma::Stats.instance
+        @log.debug("Roma::Event::Handler.dipatcher called")
         while(@connected) do
           @enter_time = nil
           next unless s=gets
           @enter_time = Time.now
           s=s.chomp.split(/ /)
+          # check whether comand was send or not? and check this command listed on ROMA?
           if s[0] && @@ev_list.key?(s[0].downcase)
             send(@@ev_list[s[0].downcase],s)
             @lastcmd=s
@@ -161,6 +203,7 @@ module Roma
             @log.warn("command error:#{s}")
             send_data("ERROR\r\n")
             close_connection_after_writing
+            next
           end
 
           # hilatency check
@@ -169,6 +212,12 @@ module Roma
             @log.warn("hilatency occurred in #{@lastcmd} put in a #{ps} seconds")
           end
 
+          # check latency average
+          if defined?@@latency_target_command
+            if @@latency_target_command.include?(@lastcmd[0])
+              calc_latency_average(ps, @lastcmd[0])
+            end
+          end
           d = EM.connection_count - @@ccl_start
           if d > 0 &&
               rand(100) < @@ccl_rate + (100 - @@ccl_rate) * d / (@@ccl_full - @@ccl_start)
