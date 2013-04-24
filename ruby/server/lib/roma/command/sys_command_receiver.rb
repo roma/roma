@@ -1,3 +1,4 @@
+require 'roma/event/handler'
 
 module Roma
   module Command
@@ -363,6 +364,53 @@ module Roma
           return send_data("DISABLED\r\n")
         else
           send_data("NOTSWITCHED\r\n")
+        end
+      end
+
+      # set_calc_latency_average <mode> <count> <command1> <command2>
+      # <command name> is on/off
+      # <count> is denominator to calculate average. 
+      # <command1/2> is target command
+      def ev_set_latency_avg_calc_rule(s)
+        #check argument
+        if s[1] == "on" && s.length <=3
+          return send_data("CLIENT_ERROR number of arguments (0 for 3)\r\n")
+        elsif s[1] == "off" && !(s.length == 2)
+          return send_data("CLIENT_ERROR number of arguments (0 for 1, or more 3)\r\n")
+        elsif !(s[1] == "on") && !(s[1] == "off")
+          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
+        end
+
+        arg ="r"
+        s.each do |arr|
+          arg += "#{arr} "
+        end
+        res = broadcast_cmd("#{arg}\r\n")
+
+        case result = Event::Handler.set_latency_calc_rule(*s)
+          when "on"   ; res[@stats.ap_str] = "ACTIVATED"
+          when "off"  ; res[@stats.ap_str] = "DEACTIVATED"
+          when "false"; res[@stats.ap_str] = "ERROR"
+          else        ; res[@stats.ap_str] = "NOT SUPPORT [#{result}] command."
+        end
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_latency_avg_calc_rule(s)
+        #check argument
+        if s[1] == "on" && s.length <=3
+          return send_data("CLIENT_ERROR number of arguments (0 for 3)\r\n")
+        elsif s[1] == "off" && !(s.length == 2)
+          return send_data("CLIENT_ERROR number of arguments (0 for 1, or more 3)\r\n")
+        elsif !(s[1] == "on") && !(s[1] == "off")
+          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
+        end
+
+        case result = Event::Handler.set_latency_calc_rule(*s)
+          when "on"   ; send_data("ACTIVATED\r\n")
+          when "off"  ; send_data("DEACTIVATED\r\n")
+          when "false"; send_data("ERROR\r\n")
+          else        ; send_data("doesn't support [#{result}] command.\r\n")
         end
       end
 
