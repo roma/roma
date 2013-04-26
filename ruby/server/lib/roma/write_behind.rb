@@ -44,6 +44,7 @@ module Roma
         unless fd
           fd = openfile(hname)
           @total_size[hname] = 0
+          @log.info("WriteBehind file has created: hname =  #{hname}")
         end
         klen = key.length
         val = val.to_s
