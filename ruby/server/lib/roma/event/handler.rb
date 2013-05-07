@@ -165,20 +165,20 @@ module Roma
       end
 
       def calc_latency_average(latency, tg)
-            @log.debug("Roma::Event::Handler.calc_latency_average called")
-            @@latency_chk_cnt = {} if !defined?(@@latency_chk_cnt)
-            @@sum = {} if !defined?(@@sum)
+        @log.debug("Roma::Event::Handler.calc_latency_average called")
+        @@latency_chk_cnt = {} if !defined?(@@latency_chk_cnt)
+        @@sum = {} if !defined?(@@sum)
 
-            @@latency_chk_cnt.store(tg, 0) if !@@latency_chk_cnt.key?(tg)
-            @@sum.store(tg, 0) if !@@sum.key?(tg)
+        @@latency_chk_cnt.store(tg, 0) if !@@latency_chk_cnt.key?(tg)
+        @@sum.store(tg, 0) if !@@sum.key?(tg)
 
-            @@sum[tg] += latency
-            if (@@latency_chk_cnt[tg] += 1) == @@latency_calc_denominator
-              average = @@sum[tg] / @@latency_chk_cnt[tg]
-              @log.info("latency average about [#{@lastcmd[0]}] is #{average} seconds")
-              @@latency_chk_cnt[tg] = 0
-              @@sum[tg] = 0
-            end
+        @@sum[tg] += latency
+        if (@@latency_chk_cnt[tg] += 1) == @@latency_calc_denominator
+          average = @@sum[tg] / @@latency_chk_cnt[tg]
+          @log.info("latency average about [#{@lastcmd[0]}] is #{average} seconds")
+          @@latency_chk_cnt[tg] = 0
+          @@sum[tg] = 0
+        end
       end
 
       def dispatcher
