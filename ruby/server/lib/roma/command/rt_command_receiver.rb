@@ -36,20 +36,24 @@ module Roma
 
       # routingdump [yaml|json|yamlbytes|bin]\r\n
       def ev_routingdump(s)
+        rt = @rttable
+        rd = @rttable.sub_nid_rd(@addr)
+        rt = Roma::Routing::RoutingTable.new(rd) if rd
+
         if s.length == 1
-          dmp = @rttable.dump
+          dmp = rt.dump
           send_data("#{dmp.length}\r\n#{dmp}\r\nEND\r\n")
         elsif s[1] == 'yaml'
-          dmp = @rttable.dump_yaml
+          dmp = rt.dump_yaml
           send_data("#{dmp}\r\nEND\r\n")
         elsif s[1] == 'json'
-          dmp = @rttable.dump_json
+          dmp = rt.dump_json
           send_data("#{dmp}\r\nEND\r\n")
         elsif s[1] == 'yamlbytes'
-          dmp = @rttable.dump_yaml
+          dmp = rt.dump_yaml
           send_data("#{dmp.length + 7}\r\nEND\r\n")
         elsif s[1] == 'bin'
-          dmp = @rttable.dump_binary
+          dmp = rt.dump_binary
           send_data("#{dmp.length}\r\n#{dmp}\r\nEND\r\n")
         else
           send_data("CLIENT_ERROR\r\n")

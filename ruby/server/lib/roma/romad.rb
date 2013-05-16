@@ -379,6 +379,10 @@ module Roma
         end
       end
       
+      if Roma::Config.const_defined?(:RTTABLE_SUB_NID)
+        @rttable.sub_nid = Roma::Config::RTTABLE_SUB_NID
+      end
+      
       if Roma::Config.const_defined?(:ROUTING_FAIL_CNT_THRESHOLD)
         @rttable.fail_cnt_threshold = Roma::Config::ROUTING_FAIL_CNT_THRESHOLD
       end

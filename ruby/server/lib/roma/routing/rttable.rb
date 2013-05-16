@@ -19,6 +19,7 @@ module Roma
       attr_reader :div_bits
       attr_accessor :fail_cnt_threshold
       attr_accessor :fail_cnt_gap
+      attr_accessor :sub_nid
 
       def initialize(rd)
         @log = Roma::Logging::RLogger.instance
@@ -31,6 +32,7 @@ module Roma
         @fail_cnt_threshold = 5
         @fail_cnt_gap = 0
         @fail_time = Time.now
+        @sub_nid = {}
         init_mtree
       end
 
@@ -62,6 +64,7 @@ module Roma
         ret['routing.lost_vnodes'] = lost
         ret['routing.fail_cnt_threshold'] = @fail_cnt_threshold
         ret['routing.fail_cnt_gap'] = @fail_cnt_gap
+        ret['routing.sub_nid'] = @sub_nid.inspect
         ret
       end
 
@@ -146,6 +149,51 @@ module Roma
         @rd.create_nodes_from_v_idx
       end
 
+      # Returns a new RoutingData object which replaced host name by the sub_nid attribute.
+      def sub_nid_rd(addr)
+        sub_nid.each do |mask, sub|
+          if check_netmask?(addr, mask)
+            return get_replaced_rd(sub[:regexp], sub[:replace])
+          end
+        end
+        nil
+      end
+
+      private
+
+      def get_replaced_rd(regxp, replace)
+        rd = Marshal.load(dump)
+        
+        rd.nodes.map! do |nid|
+          nid.sub(regxp, replace)
+        end
+
+        rd.v_idx.each_value do |nids|
+          nids.map! do |nid|
+            nid.sub(regxp, replace)
+          end
+        end
+        rd
+      end
+      
+      def check_netmask?(addr, mask)
+        if addr =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/
+          iaddr = ($1.to_i  << 24) + ($2.to_i << 16) + ($3.to_i << 8) + $4.to_i
+        else
+          @log.error("#{__method__}:Illigal format addr #{addr}")
+          return false
+        end
+
+        if mask =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)\/(\d+)/
+          imask_addr = ($1.to_i  << 24) + ($2.to_i << 16) + ($3.to_i << 8) + $4.to_i
+          imask = (2 ** $5.to_i - 1) << (32 - $5.to_i)
+        else
+          @log.error("#{__method__}:Illigal format mask #{mask}")
+          return false
+        end
+        (iaddr & imask) == (imask_addr & imask)
+      end
+      
     end # class RoutingTable
 
   end # module Routing
