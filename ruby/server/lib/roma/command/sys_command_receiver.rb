@@ -20,6 +20,7 @@ module Roma
         end
         @rttable.enabled_failover = false
         res = broadcast_cmd("rbalse\r\n")
+        res[@stats.ap_str] = "BYE"
         send_data("#{res.inspect}\r\n")
         close_connection_after_writing
         @stop_event_loop = true
