@@ -107,6 +107,33 @@ module Roma
         send_data("CLIENT_ERROR\r\n")
       end
 
+      # set_auto_recover [true|false]
+      def ev_set_auto_recover(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif
+          s[1] != "true" && s[1] != "false"
+          return send_data("CLIENT_ERROR arguments must be true or false\r\n")
+        end
+
+        res = broadcast_cmd("rset_auto_recover #{s[1]}\r\n")
+        @rttable.auto_recover = s[1].to_s
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_auto_recover(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif
+          s[1] != "true" && s[1] != "false"
+          return send_data("CLIENT_ERROR arguments must be true or false\r\n")
+        end
+
+        @rttable.auto_recover = s[1].to_s
+        send_data("STORED\r\n")
+      end
+
       # set_threshold_for_failover <n>
       def ev_set_threshold_for_failover(s)
         if s.length != 2 || s[1].to_i == 0

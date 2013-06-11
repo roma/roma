@@ -34,6 +34,15 @@ module Roma
         init_mtree
       end
 
+      #auto_recover
+      def get_short_vnodes(ap)
+        short = 0
+        @rd.v_idx.each_value{|nids|
+          return true if nids.length < @rd.rn
+        }
+        return false
+      end
+
       def get_stat(ap)
 
         pn = sn = short = lost = 0

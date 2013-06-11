@@ -386,6 +386,10 @@ module Roma
         @rttable.fail_cnt_gap = Roma::Config::ROUTING_FAIL_CNT_GAP
       end
       @rttable.lost_action = Roma::Config::DEFAULT_LOST_ACTION
+
+      #auto_recover
+      @rttable.auto_recover = Roma::Config::AUTO_RECOVER
+
       @rttable.enabled_failover = false
       @rttable.set_leave_proc{|nid|
         Roma::Messaging::ConPool.instance.close_same_host(nid)
@@ -494,6 +498,14 @@ module Roma
         end
       end
       t[:name] = 'timer_10sec'
+
+      t = Thread.new do
+        loop do
+          sleep 60
+          check_auto_recover
+        end
+      end
+      t[:name] = 'chk_auto_rec'
     end
 
     def timer_event_1sec
@@ -543,6 +555,27 @@ module Roma
       @stats.clear_counters
     rescue Exception =>e
       @log.error("#{e}\n#{$@}")
+    end
+
+    #auto_recover
+    def check_auto_recover
+      if @rttable.get_short_vnodes(@stats.ap_str)
+        @log.error("short_vnodes existed")
+        if @rttable.auto_recover == true && @stats.run_recover == false
+          sleep(1800)
+          if @rttable.auto_recover == true && @stats.run_recover == false
+            case @rttable.lost_action
+              when :auto_assign, :shutdown
+                async_broadcast_cmd("rrecover\r\n")
+                @log.debug("auto recover start\r\n")
+              when :no_action
+                @log.debug("auto recover NOT start. Because lost action is [no_action]")
+              else
+                @log.error("Unavailable value is set to [DEFAULT_LOST_ACTION] = #{@rttable.lost_action}")
+            end
+          end
+        end
+      end
     end
 
     def nodes_check(nodes)
