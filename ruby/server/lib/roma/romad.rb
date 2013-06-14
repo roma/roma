@@ -388,7 +388,7 @@ module Roma
       @rttable.lost_action = Roma::Config::DEFAULT_LOST_ACTION
 
       #auto_recover
-      @rttable.auto_recover = Roma::Config::AUTO_RECOVER
+      @rttable.auto_recover = Roma::Config::AUTO_RECOVER if defined?(Roma::Config::AUTO_RECOVER)
 
       @rttable.enabled_failover = false
       @rttable.set_leave_proc{|nid|
@@ -559,7 +559,7 @@ module Roma
 
     #auto_recover
     def check_auto_recover
-      if @rttable.get_short_vnodes(@stats.ap_str)
+      if @rttable.has_short_vnodes?(@stats.ap_str)
         @log.error("short_vnodes existed")
         if @rttable.auto_recover == true && @stats.run_recover == false
           sleep(1800)
