@@ -243,6 +243,45 @@ module Roma
       t[:name] = __method__
     end
 
+    def asyncev_start_auto_recover_process(args)
+      @log.debug("#{__method__} #{args.inspect}")
+      if @stats.run_join
+        @log.error("#{__method__}:join process running")
+        return true
+      end
+      if @stats.run_recover
+        @log.error("#{__method__}:recover process running.")
+        return false
+      end
+      if @stats.run_balance
+        @log.error("#{__method__}:balance process running")
+        return true
+      end
+
+      sleep(5)
+      if @rttable.auto_recover == true
+        case @rttable.lost_action
+          when :auto_assign, :shutdown
+            @stats.run_recover = true
+            t = Thread::new do
+              begin
+                @log.debug("auto recover start")
+                acquired_recover_process
+              rescue => e
+                @log.error("#{__method__}:#{e.inspect} #{$@}")
+              ensure
+                @stats.run_recover = false
+              end
+            end
+            t[:name] = __method__
+          when :no_action
+            @log.debug("auto recover NOT start. Because lost action is [no_action]")
+          else
+            @log.error("Unavailable value is set to [DEFAULT_LOST_ACTION] => #{@rttable.lost_action}")
+        end
+      end
+    end
+
     def asyncev_start_release_process(args)
       @log.debug("#{__method__} #{args}")
       if @stats.run_iterate_storage

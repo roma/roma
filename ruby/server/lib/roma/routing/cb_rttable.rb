@@ -244,10 +244,7 @@ module Roma
           end
         elsif short_vnodes.length > 0 && @auto_recover == true
           @log.error("Short vnodes exist.")
-          t = Thread.new do
-            auto_recover
-          end
-          t[:name] = 'auto_rec'
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_auto_recover_process'))
         end
         @fail_cnt.delete(nid)
       end
@@ -261,22 +258,6 @@ module Roma
         clk
       end
       private :set_route_and_inc_clk_inside_sync
-
-      #auto_recover
-      def auto_recover
-        sleep(5)
-        if @auto_recover == true
-          case @lost_action
-            when :auto_assign, :shutdown
-              @log.debug("auto recover start")
-              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_recover_process'))
-            when :no_action
-              @log.debug("auto recover NOT start. Because lost action is [no_action]")
-            else
-              @log.error("Unavailable value is set to [DEFAULT_LOST_ACTION] = #{@rttable.lost_action}")
-            end
-        end
-      end
 
       def next_alive_vnode(vn)
         svn = vn
