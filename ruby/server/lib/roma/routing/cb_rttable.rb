@@ -16,6 +16,7 @@ module Roma
       attr :lost_proc
       attr_accessor :lost_action
       attr_accessor :auto_recover #auto_recover
+      attr_accessor :auto_recover_status #auto_recover
       attr_reader :version_of_nodes
       attr_reader :min_version
 
@@ -28,6 +29,7 @@ module Roma
         @lost_proc=nil
         @lost_action=:no_action
         @auto_recover=false #auto_recover
+        @auto_recover_status="waiting" #auto_recover
         @enabled_failover=false
         @lock = Mutex.new
         @version_of_nodes = Hash.new(0)
@@ -39,6 +41,7 @@ module Roma
         ret = super(ap)
         ret['routing.lost_action'] = @lost_action.to_s
         ret['routing.auto_recover'] = @auto_recover.to_s #auto_recover
+        ret['routing.auto_recover_status'] = @auto_recover_status.to_s #auto_recover
         ret['routing.version_of_nodes'] = @version_of_nodes.inspect
         ret['routing.min_version'] = @min_version
         ret

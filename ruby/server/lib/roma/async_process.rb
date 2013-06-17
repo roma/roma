@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 require 'thread'
 require 'digest/sha1'
+require "timeout"
 
 module Roma
   
@@ -258,11 +259,20 @@ module Roma
         return true
       end
 
-      sleep(5)
-      if @rttable.auto_recover == true
+      @rttable.auto_recover_status = "preparing"
+      begin
+        timeout(30){
+          loop{ 
+            sleep 1
+            break if @rttable.auto_recover_status != "preparing"
+          }
+        }
+        @log.debug("inactivated AUTO_RECOVER")
+      rescue
         case @rttable.lost_action
           when :auto_assign, :shutdown
             @stats.run_recover = true
+            @rttable.auto_recover_status = "executing"
             t = Thread::new do
               begin
                 @log.debug("auto recover start")
@@ -271,6 +281,7 @@ module Roma
                 @log.error("#{__method__}:#{e.inspect} #{$@}")
               ensure
                 @stats.run_recover = false
+                @rttable.auto_recover_status = "waiting"
               end
             end
             t[:name] = __method__

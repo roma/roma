@@ -118,6 +118,7 @@ module Roma
 
         res = broadcast_cmd("rset_auto_recover #{s[1]}\r\n")
         @rttable.auto_recover = s[1].to_s
+        @rttable.auto_recover_status = "waiting"
         res[@stats.ap_str] = "STORED"
         send_data("#{res}\r\n")
       end
@@ -131,6 +132,7 @@ module Roma
         end
 
         @rttable.auto_recover = s[1].to_s
+        @rttable.auto_recover_status = "waiting"
         send_data("STORED\r\n")
       end
 
