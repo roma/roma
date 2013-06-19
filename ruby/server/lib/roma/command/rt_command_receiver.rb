@@ -151,6 +151,67 @@ module Roma
         send_data("STORED\r\n")        
       end
 
+      # cleat RTTABLE_SUB_NID map
+      def ev_clear_rttable_sub_nid(s)
+        res = broadcast_cmd("rclear_rttable_sub_nid\r\n")
+        @rttable.sub_nid.clear()
+        res[@stats.ap_str] = "CLEARED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rclear_rttable_sub_nid(s)
+        @rttable.sub_nid.clear()
+        send_data("CLEARED\r\n")
+      end
+      
+      # add_rttable_sub_nid <netmask> <regexp> <replace>
+      def ev_add_rttable_sub_nid(s)
+        if s.length != 4
+          return send_data("usage:add_rttable_sub_nid <netmask> <regexp> <replace>\r\n")
+        end
+        res = broadcast_cmd("radd_rttable_sub_nid #{s[1]} #{s[2]} #{s[3]}\r\n")
+        @rttable.sub_nid[s[1]] = {:regexp => "#{s[2]}", :replace => "#{s[3]}"}
+        res[@stats.ap_str] = "ADDED"
+        send_data("#{res}\r\n")
+      end
+
+      # radd_rttable_sub_nid <netmask> <regexp> <replace>
+      def ev_radd_rttable_sub_nid(s)
+        if s.length != 4
+          return send_data("usage:add_rttable_sub_nid <netmask> <regexp> <replace>\r\n")
+        end
+        @rttable.sub_nid[s[1]] = {:regexp => "#{s[2]}", :replace => "#{s[3]}"}
+        send_data("ADDED\r\n")
+      end
+
+      # delete_rttable_sub_nid <netmask>
+      def ev_delete_rttable_sub_nid(s)
+        if s.length != 2
+          return send_data("usage:delete_rttable_sub_nid <netmask>\r\n")
+        end
+
+        res = broadcast_cmd("rdelete_rttable_sub_nid #{s[1]}\r\n")
+        unless @rttable.sub_nid.delete s[1]
+          res[@stats.ap_str] = "NOT_FOUND"
+        else
+          res[@stats.ap_str] = "DELETED"
+        end
+        send_data("#{res}\r\n")
+      end
+
+      # rdelete_rttable_sub_nid <netmask>
+      def ev_rdelete_rttable_sub_nid(s)
+        if s.length != 2
+          return send_data("usage:delete_rttable_sub_nid <netmask>\r\n")
+        end
+
+        unless @rttable.sub_nid.delete s[1]
+          send_data("NOT_FOUND\r\n")
+        else
+          send_data("DELETED\r\n")
+        end
+      end
+
     end # module RoutingCommandReceiver
   end # module Command
 end # module Roma
