@@ -7,9 +7,9 @@ module Roma
 
     class BasicStorage
 
-      attr :hdb
-      attr :hdiv
-      attr :ext_name
+      attr_reader :hdb
+      attr_reader :hdiv
+      attr_reader :ext_name
       
       attr_reader :error_message
 
@@ -71,18 +71,23 @@ module Roma
       end
       protected :create_div_hash
 
-      def opendb
-        create_div_hash
+      def mkdir_p(md_path)
         path = ''
-        @storage_path.split('/').each{|p|
-          if p.length==0
+        md_path.split('/').each do |p|
+          if p.length == 0
             path = '/'
             next
           end
           path << p
           Dir::mkdir(path) unless File.exist?(path)
           path << '/'
-        }
+        end
+      end
+      protected :mkdir_p
+
+      def opendb
+        create_div_hash
+        mkdir_p(@storage_path)
         @divnum.times{ |i|
           @hdb[i] = open_db("#{@storage_path}/#{i}.#{@ext_name}")
         }
@@ -353,14 +358,6 @@ module Roma
         res
       end
 
-      def add_vnode(vn)
-      end
-
-      def del_vnode(vn)
-        buf = get_vnode_hash(vn)
-        buf.each_key{ |k| @hdb[@hdiv[vn]].out(k) }
-      end
-
       def each_clean_up(t, vnhash)
         @do_clean_up = true
         nt = Time.now.to_i
@@ -436,26 +433,6 @@ module Roma
         buf = get_vnode_hash(vn)
         return nil if buf.length == 0
         Marshal.dump(buf)
-      end
-
-      def dump_file(path,except_vnh = nil)
-        pbuf = ''
-        path.split('/').each{|p|
-          pbuf << p
-          begin
-            Dir::mkdir(pbuf) unless File.exist?(pbuf)
-          rescue
-          end
-          pbuf << '/'
-        }
-        @divnum.times{|i|
-          f = open("#{path}/#{i}.dump","wb")
-          each_hdb_dump(i,except_vnh){|data| f.write(data) }
-          f.close
-        }
-        open("#{path}/eod","w"){|f|
-          f.puts Time.now
-        }
       end
 
       def each_vn_dump(target_vn)

@@ -435,53 +435,6 @@ class TCStorageTest < Test::Unit::TestCase
     }
   end
 
-  def test_dump_file
-    n=100
-    n.times{|i|
-      @st.set(0,"key#{i}",0,0x7fffffff,"val#{i}")
-    }
-    @st.dump_file('storage_test_dump')
-
-    count = 0
-    open("storage_test_dump/#{@st.hdiv[0]}.dump",'rb'){|f|
-      until(f.eof?)
-        b1 = f.read(5 * 4)
-        vn, last, clk, expt, klen = b1.unpack('NNNNN')
-        key = f.read(klen)
-        b2 = f.read(4)
-        vlen = b2.unpack('N')[0]
-        val = f.read(vlen)
-        
-        count += 1
-        assert_equal('key',key[0..2])
-        assert_equal('val',val[0..2])
-        assert_equal(val[3..-1],key[3..-1]  )
-      end
-    }
-    assert_equal(n,count)
-    rmtestdir('storage_test_dump')
-
-    @st.dump_file('storage_test_dump',{0=>0})
-    count = 0
-    open("storage_test_dump/#{@st.hdiv[0]}.dump",'rb'){|f|
-      until(f.eof?)
-        b1 = f.read(5 * 4)
-        vn, last, clk, expt, klen = b1.unpack('NNNNN')
-        key = f.read(klen)
-        b2 = f.read(4)
-        vlen = b2.unpack('N')[0]
-        val = f.read(vlen)
-        
-        count += 1
-        assert_equal('key',key[0..2] )
-        assert_equal('val',val[0..2] )
-        assert_equal(val[3..-1],key[3..-1] )
-      end
-    }
-    assert_equal(0,count )
-    rmtestdir('storage_test_dump')    
-  end
-
   def test_each_vn_dump
     n=100
     n.times{|i|

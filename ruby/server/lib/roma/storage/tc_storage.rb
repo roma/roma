@@ -32,7 +32,7 @@ module Roma
           end
           ret
         end
-      end
+      end # class TokyoCabinet::HDB
 
       def initialize
         super
@@ -52,16 +52,7 @@ module Roma
 
       def opendb
         create_div_hash
-        path = ''
-        @storage_path.split('/').each{|p|
-          if p.length==0
-            path = '/'
-            next
-          end
-          path << p
-          Dir::mkdir(path) unless File.exist?(path)
-          path << '/'
-        }
+        mkdir_p(@storage_path)
 
         @fname_lock = "#{@storage_path}/lock"
         if File.exist?(@fname_lock)
