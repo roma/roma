@@ -1,9 +1,13 @@
 require 'yaml'
+require 'roma/routing/random_balancer'
 
 module Roma
   module Routing
 
     class RoutingData
+
+      include Routing::RandomBalancer
+
       attr_accessor :dgst_bits
       attr_accessor :div_bits
       attr_accessor :rn
@@ -88,6 +92,11 @@ module Roma
         rd
       end
 
+      # for deep copy
+      def clone
+        Marshal.load(Marshal.dump(self))
+      end
+ 
       # 2 bytes('RT'):magic code
       # unsigned short:format version
       # unsigned char:dgst_bits
@@ -210,11 +219,16 @@ module Roma
 
         rnlm=RandomNodeListMaker.new(nodes,repethost)
 
-        (2**div_bits).times{|i|
+        (2**div_bits).times do |i|
           vn=i<<(dgst_bits-div_bits)
           ret.v_clk[vn]=0
           ret.v_idx[vn]=rnlm.list(rn)
-        }
+        end
+
+        # vnode balanceing process
+        rlist = ret.get_balanced_vn_replacement_list(repethost)
+        ret.balance!(rlist, repethost) if rlist
+
         ret
       end
 
