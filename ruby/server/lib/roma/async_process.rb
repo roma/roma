@@ -261,7 +261,7 @@ module Roma
 
       @rttable.auto_recover_status = "preparing"
       begin
-        timeout(30){
+        timeout(@rttable.auto_recover_time){
           loop{ 
             sleep 1
             break if @rttable.auto_recover_status != "preparing"

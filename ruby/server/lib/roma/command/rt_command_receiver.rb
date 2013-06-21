@@ -107,32 +107,37 @@ module Roma
         send_data("CLIENT_ERROR\r\n")
       end
 
-      # set_auto_recover [true|false]
+      # set_auto_recover [true|false] <sec>
       def ev_set_auto_recover(s)
-        if s.length != 2
-          return send_data("CLIENT_ERROR number of arguments\r\n")
-        elsif
-          s[1] != "true" && s[1] != "false"
-          return send_data("CLIENT_ERROR arguments must be true or false\r\n")
+        #check argument
+        if s[1] == "true" && s.length != 3
+          return send_data("CLIENT_ERROR number of arguments(0 for 2)\r\n")
+        elsif s[1] == "false" && s.length != 2
+          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
+        elsif s[1] != "true" && s[1] != "false"
+          return send_data("CLIENT_ERROR arguments must be true or false  #{s[1].class} #{s[1]} \r\n")
         end
 
-        res = broadcast_cmd("rset_auto_recover #{s[1]}\r\n")
+        res = broadcast_cmd("rset_auto_recover #{s[1]} #{s[2]}\r\n")
         @rttable.auto_recover = s[1].to_s
         @rttable.auto_recover_status = "waiting"
+        @rttable.auto_recover_time = s[2]
         res[@stats.ap_str] = "STORED"
         send_data("#{res}\r\n")
       end
 
       def ev_rset_auto_recover(s)
-        if s.length != 2
-          return send_data("CLIENT_ERROR number of arguments\r\n")
-        elsif
-          s[1] != "true" && s[1] != "false"
-          return send_data("CLIENT_ERROR arguments must be true or false\r\n")
+        if s[1] == "true" && s.length != 3
+          return send_data("CLIENT_ERROR number of arguments(0 for 2)\r\n")
+        elsif s[1] == "false" && s.length != 2
+          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
+        elsif s[1] != "true" && s[1] != "false"
+          return send_data("CLIENT_ERROR arguments must be true or false  #{s[1].class} #{s[1]} \r\n")
         end
 
         @rttable.auto_recover = s[1].to_s
         @rttable.auto_recover_status = "waiting"
+        @rttable.auto_recover_time = s[2]
         send_data("STORED\r\n")
       end
 
