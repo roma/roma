@@ -265,6 +265,9 @@ module Roma
           loop{ 
             sleep 1
             break if @rttable.auto_recover_status != "preparing"
+            break if @stats.run_join
+            break if @stats.run_recover
+            break if @stats.run_balance
           }
         }
         @log.debug("inactivated AUTO_RECOVER")
