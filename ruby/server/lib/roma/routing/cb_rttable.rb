@@ -7,6 +7,7 @@ module Roma
     class ChurnbasedRoutingTable < RoutingTable
 
       include Routing::RandomPartitioner
+      include Command::VnodeCommandReceiver
 
       attr :fname
       attr :log_fd
@@ -247,7 +248,7 @@ module Roma
           end
         elsif short_vnodes.length > 0 && @auto_recover == true
           @log.error("Short vnodes exist.")
-          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_auto_recover_process'))
+          kick_auto_recover
         end
         @fail_cnt.delete(nid)
       end
