@@ -246,10 +246,12 @@ module Roma
 
     def asyncev_start_auto_recover_process(args)
       @log.debug("#{__method__} #{args.inspect}")
+=begin #run_join don't have possibility to be true in this case.
       if @stats.run_join
         @log.error("#{__method__}:join process running")
         return true
       end
+=end
       if @stats.run_recover
         @log.error("#{__method__}:recover process running.")
         return false
@@ -265,7 +267,7 @@ module Roma
           loop{ 
             sleep 1
             break if @rttable.auto_recover_status != "preparing"
-            break if @stats.run_join
+            #break if @stats.run_join #run_join don't have possibility to be true in this case.
             break if @stats.run_recover
             break if @stats.run_balance
           }

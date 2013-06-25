@@ -110,34 +110,32 @@ module Roma
       # set_auto_recover [true|false] <sec>
       def ev_set_auto_recover(s)
         #check argument
-        if s[1] == "true" && s.length != 3
-          return send_data("CLIENT_ERROR number of arguments(0 for 2)\r\n")
-        elsif s[1] == "false" && s.length != 2
-          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
-        elsif s[1] != "true" && s[1] != "false"
+        if s[1] != "true" && s[1] != "false"
           return send_data("CLIENT_ERROR arguments must be true or false  #{s[1].class} #{s[1]} \r\n")
+        elsif s.length != 2 && s.length != 3
+          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
+        elsif s.length == 3 && s[2].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
         end
-
         res = broadcast_cmd("rset_auto_recover #{s[1]} #{s[2]}\r\n")
         @rttable.auto_recover = s[1].to_s
         @rttable.auto_recover_status = "waiting"
-        @rttable.auto_recover_time = s[2]
+        @rttable.auto_recover_time = s[2].to_i if s[2]
         res[@stats.ap_str] = "STORED"
         send_data("#{res}\r\n")
       end
 
       def ev_rset_auto_recover(s)
-        if s[1] == "true" && s.length != 3
-          return send_data("CLIENT_ERROR number of arguments(0 for 2)\r\n")
-        elsif s[1] == "false" && s.length != 2
-          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
-        elsif s[1] != "true" && s[1] != "false"
+        if s[1] != "true" && s[1] != "false"
           return send_data("CLIENT_ERROR arguments must be true or false  #{s[1].class} #{s[1]} \r\n")
+        elsif s.length != 2 && s.length != 3
+          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
+        elsif s.length == 3 && s[2].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
         end
-
         @rttable.auto_recover = s[1].to_s
         @rttable.auto_recover_status = "waiting"
-        @rttable.auto_recover_time = s[2]
+        @rttable.auto_recover_time = s[2].to_i if s[2]
         send_data("STORED\r\n")
       end
 
