@@ -133,10 +133,6 @@ module Roma
         false
       end
 
-      def kick_auto_recover
-        Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_auto_recover_process'))
-      end
-
     end # module VnodeCommandReceiver
 
   end # module Command

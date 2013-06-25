@@ -7,7 +7,6 @@ module Roma
     class ChurnbasedRoutingTable < RoutingTable
 
       include Routing::RandomPartitioner
-      include Command::VnodeCommandReceiver
 
       attr :fname
       attr :log_fd
@@ -15,6 +14,7 @@ module Roma
       attr :trans # transaction
       attr :leave_proc
       attr :lost_proc
+      attr :recover_proc
       attr_accessor :lost_action
       attr_accessor :auto_recover
       attr_accessor :auto_recover_status
@@ -29,10 +29,11 @@ module Roma
         @fname=fname
         @leave_proc=nil
         @lost_proc=nil
+        @recover_proc=nil
         @lost_action=:no_action
         @auto_recover=false
         @auto_recover_status="waiting"
-        @auto_recover_time=30
+        @auto_recover_time=1800
         @enabled_failover=false
         @lock = Mutex.new
         @version_of_nodes = Hash.new(0)
@@ -43,9 +44,9 @@ module Roma
       def get_stat(ap)
         ret = super(ap)
         ret['routing.lost_action'] = @lost_action.to_s
-        ret['routing.auto_recover'] = @auto_recover.to_s #auto_recover
-        ret['routing.auto_recover_status'] = @auto_recover_status.to_s #auto_recover
-        ret['routing.auto_recover_time'] = @auto_recover_time #auto_recover
+        ret['routing.auto_recover'] = @auto_recover.to_s
+        ret['routing.auto_recover_status'] = @auto_recover_status.to_s
+        ret['routing.auto_recover_time'] = @auto_recover_time
         ret['routing.version_of_nodes'] = @version_of_nodes.inspect
         ret['routing.min_version'] = @min_version
         ret
@@ -68,6 +69,10 @@ module Roma
 
       def set_lost_proc(&block)
         @lost_proc=block        
+      end
+
+      def set_recover_proc(&block)
+        @recover_proc=block
       end
 
       def open_log
@@ -249,9 +254,9 @@ module Roma
               set_route_and_inc_clk_inside_sync( vn, next_alive_vnode(vn) )
             }
           end
-        elsif short_vnodes.length > 0 && @auto_recover == true
+        elsif short_vnodes.length > 0
           @log.error("Short vnodes exist.")
-          kick_auto_recover
+          @recover_proc.call('start_auto_recover_process') if @recover_proc
         end
         @fail_cnt.delete(nid)
       end

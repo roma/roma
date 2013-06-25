@@ -110,8 +110,8 @@ module Roma
       # set_auto_recover [true|false] <sec>
       def ev_set_auto_recover(s)
         #check argument
-        if s[1] != "true" && s[1] != "false"
-          return send_data("CLIENT_ERROR arguments must be true or false  #{s[1].class} #{s[1]} \r\n")
+        if /^true$|^false$/ !~ s[1]
+          return send_data("CLIENT_ERROR arguments must be true or false\r\n")
         elsif s.length != 2 && s.length != 3
           return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
         elsif s.length == 3 && s[2].to_i < 1
@@ -126,8 +126,8 @@ module Roma
       end
 
       def ev_rset_auto_recover(s)
-        if s[1] != "true" && s[1] != "false"
-          return send_data("CLIENT_ERROR arguments must be true or false  #{s[1].class} #{s[1]} \r\n")
+        if /^true$|^false$/ !~ s[1]
+          return send_data("CLIENT_ERROR arguments must be true or false #{s[1]} #{s[1].class} \r\n")
         elsif s.length != 2 && s.length != 3
           return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
         elsif s.length == 3 && s[2].to_i < 1
