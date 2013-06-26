@@ -1,4 +1,3 @@
-require 'roma/event/handler'
 
 module Roma
   module Command
@@ -368,50 +367,74 @@ module Roma
         end
       end
 
-      # set_calc_latency_average <mode> <count> <command1> <command2>
-      # <command name> is on/off
+      # set_calc_latency_average <mode> <count> <command1> <command2>....
+      # <mode> is on/off
       # <count> is denominator to calculate average. 
-      # <command1/2> is target command
+      # <commandx> is target command
       def ev_set_latency_avg_calc_rule(s)
         #check argument
-        if s[1] == "on" && s.length <=3
-          return send_data("CLIENT_ERROR number of arguments (0 for 3)\r\n")
+        if /^on$|^off$/ !~ s[1]
+          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
+        elsif s[1] == "on" && (s.length <= 3 || s[2].to_i < 1)
+          return send_data("CLIENT_ERROR number of arguments (0 for 3) and <count> must be greater than zero\r\n")
         elsif s[1] == "off" && !(s.length == 2)
           return send_data("CLIENT_ERROR number of arguments (0 for 1, or more 3)\r\n")
-        elsif !(s[1] == "on") && !(s[1] == "off")
-          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
         end
 
-        arg ="r"
-        s.each do |arr|
-          arg += "#{arr} "
-        end
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 3 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+        }
+
+        arg ="rset_latency_avg_calc_rule"
+        s.each_index {|idx|
+          arg += " #{s[idx]}" if idx>=1
+        }
         res = broadcast_cmd("#{arg}\r\n")
 
-        case result = Event::Handler.set_latency_calc_rule(*s)
-          when "on"   ; res[@stats.ap_str] = "ACTIVATED"
-          when "off"  ; res[@stats.ap_str] = "DEACTIVATED"
-          when "false"; res[@stats.ap_str] = "ERROR"
-          else        ; res[@stats.ap_str] = "NOT SUPPORT [#{result}] command."
+        if s[1] =="on"
+          @stats.latency_check_denominator = s[2].to_i
+          @stats.latency_check_cmd = []
+          s.each_index {|idx|
+            @stats.latency_check_cmd.push(s[idx]) if idx >= 3
+          }
+          res[@stats.ap_str] = "ACTIVATED"
+        elsif s[1] =="off"
+          @stats.latency_check_denominator = 0
+          @stats.latency_check_cmd = []
+          res[@stats.ap_str] = "DEACTIVATED"
         end
         send_data("#{res}\r\n")
       end
 
       def ev_rset_latency_avg_calc_rule(s)
-        #check argument
-        if s[1] == "on" && s.length <=3
-          return send_data("CLIENT_ERROR number of arguments (0 for 3)\r\n")
+        if /^on$|^off$/ !~ s[1]
+          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
+        elsif s[1] == "on" && (s.length <= 3 || s[2].to_i < 1)
+          return send_data("CLIENT_ERROR number of arguments (0 for 3) and <count> must be greater than zero\r\n")
         elsif s[1] == "off" && !(s.length == 2)
           return send_data("CLIENT_ERROR number of arguments (0 for 1, or more 3)\r\n")
-        elsif !(s[1] == "on") && !(s[1] == "off")
-          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
         end
 
-        case result = Event::Handler.set_latency_calc_rule(*s)
-          when "on"   ; send_data("ACTIVATED\r\n")
-          when "off"  ; send_data("DEACTIVATED\r\n")
-          when "false"; send_data("ERROR\r\n")
-          else        ; send_data("doesn't support [#{result}] command.\r\n")
+        s.each_index {|idx|
+          if idx >= 3 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+        }
+
+        if s[1] =="on"
+          @stats.latency_check_denominator = s[2].to_i
+          @stats.latency_check_cmd = []
+          s.each_index {|idx|
+            @stats.latency_check_cmd.push(s[idx]) if idx >= 3
+          }
+          send_data("ACTIVATED\r\n")
+        elsif s[1] =="off"
+          @stats.latency_check_denominator = 0
+          @stats.latency_check_cmd = []
+          send_data("DEACTIVATED\r\n")
         end
       end
 

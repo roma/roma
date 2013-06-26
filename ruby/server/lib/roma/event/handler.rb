@@ -16,8 +16,6 @@ module Roma
       def self.ev_list; @@ev_list; end
       @@system_commands={}
       def self.system_commands; @@system_commands; end
-      @@ps=[]
-      def self.ps; @@ps; end
 
       @@ccl_start = 200
       @@ccl_rate = 30
@@ -144,43 +142,6 @@ module Roma
         Roma::Event::EMConPool.instance.return_connection(ap,con)
       end
 
-      def self.set_latency_calc_rule(cmd, mode, count="0", *command)
-        #check support commands
-        command.each do |cmd|
-          return cmd if @@system_commands.include?(cmd)
-        end
-
-        if mode =="on"
-          @@latency_target_command = {}
-          @@latency_target_command = command
-          @@latency_calc_denominator = count.to_i
-          return "on"
-        elsif mode =="off"
-          @@latency_target_command = {}
-          @@latency_calc_denominator = 0
-          return "off"         
-        else
-          return false
-        end
-      end
-
-      def calc_latency_average(latency, tg)
-        @log.debug("Roma::Event::Handler.calc_latency_average called")
-        @@latency_chk_cnt = {} if !defined?(@@latency_chk_cnt)
-        @@sum = {} if !defined?(@@sum)
-
-        @@latency_chk_cnt.store(tg, 0) if !@@latency_chk_cnt.key?(tg)
-        @@sum.store(tg, 0) if !@@sum.key?(tg)
-
-        @@sum[tg] += latency
-        if (@@latency_chk_cnt[tg] += 1) == @@latency_calc_denominator
-          average = @@sum[tg] / @@latency_chk_cnt[tg]
-          @log.info("latency average about [#{@lastcmd[0]}] is #{average} seconds")
-          @@latency_chk_cnt[tg] = 0
-          @@sum[tg] = 0
-        end
-      end
-
       def dispatcher
         @stats = Roma::Stats.instance
         @log.debug("Roma::Event::Handler.dipatcher called")
@@ -211,13 +172,14 @@ module Roma
           if ps > @stats.hilatency_warn_time
             @log.warn("hilatency occurred in #{@lastcmd} put in a #{ps} seconds")
           end
-
           # check latency average
-          if defined?@@latency_target_command
-            if @@latency_target_command.include?(@lastcmd[0])
-              calc_latency_average(ps, @lastcmd[0])
+          if @stats.latency_check_cmd.length >= 1
+            if @stats.latency_check_cmd.include?(@lastcmd[0])
+              args = [ps, @lastcmd[0], @stats.latency_check_denominator]
+              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('calc_latency_average', args))
             end
           end
+
           d = EM.connection_count - @@ccl_start
           if d > 0 &&
               rand(100) < @@ccl_rate + (100 - @@ccl_rate) * d / (@@ccl_full - @@ccl_start)
