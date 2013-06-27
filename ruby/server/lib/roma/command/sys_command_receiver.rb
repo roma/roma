@@ -438,6 +438,31 @@ module Roma
         end
       end
 
+      def ev_set_descriptor_table_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1024
+          return send_data("CLIENT_ERROR length must be greater than 1024\r\n")
+        end
+
+        res = broadcast_cmd("rset_descriptor_table_size #{s[1]}\r\n")
+
+        EM.set_descriptor_table_size(s[1].to_i)
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_descriptor_table_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1024
+          return send_data("CLIENT_ERROR length must be greater than 1024\r\n")
+        end
+
+        EM.set_descriptor_table_size(s[1].to_i)
+        send_data("STORED\r\n")
+      end
+
       def ev_set_continuous_limit(s)
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
@@ -544,6 +569,28 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_connection_pool_expire_time <sec>
+      # set to expired time(sec) for connection_pool expire time
+      def ev_set_connection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        res = broadcast_cmd("rset_connection_pool_expire_time #{s[1]}\r\n")
+        Messaging::ConPool.instance.expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_expire_time <sec>
+      def ev_rset_connection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Messaging::ConPool.instance.expire_time = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
       # set_emconnection_pool_expire_time <sec>
       def ev_set_emconnection_pool_expire_time(s)
         # chcking s incude command and value (NOT check digit)
@@ -638,6 +685,31 @@ module Roma
         else
           send_data("CLIENT_ERROR hash string parse error\r\n")
         end        
+      end
+
+      # set_wb_shift_size <size>
+      def ev_set_wb_shift_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_wb_shift_size #{s[1]}\r\n")
+        $roma.wb_writer.shift_size = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_wb_shift_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        $roma.wb_writer.shift_size = s[1].to_i
+        send_data("STORED\r\n")
       end
 
       private 

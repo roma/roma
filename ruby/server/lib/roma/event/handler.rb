@@ -256,6 +256,7 @@ module Roma
       def conn_get_stat
         ret = {}
         ret["connection.count"] = EM.connection_count
+        ret["connection.descriptor_table_size"] = EM.set_descriptor_table_size
         ret["connection.continuous_limit"] = Handler.get_ccl
         ret["connection.accepted_connection_expire_time"] = Handler.connection_expire_time
         ret["connection.handler_instance_count"] = Handler.connections.length

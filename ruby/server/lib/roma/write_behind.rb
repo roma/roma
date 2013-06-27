@@ -7,6 +7,8 @@ module Roma
     
     class FileWriter
 
+      attr_accessor :shift_size
+
       def initialize(path, shift_size, log)
         @stats = Roma::Stats.instance
         path.chop! if path[-1]=='/'
@@ -43,8 +45,8 @@ module Roma
         fd = @fdh[hname]
         unless fd
           fd = openfile(hname)
+          @log.info("WriteBehind file has been created: [#{@fnh[hname]}]")
           @total_size[hname] = 0
-          @log.info("WriteBehind file has created: hname =  #{hname}")
         end
         klen = key.length
         val = val.to_s
@@ -67,7 +69,7 @@ module Roma
         @fnh.delete(hname)
         sleep 0.01 while @do_write
         fd_old.close
-        @log.info("WriteBehind:rotate sccseed")
+        @log.info("WriteBehind:rotate succeed")
         true
       end
 
