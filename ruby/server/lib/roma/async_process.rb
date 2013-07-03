@@ -631,38 +631,6 @@ module Roma
     end
 
 
-
-
-    def asyncev_calc_latency_average(args)
-      latency,cmd,denominator = args
-      @log.debug(__method__)
-
-      @latency_chk_cnt = {} if !defined?(@latency_chk_cnt)
-      @sum = {} if !defined?(@sum)
-
-      @latency_chk_cnt.store(cmd, 0) if !@latency_chk_cnt.key?(cmd)
-      @sum.store(cmd, 0) if !@sum.key?(cmd)
-
-      t = Thread::new do
-        begin
-        @sum[cmd] += latency
-          if (@latency_chk_cnt[cmd] += 1) >= denominator
-            average = @sum[cmd] / @latency_chk_cnt[cmd]
-            @log.info("latency average about [#{cmd}] is #{average} seconds")
-            @latency_chk_cnt[cmd] = 0
-            @sum[cmd] = 0
-          end
-        rescue =>e
-          @log.error("#{__method__}:#{e.inspect} #{$@}")
-        ensure
-        end
-      end
-      t[:name] = __method__
-      true
-    end
-
-
-
   end # module AsyncProcess
 
 end # module Roma
