@@ -173,10 +173,10 @@ module Roma
             @log.warn("hilatency occurred in #{@lastcmd} put in a #{ps} seconds")
           end
           # check latency average
-          if @stats.latency_check_cmd.length >= 1
+          if @stats.latency_check_cmd.length >= 1 && @stats.latency_check_denominator != nil
             if @stats.latency_check_cmd.include?(@lastcmd[0])
-              args = [ps, @lastcmd[0], @stats.latency_check_denominator]
-              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('calc_latency_average', args))
+              args = [ps, @lastcmd[0]]
+              Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', args))
             end
           end
 

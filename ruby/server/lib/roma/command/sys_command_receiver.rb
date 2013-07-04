@@ -401,7 +401,7 @@ module Roma
           }
           res[@stats.ap_str] = "ACTIVATED"
         elsif s[1] =="off"
-          @stats.latency_check_denominator = 0
+          @stats.latency_check_denominator = nil
           @stats.latency_check_cmd = []
           res[@stats.ap_str] = "DEACTIVATED"
         end
@@ -431,10 +431,134 @@ module Roma
           }
           send_data("ACTIVATED\r\n")
         elsif s[1] =="off"
-          @stats.latency_check_denominator = 0
+          @stats.latency_check_denominator = nil
           @stats.latency_check_cmd = []
           send_data("DEACTIVATED\r\n")
         end
+      end
+
+      # add_calc_latency_average <command1> <command2>....
+      def ev_add_latency_avg_calc_cmd(s)
+        #check argument
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        end
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 1 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+          if idx >= 1 && @stats.latency_check_cmd.include?(s[idx])
+            return send_data("ALREADY SET [#{s[idx]}] command\r\n")
+          end
+        }
+
+        arg ="radd_latency_avg_calc_cmd"
+        s.each_index {|idx|
+          arg += " #{s[idx]}" if idx>=1
+        }
+        res = broadcast_cmd("#{arg}\r\n")
+
+        s.each_index {|idx|
+          @stats.latency_check_cmd.push(s[idx]) if idx >= 1
+        }
+        res[@stats.ap_str] = "SET"
+        send_data("#{res}\r\n")
+      end
+
+      # add_calc_latency_average <command1> <command2>....
+      def ev_radd_latency_avg_calc_cmd(s)
+        #check argument
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        end
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 2 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+          if idx >= 1 && @stats.latency_check_cmd.include?(s[idx])
+            return send_data("ALREADY SET [#{s[idx]}] command\r\n")
+          end
+        }
+
+        s.each_index {|idx|
+          @stats.latency_check_cmd.push(s[idx]) if idx >= 1
+        }
+        send_data("SET\r\n")
+      end
+
+      # del_calc_latency_average <command1> <command2>....
+      def ev_del_latency_avg_calc_cmd(s)
+        #check argument
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        end
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 1 && !@stats.latency_check_cmd.include?(s[idx])
+            return send_data("[#{s[idx]}] command is NOT set\r\n")
+          end
+        }
+
+        arg ="rdel_latency_avg_calc_cmd"
+        s.each_index {|idx|
+          arg += " #{s[idx]}" if idx>=1
+        }
+        res = broadcast_cmd("#{arg}\r\n")
+
+        s.each_index {|idx|
+          @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
+        }
+        res[@stats.ap_str] = "DELETED"
+        send_data("#{res}\r\n")
+      end
+
+      # del_calc_latency_average <command1> <command2>....
+      def ev_rdel_latency_avg_calc_cmd(s)
+        #check argument
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        end
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 1 && !@stats.latency_check_cmd.include?(s[idx])
+            return send_data("[#{s[idx]}] command is NOT set\r\n")
+          end
+        }
+
+        s.each_index {|idx|
+          @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
+        }
+        send_data("DELETED\r\n")
+      end
+
+      # chg_calc_latency_average_denominator <count>
+      def ev_chg_latency_avg_calc_denominator(s)
+        #check argument
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        elsif  s[1].to_i < 1
+          return send_data("<count> must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rchg_latency_avg_calc_denominator #{s[1]}\r\n")
+
+        @stats.latency_check_denominator = s[1].to_i
+        res[@stats.ap_str] = "CHANGED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rchg_latency_avg_calc_denominator(s)
+        #check argument
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        elsif  s[1].to_i < 1
+          return send_data("<count> must be greater than zero\r\n")
+        end
+
+        @stats.latency_check_denominator = s[1].to_i
+        send_data("CHANGED\r\n")
       end
 
       def ev_set_continuous_limit(s)

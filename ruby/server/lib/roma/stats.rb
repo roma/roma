@@ -86,7 +86,7 @@ module Roma
       @hilatency_warn_time = 5
       @wb_command_map = {}
       @latency_check_cmd = []
-      @latency_check_denominator = 0
+      @latency_check_denominator = nil
     end
 
     def ap_str

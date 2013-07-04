@@ -34,9 +34,14 @@ module Roma
   module AsyncProcess
 
     @@async_queue = Queue.new
+    @@async_queue_latency = Queue.new
 
     def self.queue
       @@async_queue
+    end
+
+    def self.queue_latency
+      @@async_queue_latency
     end
 
     def start_async_process
@@ -44,6 +49,11 @@ module Roma
         async_process_loop
       }
       @async_thread[:name] = __method__
+
+      @async_thread_latency = Thread.new{
+        async_process_loop_for_latency
+      }
+      @async_thread_latency[:name] = __method__
     rescue =>e
       @log.error("#{e}\n#{$@}")
     end
@@ -57,6 +67,13 @@ module Roma
         sleep 0.1
       end
       @async_thread.exit
+
+      count = 0
+      while @@async_queue_latency.empty? == false && count < 100
+        count += 1
+        sleep 0.1
+      end
+      @async_thread_latency.exit
     end
 
     def async_process_loop
@@ -70,6 +87,35 @@ module Roma
                 msg.wait
                 msg.incr_count
                 @@async_queue.push(msg)
+              }
+              t[:name] = __method__
+            else
+              @log.error("async process retry out:#{msg.inspect}")
+              msg.callback.call(msg,false) if msg.callback
+            end
+          end
+        end
+      }
+    rescue =>e
+      @log.error("#{e}\n#{$@}")
+      retry
+    end
+
+    #上記とは別で作成しないと、風速が高い時にキューが全部latency_averageで埋め尽くされてしまう
+    #また、それらのキューを片っ端から投げるので、asyncev_calc_latency_averageの方でthreadが大量に発生してしまう
+    def async_process_loop_for_latency
+      @latency_chk_cnt = {} if !defined?(@latency_chk_cnt)
+      @sum = {} if !defined?(@sum)
+      loop {
+        while msg = @@async_queue_latency.pop
+          if send("asyncev_#{msg.event}",msg.args)
+            msg.callback.call(msg,true) if msg.callback
+          else
+            if msg.retry?
+              t = Thread.new{
+                msg.wait
+                msg.incr_count
+                @@async_queue_latency.push(msg)
               }
               t[:name] = __method__
             else
@@ -631,38 +677,26 @@ module Roma
       @log.info("#{__method__}:stop")
     end
 
-
-
-
     def asyncev_calc_latency_average(args)
-      latency,cmd,denominator = args
+      latency,cmd = args
       @log.debug(__method__)
-
-      @latency_chk_cnt = {} if !defined?(@latency_chk_cnt)
-      @sum = {} if !defined?(@sum)
 
       @latency_chk_cnt.store(cmd, 0) if !@latency_chk_cnt.key?(cmd)
       @sum.store(cmd, 0) if !@sum.key?(cmd)
 
-      t = Thread::new do
-        begin
+      begin
         @sum[cmd] += latency
-          if (@latency_chk_cnt[cmd] += 1) >= denominator
-            average = @sum[cmd] / @latency_chk_cnt[cmd]
-            @log.info("latency average about [#{cmd}] is #{average} seconds")
-            @latency_chk_cnt[cmd] = 0
-            @sum[cmd] = 0
-          end
-        rescue =>e
-          @log.error("#{__method__}:#{e.inspect} #{$@}")
-        ensure
+        if (@latency_chk_cnt[cmd] += 1) >= @stats.latency_check_denominator
+          @log.info("latency average about [#{cmd}] is #{@sum[cmd] / @latency_chk_cnt[cmd]} seconds")
+          @latency_chk_cnt[cmd] = 0
+          @sum[cmd] = 0
         end
+      rescue =>e
+        @log.error("#{__method__}:#{e.inspect} #{$@}")
+      ensure
       end
-      t[:name] = __method__
       true
     end
-
-
 
   end # module AsyncProcess
 
