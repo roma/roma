@@ -685,11 +685,21 @@ module Roma
       @sum.store(cmd, 0) if !@sum.key?(cmd)
 
       begin
-        @sum[cmd] += latency
-        if (@latency_chk_cnt[cmd] += 1) >= @stats.latency_check_denominator
-          @log.info("latency average about [#{cmd}] is #{@sum[cmd] / @latency_chk_cnt[cmd]} seconds")
-          @latency_chk_cnt[cmd] = 0
-          @sum[cmd] = 0
+        if @latency_chk_cnt[cmd] < 3 #ある一定量のサンプル溜まるまでは
+          @sum[cmd] += latency # 普通に足していく
+          @latency_chk_cnt[cmd] += 1
+        else
+          if !defined?(@start_t)
+            @start_t = Time.now.to_i #初回のみ
+          end
+
+          @sum[cmd] = @sum[cmd] * (2/3) + latency #移動平均を取るためだけの分のsumを保持
+          elapsed_t = (Time.now.to_i - @start_t)
+         
+          if (Time.now.to_i - @start_t) > @stats.latency_check_denominator
+            @log.debug("Latency[#{cmd}] is #{sprintf("%.8f",(@sum[cmd]/3))}")
+            @start_t = Time.now.to_i
+          end
         end
       rescue =>e
         @log.error("#{__method__}:#{e.inspect} #{$@}")
