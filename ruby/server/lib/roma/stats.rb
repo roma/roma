@@ -57,8 +57,10 @@ module Roma
     attr_accessor :wb_command_map
 
     # for latency average check
+    attr_accessor :latency_check
     attr_accessor :latency_check_cmd
-    attr_accessor :latency_check_denominator
+    attr_accessor :latency_check_time_count
+    attr_accessor :latency_sum
 
     def initialize
       @config_path = nil
@@ -85,8 +87,10 @@ module Roma
       @size_of_zredundant = 0
       @hilatency_warn_time = 5
       @wb_command_map = {}
+      @latency_check = false
       @latency_check_cmd = []
-      @latency_check_denominator = nil
+      @latency_check_time_count = nil
+      @latency_sum = {}
     end
 
     def ap_str
@@ -124,8 +128,9 @@ module Roma
       ret['stats.redundant_count'] = @redundant_count
       ret['stats.hilatency_warn_time'] = @hilatency_warn_time
       ret['stats.wb_command_map'] = @wb_command_map.inspect
+      ret['stats.latency_check']  = @latency_check
       ret['stats.latency_check_cmd']  = @latency_check_cmd
-      ret['stats.latency_check_denominator']  = @latency_check_denominator
+      ret['stats.latency_check_time_count']  = @latency_check_time_count
       ret
     end
 

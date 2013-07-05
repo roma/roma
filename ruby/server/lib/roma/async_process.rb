@@ -105,7 +105,7 @@ module Roma
     #また、それらのキューを片っ端から投げるので、asyncev_calc_latency_averageの方でthreadが大量に発生してしまう
     def async_process_loop_for_latency
       @latency_chk_cnt = {} if !defined?(@latency_chk_cnt)
-      @sum = {} if !defined?(@sum)
+      #@sum = {} if !defined?(@sum)
       loop {
         while msg = @@async_queue_latency.pop
           if send("asyncev_#{msg.event}",msg.args)
@@ -677,27 +677,30 @@ module Roma
       @log.info("#{__method__}:stop")
     end
 
+
+
+
+
     def asyncev_calc_latency_average(args)
       latency,cmd = args
       @log.debug(__method__)
 
       @latency_chk_cnt.store(cmd, 0) if !@latency_chk_cnt.key?(cmd)
-      @sum.store(cmd, 0) if !@sum.key?(cmd)
+      @stats.latency_sum.store(cmd, 0) if !@stats.latency_sum.key?(cmd)
 
       begin
         if @latency_chk_cnt[cmd] < 3 #ある一定量のサンプル溜まるまでは
-          @sum[cmd] += latency # 普通に足していく
+          @stats.latency_sum[cmd] += latency # 普通に足していく
           @latency_chk_cnt[cmd] += 1
-        else
+        else #ある一定数データのサンプルが溜まったら
           if !defined?(@start_t)
             @start_t = Time.now.to_i #初回のみ
           end
 
-          @sum[cmd] = @sum[cmd] * (2/3) + latency #移動平均を取るためだけの分のsumを保持
-          elapsed_t = (Time.now.to_i - @start_t)
-         
-          if (Time.now.to_i - @start_t) > @stats.latency_check_denominator
-            @log.debug("Latency[#{cmd}] is #{sprintf("%.8f",(@sum[cmd]/3))}")
+          @stats.latency_sum[cmd] = @stats.latency_sum[cmd] * (2/3) + latency #移動平均を取るためだけの分のsumを保持
+
+          if @stats.latency_check_time_count != nil && (Time.now.to_i - @start_t) > @stats.latency_check_time_count
+            @log.debug("Latency[#{cmd}] is #{sprintf("%.8f",(@stats.latency_sum[cmd]/3))}")
             @start_t = Time.now.to_i
           end
         end

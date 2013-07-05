@@ -67,6 +67,12 @@ module Roma
         send_data("#{@stats.name}\r\n")
       end
 
+      def ev_qps(s)
+        latency_avg = (@stats.latency_sum["get"]/3 + @stats.latency_sum["set"]/3) / 2
+        qps = 1 / latency_avg
+        send_data("QPS: #{sprintf("%.2f", qps)}\r\n")
+      end
+
       # stats [regexp]
       def ev_stats(s); ev_stat(s); end
 
@@ -366,6 +372,26 @@ module Roma
         end
       end
 
+#削除予定
+#    def calc_latency(args)
+#      cmd = args
+#      #@latency_t.exit if defined?(@latency_t)
+#      begin
+#        @latency_t = Thread.new{
+#          loop{
+#            sleep(@stats.latency_check_time_count)
+#            next if @stats.latency_sum[cmd] == nil
+#            @log.debug("Latency[#{cmd}] is #{sprintf("%.8f",(@stats.latency_sum[cmd]/3))}")
+#          }
+#        }
+#        @latency_t[:name] = __method__
+#      rescue =>e
+#        @log.error("#{__method__}:#{e.inspect} #{$@}")
+#      ensure
+#      end
+#      true
+#    end
+
       # set_calc_latency_average <mode> <count> <command1> <command2>....
       # <mode> is on/off
       # <count> is denominator to calculate average. 
@@ -394,14 +420,19 @@ module Roma
         res = broadcast_cmd("#{arg}\r\n")
 
         if s[1] =="on"
-          @stats.latency_check_denominator = s[2].to_i
-          @stats.latency_check_cmd = []
+          @stats.latency_check = true
+          @stats.latency_check_time_count = s[2].to_i
+          @stats.latency_check_cmd = [] #reset
           s.each_index {|idx|
             @stats.latency_check_cmd.push(s[idx]) if idx >= 3
+            #AsyncProcess::asyncev_calc_latency(s[idx]) if idx >= 3
+            #calc_latency(s[idx]) if idx >= 3
           }
           res[@stats.ap_str] = "ACTIVATED"
         elsif s[1] =="off"
-          @stats.latency_check_denominator = nil
+          @stats.latency_check = false
+          @stats.latency_check_time_count = s[2].to_i
+          @stats.latency_check_time_count = nil
           @stats.latency_check_cmd = []
           res[@stats.ap_str] = "DEACTIVATED"
         end
@@ -424,14 +455,16 @@ module Roma
         }
 
         if s[1] =="on"
-          @stats.latency_check_denominator = s[2].to_i
+          @stats.latency_check_time_count = s[2].to_i
           @stats.latency_check_cmd = []
           s.each_index {|idx|
             @stats.latency_check_cmd.push(s[idx]) if idx >= 3
+            #AsyncProcess::asyncev_calc_latency(s[idx]) if idx >= 3
+            #calc_latency(s[idx]) if idx >= 3
           }
           send_data("ACTIVATED\r\n")
         elsif s[1] =="off"
-          @stats.latency_check_denominator = nil
+          @stats.latency_check_time_count = nil
           @stats.latency_check_cmd = []
           send_data("DEACTIVATED\r\n")
         end
@@ -534,7 +567,7 @@ module Roma
       end
 
       # chg_calc_latency_average_denominator <count>
-      def ev_chg_latency_avg_calc_denominator(s)
+      def ev_chg_latency_avg_calc_time_count(s)
         #check argument
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
@@ -542,14 +575,14 @@ module Roma
           return send_data("<count> must be greater than zero\r\n")
         end
 
-        res = broadcast_cmd("rchg_latency_avg_calc_denominator #{s[1]}\r\n")
+        res = broadcast_cmd("rchg_latency_avg_calc_time_count #{s[1]}\r\n")
 
-        @stats.latency_check_denominator = s[1].to_i
+        @stats.latency_check_time_count = s[1].to_i
         res[@stats.ap_str] = "CHANGED"
         send_data("#{res}\r\n")
       end
 
-      def ev_rchg_latency_avg_calc_denominator(s)
+      def ev_rchg_latency_avg_calc_time_count(s)
         #check argument
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
@@ -557,7 +590,7 @@ module Roma
           return send_data("<count> must be greater than zero\r\n")
         end
 
-        @stats.latency_check_denominator = s[1].to_i
+        @stats.latency_check_time_count = s[1].to_i
         send_data("CHANGED\r\n")
       end
 
