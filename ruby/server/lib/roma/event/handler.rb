@@ -175,12 +175,10 @@ module Roma
           # check latency average
           case @lastcmd[0]
           when "set", "get" #for check real-time qps
-            args = [ps, @lastcmd[0]]
-            Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', args))
+            Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', [ps, @lastcmd[0]]))
           when *@stats.latency_check_cmd
             if @stats.latency_check_time_count != nil
-              args = [ps, @lastcmd[0]]
-              Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', args))
+              Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', [ps, @lastcmd[0]]))
             end
           end
 

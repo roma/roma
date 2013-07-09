@@ -104,7 +104,7 @@ module Roma
     #上記とは別で作成しないと、風速が高い時にキューが全部latency_averageで埋め尽くされてしまう
     #また、それらのキューを片っ端から投げるので、asyncev_calc_latency_averageの方でthreadが大量に発生してしまう
     def async_process_loop_for_latency
-      @latency_chk_cnt = {} if !defined?(@latency_chk_cnt)
+      #@latency_chk_cnt = {} if !defined?(@latency_chk_cnt)
       #@sum = {} if !defined?(@sum)
       loop {
         while msg = @@async_queue_latency.pop
@@ -677,30 +677,29 @@ module Roma
       @log.info("#{__method__}:stop")
     end
 
-
-
-
-
     def asyncev_calc_latency_average(args)
       latency,cmd = args
       @log.debug(__method__)
 
-      @latency_chk_cnt.store(cmd, 0) if !@latency_chk_cnt.key?(cmd)
-      @stats.latency_sum.store(cmd, 0) if !@stats.latency_sum.key?(cmd)
+      if !@stats.latency_sum.key?(cmd)
+        @stats.latency_sum[cmd].store("latency_sum", 0)
+        @stats.latency_sum[cmd].store("count", 0)
+      end
 
       begin
-        if @latency_chk_cnt[cmd] < 3 #ある一定量のサンプル溜まるまでは
-          @stats.latency_sum[cmd] += latency # 普通に足していく
-          @latency_chk_cnt[cmd] += 1
+        if @stats.latency_sum[cmd]["count"] < @stats.latency_denominator #ある一定量のサンプル溜まるまでは
+          @stats.latency_sum[cmd]["count"] += 1
+          @stats.latency_sum[cmd]["latency_sum"] += latency # 普通に足していく
         else #ある一定数データのサンプルが溜まったら
           if !defined?(@start_t)
             @start_t = Time.now.to_i #初回のみ
           end
-
-          @stats.latency_sum[cmd] = @stats.latency_sum[cmd] * (2/3) + latency #移動平均を取るためだけの分のsumを保持
+          #移動平均を取るためだけの分のsumを保持
+          @stats.latency_sum[cmd]["latency_sum"] = @stats.latency_sum[cmd]["latency_sum"] * ((@stats.latency_denominator - 1)/@stats.latency_denominator) + latency
+          @stats.latency_sum[cmd]["count"] += 1 if @stats.latency_sum[cmd]["count"] < @stats.latency_denominator
 
           if @stats.latency_check_time_count != nil && (Time.now.to_i - @start_t) > @stats.latency_check_time_count
-            @log.debug("Latency[#{cmd}] is #{sprintf("%.8f",(@stats.latency_sum[cmd]/3))}")
+            @log.debug("Latency[#{cmd}] is #{sprintf("%.8f",(@stats.latency_sum[cmd]["latency_sum"]/@stats.latency_check_time_count))}")
             @start_t = Time.now.to_i
           end
         end

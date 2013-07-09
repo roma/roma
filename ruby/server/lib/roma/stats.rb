@@ -61,6 +61,7 @@ module Roma
     attr_accessor :latency_check_cmd
     attr_accessor :latency_check_time_count
     attr_accessor :latency_sum
+    attr_accessor :latency_denominator
 
     def initialize
       @config_path = nil
@@ -90,7 +91,8 @@ module Roma
       @latency_check = false
       @latency_check_cmd = []
       @latency_check_time_count = nil
-      @latency_sum = {}
+      @latency_sum = Hash.new { |hash,key| hash[key] = {} } #double hash
+      @latency_denominator = 3
     end
 
     def ap_str

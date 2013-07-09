@@ -68,9 +68,15 @@ module Roma
       end
 
       def ev_qps(s)
-        latency_avg = (@stats.latency_sum["get"]/3 + @stats.latency_sum["set"]/3) / 2
-        qps = 1 / latency_avg
-        send_data("QPS: #{sprintf("%.2f", qps)}\r\n")
+        data = @stats.latency_sum
+        if data.key?("get") && data.key?("set") && data["get"]["count"] >= @stats.latency_denominator && data["set"]["count"] >= @stats.latency_denominator
+          latency_avg = ((data["get"]["latency_sum"] + data["set"]["latency_sum"]) /2) / @stats.latency_denominator
+          qps = 1 / latency_avg
+          send_data("QPS: #{sprintf("%.2f", qps)}\r\n")
+        else
+          send_data("QPS: Data is not enough to calculate QPS\r\n")
+        end
+          send_data("@stats.latency_sum = #{@stats.latency_sum}\r\n") #debug
       end
 
       # stats [regexp]
@@ -419,21 +425,18 @@ module Roma
         }
         res = broadcast_cmd("#{arg}\r\n")
 
+        @stats.latency_check_cmd = [] #reset
         if s[1] =="on"
           @stats.latency_check = true
           @stats.latency_check_time_count = s[2].to_i
-          @stats.latency_check_cmd = [] #reset
           s.each_index {|idx|
             @stats.latency_check_cmd.push(s[idx]) if idx >= 3
-            #AsyncProcess::asyncev_calc_latency(s[idx]) if idx >= 3
-            #calc_latency(s[idx]) if idx >= 3
           }
           res[@stats.ap_str] = "ACTIVATED"
         elsif s[1] =="off"
           @stats.latency_check = false
-          @stats.latency_check_time_count = s[2].to_i
           @stats.latency_check_time_count = nil
-          @stats.latency_check_cmd = []
+          @stats.latency_sum.delete_if{|key| /^get$|^set$/ !~ key}
           res[@stats.ap_str] = "DEACTIVATED"
         end
         send_data("#{res}\r\n")
@@ -454,18 +457,18 @@ module Roma
           end
         }
 
+        @stats.latency_check_cmd = []
         if s[1] =="on"
+          @stats.latency_check = true
           @stats.latency_check_time_count = s[2].to_i
-          @stats.latency_check_cmd = []
           s.each_index {|idx|
             @stats.latency_check_cmd.push(s[idx]) if idx >= 3
-            #AsyncProcess::asyncev_calc_latency(s[idx]) if idx >= 3
-            #calc_latency(s[idx]) if idx >= 3
           }
           send_data("ACTIVATED\r\n")
         elsif s[1] =="off"
+          @stats.latency_check = false
           @stats.latency_check_time_count = nil
-          @stats.latency_check_cmd = []
+          @stats.latency_sum.delete_if{|key| /^get$|^set$/ !~ key}
           send_data("DEACTIVATED\r\n")
         end
       end
@@ -499,13 +502,10 @@ module Roma
         send_data("#{res}\r\n")
       end
 
-      # add_calc_latency_average <command1> <command2>....
       def ev_radd_latency_avg_calc_cmd(s)
-        #check argument
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
         end
-        #check support commands
         s.each_index {|idx|
           if idx >= 2 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
              return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
@@ -542,26 +542,24 @@ module Roma
 
         s.each_index {|idx|
           @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
+          @stats.latency_sum.delete(s[idx]) if idx >= 1 && /^get$|^set$/ !~ s[idx]
         }
         res[@stats.ap_str] = "DELETED"
         send_data("#{res}\r\n")
       end
 
-      # del_calc_latency_average <command1> <command2>....
       def ev_rdel_latency_avg_calc_cmd(s)
-        #check argument
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
         end
-        #check support commands
         s.each_index {|idx|
           if idx >= 1 && !@stats.latency_check_cmd.include?(s[idx])
             return send_data("[#{s[idx]}] command is NOT set\r\n")
           end
         }
-
         s.each_index {|idx|
           @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
+          @stats.latency_sum.delete(s[idx]) if idx >= 1 && /^get$|^set$/ !~ s[idx]
         }
         send_data("DELETED\r\n")
       end
@@ -583,7 +581,6 @@ module Roma
       end
 
       def ev_rchg_latency_avg_calc_time_count(s)
-        #check argument
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
         elsif  s[1].to_i < 1
