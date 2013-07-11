@@ -68,15 +68,29 @@ module Roma
       end
 
       def ev_qps(s)
-        data = @stats.latency_sum
-        if data.key?("get") && data.key?("set") && data["get"]["count"] >= @stats.latency_denominator && data["set"]["count"] >= @stats.latency_denominator
-          latency_avg = ((data["get"]["latency_sum"] + data["set"]["latency_sum"]) /2) / @stats.latency_denominator
-          qps = 1 / latency_avg
-          send_data("QPS: #{sprintf("%.2f", qps)}\r\n")
-        else
-          send_data("QPS: Data is not enough to calculate QPS\r\n")
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (1 for 2)\r\n")
         end
-          send_data("@stats.latency_sum = #{@stats.latency_sum}\r\n") #debug
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 1 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+        }
+        
+        data = @stats.latency_data
+        s.each_index {|idx|
+          if idx >= 1 
+            if data.key?(s[idx])
+              average = data[s[idx]]["latency"].inject(0.0){|r,i| r+=i }/@stats.latency_data[s[idx]]["latency"].size
+              qps = 1 / average
+              send_data("QPS[#{s[idx]}]: #{sprintf("%.2f", qps)}\r\n")
+            else
+              send_data("QPS: NOT exist [#{s[idx]}]'s latency data.\r\n")
+            end
+          end
+        }
+        send_data("@stats.latency_data = #{@stats.latency_data}\r\n") #debug
       end
 
       # stats [regexp]
@@ -378,26 +392,6 @@ module Roma
         end
       end
 
-#削除予定
-#    def calc_latency(args)
-#      cmd = args
-#      #@latency_t.exit if defined?(@latency_t)
-#      begin
-#        @latency_t = Thread.new{
-#          loop{
-#            sleep(@stats.latency_check_time_count)
-#            next if @stats.latency_sum[cmd] == nil
-#            @log.debug("Latency[#{cmd}] is #{sprintf("%.8f",(@stats.latency_sum[cmd]/3))}")
-#          }
-#        }
-#        @latency_t[:name] = __method__
-#      rescue =>e
-#        @log.error("#{__method__}:#{e.inspect} #{$@}")
-#      ensure
-#      end
-#      true
-#    end
-
       # set_calc_latency_average <mode> <count> <command1> <command2>....
       # <mode> is on/off
       # <count> is denominator to calculate average. 
@@ -436,7 +430,8 @@ module Roma
         elsif s[1] =="off"
           @stats.latency_check = false
           @stats.latency_check_time_count = nil
-          @stats.latency_sum.delete_if{|key| /^get$|^set$/ !~ key}
+          #@stats.latency_sum.delete_if{|key| /^get$|^set$/ !~ key}
+          @stats.latency_data = Hash.new { |hash,key| hash[key] = {} }
           res[@stats.ap_str] = "DEACTIVATED"
         end
         send_data("#{res}\r\n")
@@ -468,7 +463,7 @@ module Roma
         elsif s[1] =="off"
           @stats.latency_check = false
           @stats.latency_check_time_count = nil
-          @stats.latency_sum.delete_if{|key| /^get$|^set$/ !~ key}
+          @stats.latency_data = Hash.new { |hash,key| hash[key] = {} }
           send_data("DEACTIVATED\r\n")
         end
       end
@@ -542,7 +537,8 @@ module Roma
 
         s.each_index {|idx|
           @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
-          @stats.latency_sum.delete(s[idx]) if idx >= 1 && /^get$|^set$/ !~ s[idx]
+          #@stats.latency_sum.delete(s[idx]) if idx >= 1 && /^get$|^set$/ !~ s[idx]
+          @stats.latency_data.delete(s[idx]) if idx >= 1
         }
         res[@stats.ap_str] = "DELETED"
         send_data("#{res}\r\n")
@@ -559,7 +555,7 @@ module Roma
         }
         s.each_index {|idx|
           @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
-          @stats.latency_sum.delete(s[idx]) if idx >= 1 && /^get$|^set$/ !~ s[idx]
+          @stats.latency_data.delete(s[idx]) if idx >= 1
         }
         send_data("DELETED\r\n")
       end

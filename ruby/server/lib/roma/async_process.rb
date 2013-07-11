@@ -681,31 +681,31 @@ module Roma
       latency,cmd = args
       @log.debug(__method__)
 
-      if !@stats.latency_sum.key?(cmd)
-        @stats.latency_sum[cmd].store("latency_sum", 0)
-        @stats.latency_sum[cmd].store("count", 0)
+      if !@stats.latency_data.key?(cmd)
+        @stats.latency_data[cmd].store("latency", Array.new())
+        @stats.latency_data[cmd].store("time", Time.now.to_i)
       end
 
       begin
-        if @stats.latency_sum[cmd]["count"] < @stats.latency_denominator #ある一定量のサンプル溜まるまでは
-          @stats.latency_sum[cmd]["count"] += 1
-          @stats.latency_sum[cmd]["latency_sum"] += latency # 普通に足していく
-        else #ある一定数データのサンプルが溜まったら
-          if !defined?(@start_t)
-            @start_t = Time.now.to_i #初回のみ
-          end
-          #移動平均を取るためだけの分のsumを保持
-          @stats.latency_sum[cmd]["latency_sum"] = @stats.latency_sum[cmd]["latency_sum"] * ((@stats.latency_denominator - 1)/@stats.latency_denominator) + latency
-          @stats.latency_sum[cmd]["count"] += 1 if @stats.latency_sum[cmd]["count"] < @stats.latency_denominator
-
-          if @stats.latency_check_time_count != nil && (Time.now.to_i - @start_t) > @stats.latency_check_time_count
-            @log.debug("Latency[#{cmd}] is #{sprintf("%.8f",(@stats.latency_sum[cmd]["latency_sum"]/@stats.latency_check_time_count))}")
-            @start_t = Time.now.to_i
-          end
+        if @stats.latency_data[cmd]["latency"].length < 10
+          @stats.latency_data[cmd]["latency"].push(latency)
+        else
+          @stats.latency_data[cmd]["latency"].delete_at(0)
+          @stats.latency_data[cmd]["latency"].push(latency)
         end
+
       rescue =>e
         @log.error("#{__method__}:#{e.inspect} #{$@}")
+
       ensure
+        if @stats.latency_check_time_count != nil && Time.now.to_i - @stats.latency_data[cmd]["time"] > @stats.latency_check_time_count
+          average = @stats.latency_data[cmd]["latency"].inject(0.0){|r,i| r+=i }/@stats.latency_data[cmd]["latency"].size
+          @log.debug("Latency average[#{cmd}] is #{sprintf("%.8f", average)}")
+
+          #1世代は残さないと、qpsコマンドのタイミングによっては出来なくなる
+          @stats.latency_data[cmd]["time"] =  Time.now.to_i
+          @stats.latency_data[cmd]["latency"] = []
+        end
       end
       true
     end
