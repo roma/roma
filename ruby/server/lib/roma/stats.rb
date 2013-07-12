@@ -129,8 +129,8 @@ module Roma
       ret['stats.out_message_count'] = @out_message_count
       ret['stats.redundant_count'] = @redundant_count
       ret['stats.hilatency_warn_time'] = @hilatency_warn_time
-      et['stats.wb_command_map'] = @wb_command_map.inspect
-      #ret['stats.latency_check']  = @latency_check
+      ret['stats.wb_command_map'] = @wb_command_map.inspect
+      ret['stats.latency_check']  = @latency_check
       ret['stats.latency_check_cmd']  = @latency_check_cmd
       ret['stats.latency_check_time_count']  = @latency_check_time_count
       ret

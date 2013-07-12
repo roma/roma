@@ -82,7 +82,12 @@ module Roma
         s.each_index {|idx|
           if idx >= 1 
             if data.key?(s[idx])
-              average = data[s[idx]]["latency"].inject(0.0){|r,i| r+=i }/@stats.latency_data[s[idx]]["latency"].size
+              if data[s[idx]]["latency"].length != 0
+                average = data[s[idx]]["latency"].inject(0.0){|r,i| r+=i }/data[s[idx]]["latency"].size
+              else
+                average = data[s[idx]]["latency_past"].inject(0.0){|r,i| r+=i }/data[s[idx]]["latency_past"].size
+              end
+
               qps = 1 / average
               send_data("QPS[#{s[idx]}]: #{sprintf("%.2f", qps)}\r\n")
             else
@@ -413,58 +418,15 @@ module Roma
           end
         }
 
-        arg ="rset_latency_avg_calc_rule"
-        s.each_index {|idx|
-          arg += " #{s[idx]}" if idx>=1
-        }
-        res = broadcast_cmd("#{arg}\r\n")
-
-        @stats.latency_check_cmd = [] #reset
         if s[1] =="on"
-          @stats.latency_check = true
-          @stats.latency_check_time_count = s[2].to_i
-          s.each_index {|idx|
-            @stats.latency_check_cmd.push(s[idx]) if idx >= 3
-          }
-          res[@stats.ap_str] = "ACTIVATED"
+          ev_del_latency_avg_calc_cmd(["del_latency_avg_calc_cmd", *@stats.latency_check_cmd])
+          ev_chg_latency_avg_calc_time_count(["chg_latency_avg_calc_time_count", s[2]])
+          ev_add_latency_avg_calc_cmd(["add_latency_avg_calc_cmd", *s[3..-1]])
+          send_data("\r\nACTIVATED\r\n")
         elsif s[1] =="off"
-          @stats.latency_check = false
-          @stats.latency_check_time_count = nil
-          #@stats.latency_sum.delete_if{|key| /^get$|^set$/ !~ key}
-          @stats.latency_data = Hash.new { |hash,key| hash[key] = {} }
-          res[@stats.ap_str] = "DEACTIVATED"
-        end
-        send_data("#{res}\r\n")
-      end
-
-      def ev_rset_latency_avg_calc_rule(s)
-        if /^on$|^off$/ !~ s[1]
-          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
-        elsif s[1] == "on" && (s.length <= 3 || s[2].to_i < 1)
-          return send_data("CLIENT_ERROR number of arguments (0 for 3) and <count> must be greater than zero\r\n")
-        elsif s[1] == "off" && !(s.length == 2)
-          return send_data("CLIENT_ERROR number of arguments (0 for 1, or more 3)\r\n")
-        end
-
-        s.each_index {|idx|
-          if idx >= 3 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
-             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
-          end
-        }
-
-        @stats.latency_check_cmd = []
-        if s[1] =="on"
-          @stats.latency_check = true
-          @stats.latency_check_time_count = s[2].to_i
-          s.each_index {|idx|
-            @stats.latency_check_cmd.push(s[idx]) if idx >= 3
-          }
-          send_data("ACTIVATED\r\n")
-        elsif s[1] =="off"
-          @stats.latency_check = false
-          @stats.latency_check_time_count = nil
-          @stats.latency_data = Hash.new { |hash,key| hash[key] = {} }
-          send_data("DEACTIVATED\r\n")
+          ev_del_latency_avg_calc_cmd(["del_latency_avg_calc_cmd", *@stats.latency_check_cmd])
+          ev_chg_latency_avg_calc_time_count(["chg_latency_avg_calc_time_count", "nil"])
+          send_data("\r\nDEACTIVATED\r\n")
         end
       end
 
@@ -522,6 +484,7 @@ module Roma
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
         end
+        
         #check support commands
         s.each_index {|idx|
           if idx >= 1 && !@stats.latency_check_cmd.include?(s[idx])
@@ -537,7 +500,6 @@ module Roma
 
         s.each_index {|idx|
           @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
-          #@stats.latency_sum.delete(s[idx]) if idx >= 1 && /^get$|^set$/ !~ s[idx]
           @stats.latency_data.delete(s[idx]) if idx >= 1
         }
         res[@stats.ap_str] = "DELETED"
@@ -548,6 +510,8 @@ module Roma
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
         end
+
+        # reset
         s.each_index {|idx|
           if idx >= 1 && !@stats.latency_check_cmd.include?(s[idx])
             return send_data("[#{s[idx]}] command is NOT set\r\n")
@@ -565,13 +529,20 @@ module Roma
         #check argument
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
-        elsif  s[1].to_i < 1
-          return send_data("<count> must be greater than zero\r\n")
+        elsif s[1] != "nil" && s[1].to_i < 1
+          return send_data("s[1].class = #{s[1].class}\r\n")
+          return send_data("<count> must be greater than zero or nil[DEACTIVATE]\r\n")
         end
 
         res = broadcast_cmd("rchg_latency_avg_calc_time_count #{s[1]}\r\n")
 
-        @stats.latency_check_time_count = s[1].to_i
+        if s[1] != "nil"
+          @stats.latency_check_time_count = s[1].to_i
+          @stats.latency_check = true
+        elsif s[1] == "nil"
+          @stats.latency_check_time_count = nil
+          @stats.latency_check = false
+        end
         res[@stats.ap_str] = "CHANGED"
         send_data("#{res}\r\n")
       end
@@ -579,10 +550,17 @@ module Roma
       def ev_rchg_latency_avg_calc_time_count(s)
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
-        elsif  s[1].to_i < 1
+        elsif s[1] != "nil" && s[1].to_i < 1
           return send_data("<count> must be greater than zero\r\n")
         end
 
+        if s[1] != "nil"
+          @stats.latency_check_time_count = s[1].to_i
+          @stats.latency_check = true
+        elsif s[1] == "nil"
+          @stats.latency_check_time_count = nil
+          @stats.latency_check = false
+        end
         @stats.latency_check_time_count = s[1].to_i
         send_data("CHANGED\r\n")
       end

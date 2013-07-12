@@ -704,6 +704,7 @@ module Roma
 
           #1世代は残さないと、qpsコマンドのタイミングによっては出来なくなる
           @stats.latency_data[cmd]["time"] =  Time.now.to_i
+          @stats.latency_data[cmd]["latency_past"] = @stats.latency_data[cmd]["latency"]
           @stats.latency_data[cmd]["latency"] = []
         end
       end
