@@ -683,6 +683,10 @@ module Roma
 
       if !@stats.latency_data.key?(cmd)
         @stats.latency_data[cmd].store("latency", Array.new())
+        @stats.latency_data[cmd].store("latency_max", Hash.new())
+        @stats.latency_data[cmd]["latency_max"].store("current", 0)
+        @stats.latency_data[cmd].store("latency_min", Hash.new())
+        @stats.latency_data[cmd]["latency_min"].store("current", 99999)
         @stats.latency_data[cmd].store("time", Time.now.to_i)
       end
 
@@ -694,18 +698,31 @@ module Roma
           @stats.latency_data[cmd]["latency"].push(latency)
         end
 
+        @stats.latency_data[cmd]["latency_max"]["current"] = latency if latency > @stats.latency_data[cmd]["latency_max"]["current"]
+        @stats.latency_data[cmd]["latency_min"]["current"] = latency if latency < @stats.latency_data[cmd]["latency_min"]["current"]
+
       rescue =>e
         @log.error("#{__method__}:#{e.inspect} #{$@}")
 
       ensure
         if @stats.latency_check_time_count != nil && Time.now.to_i - @stats.latency_data[cmd]["time"] > @stats.latency_check_time_count
           average = @stats.latency_data[cmd]["latency"].inject(0.0){|r,i| r+=i }/@stats.latency_data[cmd]["latency"].size
-          @log.debug("Latency average[#{cmd}] is #{sprintf("%.8f", average)}")
+          max = @stats.latency_data[cmd]["latency_max"]["current"]
+          min = @stats.latency_data[cmd]["latency_min"]["current"]
+          @log.debug("Latency average[#{cmd}]: #{sprintf("%.8f", average)}"+
+                     "(denominator=#{@stats.latency_data[cmd]["latency"].length}"+
+                     " max=#{sprintf("%.8f", max)}"+
+                     " min=#{sprintf("%.8f", min)})"
+                    )
 
           #1世代は残さないと、qpsコマンドのタイミングによっては出来なくなる
           @stats.latency_data[cmd]["time"] =  Time.now.to_i
           @stats.latency_data[cmd]["latency_past"] = @stats.latency_data[cmd]["latency"]
           @stats.latency_data[cmd]["latency"] = []
+          @stats.latency_data[cmd]["latency_max"]["past"] = @stats.latency_data[cmd]["latency_max"]["current"]
+          @stats.latency_data[cmd]["latency_max"]["current"] = 0
+          @stats.latency_data[cmd]["latency_min"]["past"] = @stats.latency_data[cmd]["latency_min"]["current"]
+          @stats.latency_data[cmd]["latency_min"]["current"] = 99999
         end
       end
       true
