@@ -681,7 +681,7 @@ module Roma
       latency,cmd = args
       @log.debug(__method__)
 
-      if !@stats.latency_data.key?(cmd)
+      if !@stats.latency_data.key?(cmd) #only first execute target cmd
         @stats.latency_data[cmd].store("latency", Array.new())
         @stats.latency_data[cmd].store("latency_max", Hash.new())
         @stats.latency_data[cmd]["latency_max"].store("current", 0)

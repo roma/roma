@@ -86,26 +86,21 @@ module Roma
               if data[s[idx]]["latency"].length != 0
                 average = data[s[idx]]["latency"].inject(0.0){|r,i| r+=i }/data[s[idx]]["latency"].size
                 denominator = data[s[idx]]["latency"].size
-                #max = data[s[idx]]["latency_max"]["current"]
-                #min = data[s[idx]]["latency_min"]["current"]
               elsif data[s[idx]]["time"] + 60 > Time.now.to_i
                 average = data[s[idx]]["latency_past"].inject(0.0){|r,i| r+=i }/data[s[idx]]["latency_past"].size
                 denominator = data[s[idx]]["latency_past"].size
-                #max = data[s[idx]]["latency_max"]["past"]
-                #min = data[s[idx]]["latency_min"]["past"]
               else
                 return send_data("QPS: [#{s[idx]}]'s latency is too old.\r\n")
               end
 
               qps = 1 / average
-              #send_data("Latency Average[#{s[idx]}]: #{sprintf("%.2f", qps)}(denominator=#{denominator} max=#{max} min=#{min})\r\n")
               send_data("QPS[#{s[idx]}]: #{sprintf("%.2f", qps)}(denominator=#{denominator} latency_average=#{average})\r\n" )
             else
               send_data("QPS: NOT exist [#{s[idx]}]'s latency data.\r\n")
             end
           end
         }
-        send_data("@stats.latency_data = #{@stats.latency_data}\r\n") #debug
+        #send_data("@stats.latency_data = #{@stats.latency_data}\r\n") #debug
       end
 
       # stats [regexp]
@@ -407,7 +402,7 @@ module Roma
         end
       end
 
-      # set_calc_latency_average <mode> <count> <command1> <command2>....
+      # set_latency_avg_calc_rule <mode> <count> <command1> <command2>....
       # <mode> is on/off
       # <count> is denominator to calculate average. 
       # <commandx> is target command
@@ -435,32 +430,22 @@ module Roma
         res = broadcast_cmd("#{arg}\r\n")
 
         if s[1] =="on"
-          @stats.latency_data = Hash.new { |hash,key| hash[key] = {}}
           @stats.latency_check_cmd = [] #reset
           s.each_index {|idx|
             @stats.latency_check_cmd.push(s[idx]) if idx >= 3
           }
           @stats.latency_check_time_count = s[2].to_i
           @stats.latency_check = true
-          #ev_del_latency_avg_calc_cmd(["del_latency_avg_calc_cmd", *@stats.latency_check_cmd])
-          #ev_chg_latency_avg_calc_time_count(["chg_latency_avg_calc_time_count", s[2]])
-          #ev_add_latency_avg_calc_cmd(["add_latency_avg_calc_cmd", *s[3..-1]])
-          #send_data("\r\nACTIVATED\r\n")
           res[@stats.ap_str] = "ACTIVATED"
         elsif s[1] =="off"
-          @stats.latency_data = Hash.new { |hash,key| hash[key] = {}}
           @stats.latency_check_cmd = [] #reset
           @stats.latency_check_time_count = nil
           @stats.latency_check = false
-          #ev_del_latency_avg_calc_cmd(["del_latency_avg_calc_cmd", *@stats.latency_check_cmd])
-          #ev_chg_latency_avg_calc_time_count(["chg_latency_avg_calc_time_count", "nil"])
-          #send_data("\r\nDEACTIVATED\r\n")
           res[@stats.ap_str] = "DEACTIVATED"
         end
+        @stats.latency_data = Hash.new { |hash,key| hash[key] = {}}
         send_data("#{res}\r\n")
       end
-
-
 
       def ev_rset_latency_avg_calc_rule(s)
         if /^on$|^off$/ !~ s[1]
@@ -493,11 +478,6 @@ module Roma
           send_data("DEACTIVATED\r\n")
         end
       end
-
-
-
-
-
 
       # add_calc_latency_average <command1> <command2>....
       def ev_add_latency_avg_calc_cmd(s)
