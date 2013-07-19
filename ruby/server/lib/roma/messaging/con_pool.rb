@@ -55,7 +55,7 @@ module Roma
 
       def create_connection(ap)
         host, port = ap.split(/[:_]/)
-        addr = DNSCache.resolve_name(host)
+        addr = DNSCache.instance.resolve_name(host)
         TCPSocket.new(addr, port)
       end
 

@@ -116,7 +116,7 @@ module Roma
 
       def create_connection(ap)
         host,port = ap.split(/[:_]/)
-        addr = DNSCache.resolve_name(host)
+        addr = DNSCache.instance.resolve_name(host)
         con = EventMachine::connect(addr, port, Roma::Event::EMConnection)
         con.ap = ap
         con

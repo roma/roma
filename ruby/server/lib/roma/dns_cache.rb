@@ -1,12 +1,18 @@
+require 'singleton'
+
 module Roma
-  module DNSCache
-    @@addrs = {}
-    @@enabled_caching = false
-    if Config.const_defined?(:DNS_CACHING)
-      @@enabled_caching = Config::DNS_CACHING
+  class DNSCache
+    include Singleton
+
+    def initialize
+      @@addrs = {}
+      @@enabled_caching = false
+      if Config.const_defined?(:DNS_CACHING)
+        @@enabled_caching = Config::DNS_CACHING
+      end
     end
 
-    def self.resolve_name(host)
+    def resolve_name(host)
       return host unless @@enabled_caching
 
       unless @@addrs.include?(host)
@@ -16,16 +22,16 @@ module Roma
       @@addrs[host]
     end
 
-    def self.disable_dns_cache
+    def disable_dns_cache
       @@enabled_caching = false
       @@addrs.clear
     end
 
-    def self.enable_dns_cache
+    def enable_dns_cache
       @@enabled_caching = true
     end
 
-    def self.get_stat
+    def get_stat
       ret = {}
       ret["dns_caching"] = @@enabled_caching
       ret

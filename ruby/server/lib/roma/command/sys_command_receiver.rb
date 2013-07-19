@@ -84,7 +84,7 @@ module Roma
         send_stat_result(nil,$roma.wb_get_stat,regexp)
         send_stat_result(nil,@rttable.get_stat(@stats.ap_str),regexp)
         send_stat_result(nil,conn_get_stat,regexp)
-        send_stat_result(nil,DNSCache.get_stat,regexp)
+        send_stat_result(nil,DNSCache.instance.get_stat,regexp)
         send_data("END\r\n")
       end
 
@@ -478,13 +478,14 @@ module Roma
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments\r\n")
         end
+
         res = broadcast_cmd("rswitch_dns_caching #{s[1]}\r\n")
         if s[1] == 'on' || s[1] == 'true'
-          DNSCache.enable_dns_cache
+          DNSCache.instance.enable_dns_cache
           @log.info("DNS caching enabled")
           res[@stats.ap_str] = "ENABLED"
         elsif s[1] == 'off' || s[1] == 'false'
-          DNSCache.disable_dns_cache
+          DNSCache.instance.disable_dns_cache
           @log.info("DNS caching disabled")
           res[@stats.ap_str] = "DISABLED"
         else
@@ -498,12 +499,13 @@ module Roma
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments\r\n")
         end
+
         if s[1] == 'on' || s[1] == 'true'
-          DNSCache.enable_dns_cache
+          DNSCache.instance.enable_dns_cache
           @log.info("DNS caching enabled")
           return send_data("ENABLED\r\n")
         elsif s[1] == 'off' || s[1] == 'false'
-          DNSCache.disable_dns_cache
+          DNSCache.instance.disable_dns_cache
           @log.info("DNS caching disabled")
           return send_data("DISABLED\r\n")
         else
