@@ -101,11 +101,7 @@ module Roma
       retry
     end
 
-    #上記とは別で作成しないと、風速が高い時にキューが全部latency_averageで埋め尽くされてしまう
-    #また、それらのキューを片っ端から投げるので、asyncev_calc_latency_averageの方でthreadが大量に発生してしまう
     def async_process_loop_for_latency
-      #@latency_chk_cnt = {} if !defined?(@latency_chk_cnt)
-      #@sum = {} if !defined?(@sum)
       loop {
         while msg = @@async_queue_latency.pop
           if send("asyncev_#{msg.event}",msg.args)
@@ -679,7 +675,7 @@ module Roma
 
     def asyncev_calc_latency_average(args)
       latency,cmd = args
-      @log.debug(__method__)
+      #@log.debug(__method__)
 
       if !@stats.latency_data.key?(cmd) #only first execute target cmd
         @stats.latency_data[cmd].store("latency", Array.new())
@@ -715,7 +711,6 @@ module Roma
                      " min=#{sprintf("%.8f", min)})"
                     )
 
-          #1世代は残さないと、qpsコマンドのタイミングによっては出来なくなる
           @stats.latency_data[cmd]["time"] =  Time.now.to_i
           @stats.latency_data[cmd]["latency_past"] = @stats.latency_data[cmd]["latency"]
           @stats.latency_data[cmd]["latency"] = []

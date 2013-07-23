@@ -90,9 +90,8 @@ module Roma
       @wb_command_map = {}
       @latency_check = false
       @latency_check_cmd =["get", "set", "delete"]
-      @latency_check_time_count = nil # 600(sec)
+      @latency_check_time_count = nil
       @latency_data = Hash.new { |hash,key| hash[key] = {} } #double hash
-      #@latency_denominator = 3
     end
 
     def ap_str

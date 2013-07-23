@@ -174,12 +174,8 @@ module Roma
           end
           # check latency average
           #case @lastcmd[0]
-          #when "set", "get" #for check real-time qps
-          #  Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', [ps, @lastcmd[0]]))
-          #when *@stats.latency_check_cmd
-          #if @stats.latency_check_cmd.include?(@lastcmd[0]) && @stats.latency_check_time_count != nil
           if @stats.latency_check_cmd.include?(@lastcmd[0])
-            Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', [ps, @lastcmd[0]])) #if @stats.latency_check_time_count != nil
+            Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', [ps, @lastcmd[0]]))
           end
 
           d = EM.connection_count - @@ccl_start
