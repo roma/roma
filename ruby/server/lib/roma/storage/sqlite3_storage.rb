@@ -6,7 +6,9 @@ module Roma
 
     module SQLite3_Ext
       def put(k,v)
-        k = k.encode("ascii-8bit") if RUBY_VERSION >= "1.9.3"
+        if RUBY_VERSION >= "1.9.2"
+          k = k.encode("ascii-8bit") if k.encoding != Encoding::ASCII_8BIT
+        end
         if self.execute("select count(*) from t_roma where key=?",k)[0][0].to_i==0
           self.execute("insert into t_roma values (?,?)",k,SQLite3::Blob.new(v))
         else
@@ -15,14 +17,18 @@ module Roma
       end
 
       def get(k)
-        k = k.encode("ascii-8bit") if RUBY_VERSION >= "1.9.3"
+        if RUBY_VERSION >= "1.9.2"
+          k = k.encode("ascii-8bit") if k.encoding != Encoding::ASCII_8BIT
+        end
         r = self.execute("select * from t_roma where key=?",k)
         return nil if r.length==0
         r[0][1]
       end
 
       def out(k)
-        k = k.encode("ascii-8bit") if RUBY_VERSION >= "1.9.3"
+        if RUBY_VERSION >= "1.9.2"
+          k = k.encode("ascii-8bit") if k.encoding != Encoding::ASCII_8BIT
+        end
         return nil if get(k) == nil
         self.execute("delete from t_roma where key=?",k)
       end
