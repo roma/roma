@@ -8,15 +8,18 @@ module Roma
       def get(k); self[k]; end
       def out(k); delete(k); end
       def rnum; length; end
+      def sync; true; end
     end
 
     class RubyHashStorage < BasicStorage
 
       def opendb
         create_div_hash
-        @divnum.times{ |i|
+        @divnum.times do |i|
           @hdb[i] = open_db(nil)
-        }
+          @hdbc[i] = nil
+          @dbs[i] = :normal
+        end
       end
 
       if RUBY_VERSION >= '1.9.2'
@@ -42,25 +45,23 @@ module Roma
           }
         end
 
-        def each_vn_dump(target_vn)
+        def each_unpacked_db(target_vn, db)
           count = 0
           tn =  Time.now.to_i
-          keys = @hdb[@hdiv[target_vn]].keys
-          keys.each{|k|
-            v = @hdb[@hdiv[target_vn]][k]
+          keys = db[@hdiv[target_vn]].keys
+          keys.each do |k|
+            v = db[@hdiv[target_vn]][k]
             vn, last, clk, expt, val = unpack_data(v)
             if vn != target_vn || (expt != 0 && tn > expt)
               count += 1
               sleep @each_vn_dump_sleep if count % @each_vn_dump_sleep_count == 0
               next
             end
-            if val
-              yield [vn, last, clk, expt, k.length, k, val.length, val].pack("NNNNNa#{k.length}Na#{val.length}")
-            else
-              yield [vn, last, clk, expt, k.length, k, 0].pack("NNNNNa#{k.length}N")
-            end
-          }
+            yield vn, last, clk, expt, k, val
+          end
         end
+        private :each_unpacked_db
+
 
         def each_hdb_dump(i,except_vnh = nil)
           count = 0
