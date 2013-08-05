@@ -52,6 +52,10 @@ module Roma
     # max length of the eventmachine's connection pool
     CONNECTION_EMPOOL_MAX = 15
 
+    # lookup hostname to the nameserver everytime or only first time.
+    # if set true, the result of lookup will keep.
+    DNS_CACHING = false
+
     # storage setting
     STORAGE_CLASS = Roma::Storage::RubyHashStorage
     STORAGE_DIVNUM = 10
