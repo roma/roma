@@ -18,7 +18,7 @@ Thread.new do
   end
 end
 
-def random_rquest_sender(ini_nodes, n)
+def random_request_sender(ini_nodes, n)
   puts __method__
   rc=Roma::Client::RomaClient.new(ini_nodes)
 
@@ -80,7 +80,7 @@ opts.banner = "usage:#{File.basename($0)} [options] addr:port"
 opts.on("-s", "--set", "set request"){|v| param[:set] = v }
 opts.on("-g", "--get", "get request"){|v| param[:get] = v }
 opts.on("-r", "--rand", "random request"){|v| param[:rand] = v }
-opts.on("-n", "--num [num]", "number of kyes"){|v| param[:num] = v.to_i }
+opts.on("-n", "--num [num]", "number of keys"){|v| param[:num] = v.to_i }
 opts.on("-t", "--threads [num]", "number of threads"){|v| param[:th] = v.to_i }
 opts.parse!(ARGV)
 
@@ -99,7 +99,7 @@ param[:th].times do |i|
   t << Thread.new do
     get_sequence(ARGV, param[:num]) if param.key?(:get)
     set_sequence(ARGV, param[:num]) if param.key?(:set)
-    random_rquest_sender(ARGV, param[:num]) if param.key?(:rand)
+    random_request_sender(ARGV, param[:num]) if param.key?(:rand)
   end
 end
 

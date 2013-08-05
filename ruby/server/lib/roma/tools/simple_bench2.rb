@@ -51,7 +51,7 @@ module Roma
 end
 
 
-def random_rquest_sender(ini_nodes)
+def random_request_sender(ini_nodes)
   rc=Roma::Client::RomaClient.new(ini_nodes)
 
   n=10000
