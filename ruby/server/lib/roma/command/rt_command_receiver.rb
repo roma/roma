@@ -118,7 +118,11 @@ module Roma
           return send_data("CLIENT_ERROR length must be greater than zero\r\n")
         end
         res = broadcast_cmd("rset_auto_recover #{s[1]} #{s[2]}\r\n")
-        @rttable.auto_recover = s[1].to_s
+        if s[1] == "true"
+          @rttable.auto_recover = true
+        elsif s[1] == "false"
+          @rttable.auto_recover = false
+        end
         @rttable.auto_recover_status = "waiting"
         @rttable.auto_recover_time = s[2].to_i if s[2]
         res[@stats.ap_str] = "STORED"
@@ -133,7 +137,11 @@ module Roma
         elsif s.length == 3 && s[2].to_i < 1
           return send_data("CLIENT_ERROR length must be greater than zero\r\n")
         end
-        @rttable.auto_recover = s[1].to_s
+        if s[1] == "true"
+          @rttable.auto_recover = true
+        elsif s[1] == "false"
+          @rttable.auto_recover = false
+        end
         @rttable.auto_recover_status = "waiting"
         @rttable.auto_recover_time = s[2].to_i if s[2]
         send_data("STORED\r\n")
