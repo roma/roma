@@ -462,12 +462,12 @@ module Roma
             @stats.latency_check_cmd.push(s[idx]) if idx >= 3
           }
           @stats.latency_check_time_count = s[2].to_i
-          @stats.latency_check = true
+          @stats.latency_log = true
           res[@stats.ap_str] = "ACTIVATED"
         elsif s[1] =="off"
           @stats.latency_check_cmd = [] #reset
           @stats.latency_check_time_count = nil
-          @stats.latency_check = false
+          @stats.latency_log = false
           res[@stats.ap_str] = "DEACTIVATED"
         end
         @stats.latency_data = Hash.new { |hash,key| hash[key] = {}}
@@ -496,12 +496,13 @@ module Roma
             @stats.latency_check_cmd.push(s[idx]) if idx >= 3
           }
           @stats.latency_check_time_count = s[1].to_i
-          @stats.latency_check = true
+          @stats.latency_log = true
           send_data("ACTIVATED\r\n")
         elsif s[1] =="off"
           @latency_data = Hash.new { |hash,key| hash[key] = {}}
           @stats.latency_check_cmd = []
           @stats.latency_check_time_count = nil
+          @stats.latency_log = false
           send_data("DEACTIVATED\r\n")
         end
       end
@@ -614,10 +615,10 @@ module Roma
 
         if s[1] != "nil"
           @stats.latency_check_time_count = s[1].to_i
-          @stats.latency_check = true
+          @stats.latency_log = true
         elsif s[1] == "nil"
           @stats.latency_check_time_count = nil
-          @stats.latency_check = false
+          @stats.latency_log = false
         end
         res[@stats.ap_str] = "CHANGED"
         send_data("#{res}\r\n")
@@ -632,10 +633,10 @@ module Roma
 
         if s[1] != "nil"
           @stats.latency_check_time_count = s[1].to_i
-          @stats.latency_check = true
+          @stats.latency_log = true
         elsif s[1] == "nil"
           @stats.latency_check_time_count = nil
-          @stats.latency_check = false
+          @stats.latency_log = false
         end
         @stats.latency_check_time_count = s[1].to_i
         send_data("CHANGED\r\n")

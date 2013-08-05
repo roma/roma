@@ -738,12 +738,8 @@ module Roma
       end
 
       begin
-        if @stats.latency_data[cmd]["latency"].length < 10
-          @stats.latency_data[cmd]["latency"].push(latency)
-        else
-          @stats.latency_data[cmd]["latency"].delete_at(0)
-          @stats.latency_data[cmd]["latency"].push(latency)
-        end
+        @stats.latency_data[cmd]["latency"].delete_at(0) if @stats.latency_data[cmd]["latency"].length >= 10
+        @stats.latency_data[cmd]["latency"].push(latency)
 
         @stats.latency_data[cmd]["latency_max"]["current"] = latency if latency > @stats.latency_data[cmd]["latency_max"]["current"]
         @stats.latency_data[cmd]["latency_min"]["current"] = latency if latency < @stats.latency_data[cmd]["latency_min"]["current"]
