@@ -1,5 +1,4 @@
 #!/usr/bin/ruby
-# encoding: utf-8
 require 'socket'
 require 'ipaddr'
 require 'optparse'
@@ -46,7 +45,7 @@ class Tribunus
     @remote_servers={} #ipaddr => RomadHost
 
   end
-  
+
   def from_remote?(ipaddr)
       from_remote= !Socket.ip_address_list.any?{|addr|addr.ip_address==ipaddr}
   end
@@ -67,7 +66,7 @@ class Tribunus
     if(Process.waitpid2(pid)[1].to_i!=0)
       raise "failed to make route"
     end
-    
+
     @local_romad_host.ports.each do|port|
       pid=Process.spawn(@ruby_command_name,*RUBY_COMMAND_OPTIONS,ROMAD_PATH,*ROMAD_OPTIONS,"-p",port.to_s,@local_romad_host.hostname, :chdir=>@romad_work_dir)
       @romads[port]=pid
@@ -163,7 +162,7 @@ class Tribunus
       end
 
 
-      
+
 
       sleep(HEARTBEAT_LOOP_INTERVAL)
     end
@@ -288,10 +287,10 @@ if ports.size >100
 end
 
 tri=Tribunus.new(hostname,ports,conf)
-case conf[:mode] 
+case conf[:mode]
 when:new_ring
   tri.start_new_ring
-when :join 
+when :join
   tri.start_join(conf[:joining_node][0],conf[:joining_node][1])
 else
   tri.start_discover

@@ -19,6 +19,7 @@ module Roma
         end
         @rttable.enabled_failover = false
         res = broadcast_cmd("rbalse\r\n")
+        res[@stats.ap_str] = "BYE"
         send_data("#{res.inspect}\r\n")
         close_connection_after_writing
         @stop_event_loop = true
@@ -366,6 +367,31 @@ module Roma
         end
       end
 
+      def ev_set_descriptor_table_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1024
+          return send_data("CLIENT_ERROR length must be greater than 1024\r\n")
+        end
+
+        res = broadcast_cmd("rset_descriptor_table_size #{s[1]}\r\n")
+
+        EM.set_descriptor_table_size(s[1].to_i)
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_descriptor_table_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1024
+          return send_data("CLIENT_ERROR length must be greater than 1024\r\n")
+        end
+
+        EM.set_descriptor_table_size(s[1].to_i)
+        send_data("STORED\r\n")
+      end
+
       def ev_set_continuous_limit(s)
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
@@ -472,6 +498,54 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_connection_pool_expire_time <sec>
+      # set to expired time(sec) for connection_pool expire time
+      def ev_set_connection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        res = broadcast_cmd("rset_connection_pool_expire_time #{s[1]}\r\n")
+        Messaging::ConPool.instance.expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_expire_time <sec>
+      def ev_rset_connection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Messaging::ConPool.instance.expire_time = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_emconnection_pool_expire_time <sec>
+      def ev_set_emconnection_pool_expire_time(s)
+        # chcking s incude command and value (NOT check digit)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        #if ARGV is 0, expire time become infinity(NOT happen expire)
+        if s[1].to_i == 0
+          s[1] = "2147483647"
+        end
+        res = broadcast_cmd("rset_emconnection_pool_expire_time #{s[1]}\r\n")
+        Event::EMConPool::instance.expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_emconnection_pool_expire_time <sec>
+      def ev_rset_emconnection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Event::EMConPool::instance.expire_time = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
       # set_hilatency_warn_time <sec>
       # set to threshold of warn message into a log when hilatency occured in a command.
       def ev_set_hilatency_warn_time(s)
@@ -540,6 +614,31 @@ module Roma
         else
           send_data("CLIENT_ERROR hash string parse error\r\n")
         end        
+      end
+
+      # set_wb_shift_size <size>
+      def ev_set_wb_shift_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_wb_shift_size #{s[1]}\r\n")
+        $roma.wb_writer.shift_size = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_wb_shift_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        $roma.wb_writer.shift_size = s[1].to_i
+        send_data("STORED\r\n")
       end
 
       private 

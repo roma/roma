@@ -21,6 +21,7 @@ module Roma
     attr :storages
     attr :rttable
     attr :stats
+    attr :wb_writer
 
     attr_accessor :eventloop
     attr_accessor :startup
@@ -36,7 +37,7 @@ module Roma
       initialize_storages
       initialize_handler
       initialize_plugin
-      initialize_wb_witer
+      initialize_wb_writer
     end
 
     def start
@@ -191,7 +192,7 @@ module Roma
       end
     end
 
-    def initialize_wb_witer
+    def initialize_wb_writer
       @wb_writer = Roma::WriteBehind::FileWriter.new(
                                                      Roma::Config::WRITEBEHIND_PATH, 
                                                      Roma::Config::WRITEBEHIND_SHIFT_SIZE,

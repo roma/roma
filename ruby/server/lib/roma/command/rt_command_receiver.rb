@@ -151,6 +151,29 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_lost_action [auto_assign|shutdown]
+      def ev_set_lost_action(s)
+        if s.length != 2 || /^auto_assign$|^shutdown$/ !~ s[1]
+          return send_data("CLIENT_ERROR changing lost_action must be auto_assign or shutdown\r\n")
+        elsif /^auto_assign$|^shutdown$/ !~ @rttable.lost_action
+          return send_data("CLIENT_ERROR can use this command only current lost action is auto_assign or shutdwn mode\r\n")
+        end
+        res = broadcast_cmd("rset_lost_action #{s[1]}\r\n")
+        @rttable.lost_action = s[1].to_sym
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+      
+      def ev_rset_lost_action(s)
+        if s.length != 2 || /^auto_assign$|^shutdown$/ !~ s[1]
+          return send_data("CLIENT_ERROR changing lost_action must be auto_assign or shutdown\r\n")
+        elsif /^auto_assign$|^shutdown$/ !~ @rttable.lost_action
+          return send_data("CLIENT_ERROR can use this command only current lost action is auto_assign or shutdwn mode\r\n")
+        end
+        @rttable.lost_action = s[1].to_sym
+        send_data("STORED\r\n")
+      end  
+
       # set_threshold_for_failover <n>
       def ev_set_threshold_for_failover(s)
         if s.length != 2 || s[1].to_i == 0
