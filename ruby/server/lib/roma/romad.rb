@@ -390,6 +390,8 @@ module Roma
         @rttable.fail_cnt_gap = Roma::Config::ROUTING_FAIL_CNT_GAP
       end
       @rttable.lost_action = Roma::Config::DEFAULT_LOST_ACTION
+      @rttable.auto_recover = Roma::Config::AUTO_RECOVER if defined?(Roma::Config::AUTO_RECOVER)
+
       @rttable.enabled_failover = false
       @rttable.set_leave_proc{|nid|
         Roma::Messaging::ConPool.instance.close_same_host(nid)
@@ -401,6 +403,13 @@ module Roma
           async_broadcast_cmd("rbalse lose_data\r\n")
           EventMachine::stop_event_loop
           @log.error("Romad has stopped, so that lose data.")
+        end
+      }
+      @rttable.set_recover_proc{|action|
+        if (@rttable.lost_action == :shutdown || @rttable.lost_action == :auto_assign) && @rttable.auto_recover == true
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new("#{action}"))
+        elsif
+          @log.error("AUTO_RECOVER is off or Unavailable value is set to [DEFAULT_LOST_ACTION] => #{@rttable.lost_action}")
         end
       }
     end

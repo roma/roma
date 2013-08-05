@@ -8,6 +8,8 @@ module Roma
 
     # :no_action | :auto_assign | :shutdown
     DEFAULT_LOST_ACTION = :auto_assign
+    # to use a auto recover function, AUTO_RECOVER is to set true
+    AUTO_RECOVER = false
 
     # failover setting
     # threshold of failover occurrence
