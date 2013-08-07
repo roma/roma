@@ -68,42 +68,6 @@ module Roma
         send_data("#{@stats.name}\r\n")
       end
 
-      def ev_qps(s)
-        if s.length < 2
-          return send_data("CLIENT_ERROR number of arguments (1 for 2)\r\n")
-        end
-        #check support commands
-        s.each_index {|idx|
-          if idx >= 1 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
-             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
-          end
-        }
-        
-        data = @stats.latency_data
-        send_data("QPS are calculated quotient of (1 / each command's latency average)\r\n")
-        s.each_index {|idx|
-          if idx >= 1 
-            if data.key?(s[idx])
-              if data[s[idx]]["latency"].length != 0
-                average = data[s[idx]]["latency"].inject(0.0){|r,i| r+=i }/data[s[idx]]["latency"].size
-                denominator = data[s[idx]]["latency"].size
-              elsif data[s[idx]]["time"] + 60 > Time.now.to_i
-                average = data[s[idx]]["latency_past"].inject(0.0){|r,i| r+=i }/data[s[idx]]["latency_past"].size
-                denominator = data[s[idx]]["latency_past"].size
-              else
-                return send_data("QPS: [#{s[idx]}]'s latency is too old.\r\n")
-              end
-
-              qps = 1 / average
-              send_data("QPS[#{s[idx]}]: #{sprintf("%.2f", qps)}(denominator=#{denominator} latency_average=#{average})\r\n" )
-            else
-              send_data("QPS: NOT exist [#{s[idx]}]'s latency data.\r\n")
-            end
-          end
-        }
-        #send_data("@stats.latency_data = #{@stats.latency_data}\r\n") #debug
-      end
-
       # stats [regexp]
       def ev_stats(s); ev_stat(s); end
 
