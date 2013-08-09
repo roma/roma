@@ -506,22 +506,25 @@ module Roma
         else
           # in case of out of :normal status
           @each_cache_lock.synchronize do
-            each_unpacked_db(target_vn, @hdbc) do |vn, last, clk, expt, k, val|
+            each_unpacked_db(target_vn, @hdbc) do |cvn, clast, cclk, cexpt, k, cval|
               return unless @do_each_vn_dump
-              yield vn_dump_pack(vn, last, clk, expt, k, val)
+              data = @hdb[n].get(k)
+              if data
+                vn, last, clk, expt, val = unpack_data(data)
+                #puts "#{k} #{clk} #{cclk} #{cmp_clk(clk, cclk)} #{val}"
+                if cmp_clk(clk, cclk) > 0
+                  yield vn_dump_pack(vn, last, clk, expt, k, val)
+                else
+                  yield vn_dump_pack(cvn, clast, cclk, cexpt, k, cval)
+                end
+              else
+                yield vn_dump_pack(cvn, clast, cclk, cexpt, k, cval)
+              end
             end
           end
           each_unpacked_db(target_vn, @hdb) do |vn, last, clk, expt, k, val|
             return unless @do_each_vn_dump
-            cdata = @hdbc[n].get(k)
-            if cdata
-              cvn, clat, cclk, cexpt = unpack_header(cdata)
-              if cmp_clk(clk, cclk) > 0
-                # if a database(@hdb) data newer than a cache(@hdbc) data
-                yield vn_dump_pack(vn, last, clk, expt, k, val)
-              end
-            else
-              # this is an only data in @hdb.
+            unless @hdbc[n].get(k)
               yield vn_dump_pack(vn, last, clk, expt, k, val)
             end
           end
