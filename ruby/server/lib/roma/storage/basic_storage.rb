@@ -12,6 +12,7 @@ module Roma
       attr_reader :hdiv
       attr_reader :ext_name
       attr_reader :error_message
+      attr_reader :dbs
 
       attr_writer :vn_list
       attr_writer :storage_path
@@ -57,6 +58,7 @@ module Roma
         ret['storage.each_vn_dump_sleep_count'] = @each_vn_dump_sleep_count
         ret['storage.each_clean_up_sleep'] = @each_clean_up_sleep
         ret['storage.logic_clock_expire'] = @logic_clock_expire
+        ret['storage.safecopy_stats'] = @dbs.inspect
         ret
       end
 

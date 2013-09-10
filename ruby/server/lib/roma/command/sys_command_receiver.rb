@@ -542,6 +542,48 @@ module Roma
         end        
       end
 
+      # set_storage_status [number of file][safecopy|normal]{hash_name}
+      def ev_set_storage_status(s)
+        if s.length < 3
+          return send_data("CLIENT_ERROR number of arguments (#{s.length - 1} for 2)\r\n")
+        end
+
+        if s.length >= 4
+          hname = s[3]
+        else
+          hname = 'roma'
+        end
+        st = @storages[hname]
+        unless st
+          return send_data("CLIENT_ERROR hash_name = #{hanme} dose not found\r\n")
+        end
+        dn = s[1].to_i
+        if st.divnum <= dn
+          return send_data("CLIENT_ERROR divnum <= #{dn}\r\n")
+        end
+        if s[2] == 'safecopy'
+          if st.dbs[dn] != :normal
+            return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
+          end
+          #
+          #
+          #
+          send_data("-> safecopy\r\n")
+        elsif s[2] ==  'normal'
+          if st.dbs[dn] != :safecopy_flushed
+            return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
+          end
+          #
+          #
+          #
+          send_data("-> normal\r\n")
+        else
+          return send_data("CLIENT_ERROR status parse error\r\n")
+        end
+        
+        send_data("CHANGED\r\n")
+      end
+
       private 
 
       def dcnice(p)
