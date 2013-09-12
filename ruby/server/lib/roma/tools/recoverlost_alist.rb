@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 #
 # usage:recoverlost_alist address port storage-path [yyyymmddhhmmss]
 #

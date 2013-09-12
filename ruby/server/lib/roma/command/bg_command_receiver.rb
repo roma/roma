@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 require 'roma/async_process'
 require 'roma/messaging/con_pool'
 require 'roma/command/vn_command_receiver'
@@ -12,7 +11,7 @@ module Roma
       def ev_balance(s)
         res = broadcast_cmd("rbalance\r\n")
         if @stats.run_join == false &&
-            @stats.run_recover == false && 
+            @stats.run_recover == false &&
             @stats.run_balance == false &&
             @rttable.vnode_balance(@stats.ap_str)==:less
           Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_balance_process'))
@@ -25,7 +24,7 @@ module Roma
 
       def ev_rbalance(s)
         if @stats.run_join == false &&
-            @stats.run_recover == false && 
+            @stats.run_recover == false &&
             @stats.run_balance == false &&
             @rttable.vnode_balance(@stats.ap_str)==:less
           Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_balance_process'))
@@ -37,7 +36,7 @@ module Roma
 
       def ev_release(s)
         if @stats.run_join == false &&
-            @stats.run_recover == false && 
+            @stats.run_recover == false &&
             @stats.run_balance == false &&
             @stats.run_release == false &&
             @stats.run_iterate_storage == false

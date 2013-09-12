@@ -19,6 +19,7 @@ module Roma
         end
         @rttable.enabled_failover = false
         res = broadcast_cmd("rbalse\r\n")
+        res[@stats.ap_str] = "BYE"
         send_data("#{res.inspect}\r\n")
         close_connection_after_writing
         @stop_event_loop = true
@@ -84,6 +85,7 @@ module Roma
         send_stat_result(nil,$roma.wb_get_stat,regexp)
         send_stat_result(nil,@rttable.get_stat(@stats.ap_str),regexp)
         send_stat_result(nil,conn_get_stat,regexp)
+        send_stat_result(nil,DNSCache.instance.get_stat,regexp)
         send_data("END\r\n")
       end
 
@@ -366,6 +368,244 @@ module Roma
         end
       end
 
+      def ev_set_descriptor_table_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1024
+          return send_data("CLIENT_ERROR length must be greater than 1024\r\n")
+        end
+
+        res = broadcast_cmd("rset_descriptor_table_size #{s[1]}\r\n")
+
+        EM.set_descriptor_table_size(s[1].to_i)
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_descriptor_table_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1024
+          return send_data("CLIENT_ERROR length must be greater than 1024\r\n")
+        end
+
+        EM.set_descriptor_table_size(s[1].to_i)
+        send_data("STORED\r\n")
+      end
+
+      # set_latency_avg_calc_rule <mode> <count> <command1> <command2>....
+      # <mode> is on/off
+      # <count> is denominator to calculate average. 
+      # <commandx> is target command
+      def ev_set_latency_avg_calc_rule(s)
+        #check argument
+        if /^on$|^off$/ !~ s[1]
+          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
+        elsif s[1] == "on" && (s.length <= 3 || s[2].to_i < 1)
+          return send_data("CLIENT_ERROR number of arguments (0 for 3) and <count> must be greater than zero\r\n")
+        elsif s[1] == "off" && !(s.length == 2)
+          return send_data("CLIENT_ERROR number of arguments (0 for 1, or more 3)\r\n")
+        end
+
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 3 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+        }
+
+        arg ="rset_latency_avg_calc_rule"
+        s.each_index {|idx|
+          arg += " #{s[idx]}" if idx>=1
+        }
+        res = broadcast_cmd("#{arg}\r\n")
+
+        if s[1] =="on"
+          @stats.latency_check_cmd = [] #reset
+          s.each_index {|idx|
+            @stats.latency_check_cmd.push(s[idx]) if idx >= 3
+          }
+          @stats.latency_check_time_count = s[2].to_i
+          @stats.latency_log = true
+          res[@stats.ap_str] = "ACTIVATED"
+        elsif s[1] =="off"
+          @stats.latency_check_cmd = [] #reset
+          @stats.latency_check_time_count = nil
+          @stats.latency_log = false
+          res[@stats.ap_str] = "DEACTIVATED"
+        end
+        @stats.latency_data = Hash.new { |hash,key| hash[key] = {}}
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_latency_avg_calc_rule(s)
+        if /^on$|^off$/ !~ s[1]
+          return send_data("CLIENT_ERROR argument 1: please input \"on\" or \"off\"\r\n")
+        elsif s[1] == "on" && (s.length <= 3 || s[2].to_i < 1)
+          return send_data("CLIENT_ERROR number of arguments (0 for 3) and <count> must be greater than zero\r\n")
+        elsif s[1] == "off" && !(s.length == 2)
+          return send_data("CLIENT_ERROR number of arguments (0 for 1, or more 3)\r\n")
+        end
+
+        s.each_index {|idx|
+          if idx >= 3 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+        }
+
+        if s[1] =="on"
+          @latency_data = Hash.new { |hash,key| hash[key] = {}}
+          @stats.latency_check_cmd = []
+          s.each_index {|idx|
+            @stats.latency_check_cmd.push(s[idx]) if idx >= 3
+          }
+          @stats.latency_check_time_count = s[1].to_i
+          @stats.latency_log = true
+          send_data("ACTIVATED\r\n")
+        elsif s[1] =="off"
+          @latency_data = Hash.new { |hash,key| hash[key] = {}}
+          @stats.latency_check_cmd = []
+          @stats.latency_check_time_count = nil
+          @stats.latency_log = false
+          send_data("DEACTIVATED\r\n")
+        end
+      end
+
+      # add_calc_latency_average <command1> <command2>....
+      def ev_add_latency_avg_calc_cmd(s)
+        #check argument
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        end
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 1 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+          if idx >= 1 && @stats.latency_check_cmd.include?(s[idx])
+            return send_data("ALREADY SET [#{s[idx]}] command\r\n")
+          end
+        }
+
+        arg ="radd_latency_avg_calc_cmd"
+        s.each_index {|idx|
+          arg += " #{s[idx]}" if idx>=1
+        }
+        res = broadcast_cmd("#{arg}\r\n")
+
+        s.each_index {|idx|
+          @stats.latency_check_cmd.push(s[idx]) if idx >= 1
+        }
+        res[@stats.ap_str] = "SET"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_radd_latency_avg_calc_cmd(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        end
+        s.each_index {|idx|
+          if idx >= 2 && (!Event::Handler::ev_list.include?(s[idx]) || Event::Handler::system_commands.include?(s[idx]))
+             return send_data("NOT SUPPORT [#{s[idx]}] command\r\n")
+          end
+          if idx >= 1 && @stats.latency_check_cmd.include?(s[idx])
+            return send_data("ALREADY SET [#{s[idx]}] command\r\n")
+          end
+        }
+
+        s.each_index {|idx|
+          @stats.latency_check_cmd.push(s[idx]) if idx >= 1
+        }
+        send_data("SET\r\n")
+      end
+
+      # del_calc_latency_average <command1> <command2>....
+      def ev_del_latency_avg_calc_cmd(s)
+        #check argument
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        end
+        
+        #check support commands
+        s.each_index {|idx|
+          if idx >= 1 && !@stats.latency_check_cmd.include?(s[idx])
+            return send_data("[#{s[idx]}] command is NOT set\r\n")
+          end
+        }
+
+        arg ="rdel_latency_avg_calc_cmd"
+        s.each_index {|idx|
+          arg += " #{s[idx]}" if idx>=1
+        }
+        res = broadcast_cmd("#{arg}\r\n")
+
+        s.each_index {|idx|
+          @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
+          @stats.latency_data.delete(s[idx]) if idx >= 1
+        }
+        res[@stats.ap_str] = "DELETED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rdel_latency_avg_calc_cmd(s)
+        if s.length < 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        end
+
+        # reset
+        s.each_index {|idx|
+          if idx >= 1 && !@stats.latency_check_cmd.include?(s[idx])
+            return send_data("[#{s[idx]}] command is NOT set\r\n")
+          end
+        }
+        s.each_index {|idx|
+          @stats.latency_check_cmd.delete(s[idx]) if idx >= 1
+          @stats.latency_data.delete(s[idx]) if idx >= 1
+        }
+        send_data("DELETED\r\n")
+      end
+
+      # chg_calc_latency_average_denominator <count>
+      def ev_chg_latency_avg_calc_time_count(s)
+        #check argument
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        elsif s[1] != "nil" && s[1].to_i < 1
+          return send_data("s[1].class = #{s[1].class}\r\n")
+          return send_data("<count> must be greater than zero or nil[DEACTIVATE]\r\n")
+        end
+
+        res = broadcast_cmd("rchg_latency_avg_calc_time_count #{s[1]}\r\n")
+
+        if s[1] != "nil"
+          @stats.latency_check_time_count = s[1].to_i
+          @stats.latency_log = true
+        elsif s[1] == "nil"
+          @stats.latency_check_time_count = nil
+          @stats.latency_log = false
+        end
+        res[@stats.ap_str] = "CHANGED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rchg_latency_avg_calc_time_count(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
+        elsif s[1] != "nil" && s[1].to_i < 1
+          return send_data("<count> must be greater than zero\r\n")
+        end
+
+        if s[1] != "nil"
+          @stats.latency_check_time_count = s[1].to_i
+          @stats.latency_log = true
+        elsif s[1] == "nil"
+          @stats.latency_check_time_count = nil
+          @stats.latency_log = false
+        end
+        @stats.latency_check_time_count = s[1].to_i
+        send_data("CHANGED\r\n")
+      end
+
       def ev_set_continuous_limit(s)
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
@@ -472,6 +712,94 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_connection_pool_expire_time <sec>
+      # set to expired time(sec) for connection_pool expire time
+      def ev_set_connection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        res = broadcast_cmd("rset_connection_pool_expire_time #{s[1]}\r\n")
+        Messaging::ConPool.instance.expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_connection_pool_expire_time <sec>
+      def ev_rset_connection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Messaging::ConPool.instance.expire_time = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_emconnection_pool_expire_time <sec>
+      def ev_set_emconnection_pool_expire_time(s)
+        # chcking s incude command and value (NOT check digit)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        #if ARGV is 0, expire time become infinity(NOT happen expire)
+        if s[1].to_i == 0
+          s[1] = "2147483647"
+        end
+        res = broadcast_cmd("rset_emconnection_pool_expire_time #{s[1]}\r\n")
+        Event::EMConPool::instance.expire_time = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_emconnection_pool_expire_time <sec>
+      def ev_rset_emconnection_pool_expire_time(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        Event::EMConPool::instance.expire_time = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # switch_dns_caching <on|off|true|false>
+      def ev_switch_dns_caching(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        res = broadcast_cmd("rswitch_dns_caching #{s[1]}\r\n")
+        if s[1] == 'on' || s[1] == 'true'
+          DNSCache.instance.enable_dns_cache
+          @log.info("DNS caching enabled")
+          res[@stats.ap_str] = "ENABLED"
+        elsif s[1] == 'off' || s[1] == 'false'
+          DNSCache.instance.disable_dns_cache
+          @log.info("DNS caching disabled")
+          res[@stats.ap_str] = "DISABLED"
+        else
+          res[@stats.ap_str] = "NOTSWITCHED"
+        end
+        send_data("#{res}\r\n")
+      end
+
+      # rswitch_dns_caching <on|off|true|false>
+      def ev_rswitch_dns_caching(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+
+        if s[1] == 'on' || s[1] == 'true'
+          DNSCache.instance.enable_dns_cache
+          @log.info("DNS caching enabled")
+          return send_data("ENABLED\r\n")
+        elsif s[1] == 'off' || s[1] == 'false'
+          DNSCache.instance.disable_dns_cache
+          @log.info("DNS caching disabled")
+          return send_data("DISABLED\r\n")
+        else
+          send_data("NOTSWITCHED\r\n")
+        end
+      end
+
       # set_hilatency_warn_time <sec>
       # set to threshold of warn message into a log when hilatency occured in a command.
       def ev_set_hilatency_warn_time(s)
@@ -540,6 +868,31 @@ module Roma
         else
           send_data("CLIENT_ERROR hash string parse error\r\n")
         end        
+      end
+
+      # set_wb_shift_size <size>
+      def ev_set_wb_shift_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_wb_shift_size #{s[1]}\r\n")
+        $roma.wb_writer.shift_size = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_wb_shift_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        $roma.wb_writer.shift_size = s[1].to_i
+        send_data("STORED\r\n")
       end
 
       private 

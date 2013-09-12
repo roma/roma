@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 require 'thread'
 require 'digest/sha1'
+require "timeout"
 
 module Roma
-  
+
   class AsyncMessage
     attr_accessor :event
     attr_accessor :args
@@ -34,9 +34,14 @@ module Roma
   module AsyncProcess
 
     @@async_queue = Queue.new
+    @@async_queue_latency = Queue.new
 
     def self.queue
       @@async_queue
+    end
+
+    def self.queue_latency
+      @@async_queue_latency
     end
 
     def start_async_process
@@ -44,6 +49,11 @@ module Roma
         async_process_loop
       }
       @async_thread[:name] = __method__
+
+      @async_thread_latency = Thread.new{
+        async_process_loop_for_latency
+      }
+      @async_thread_latency[:name] = __method__
     rescue =>e
       @log.error("#{e}\n#{$@}")
     end
@@ -57,6 +67,13 @@ module Roma
         sleep 0.1
       end
       @async_thread.exit
+
+      count = 0
+      while @@async_queue_latency.empty? == false && count < 100
+        count += 1
+        sleep 0.1
+      end
+      @async_thread_latency.exit
     end
 
     def async_process_loop
@@ -70,6 +87,31 @@ module Roma
                 msg.wait
                 msg.incr_count
                 @@async_queue.push(msg)
+              }
+              t[:name] = __method__
+            else
+              @log.error("async process retry out:#{msg.inspect}")
+              msg.callback.call(msg,false) if msg.callback
+            end
+          end
+        end
+      }
+    rescue =>e
+      @log.error("#{e}\n#{$@}")
+      retry
+    end
+
+    def async_process_loop_for_latency
+      loop {
+        while msg = @@async_queue_latency.pop
+          if send("asyncev_#{msg.event}",msg.args)
+            msg.callback.call(msg,true) if msg.callback
+          else
+            if msg.retry?
+              t = Thread.new{
+                msg.wait
+                msg.incr_count
+                @@async_queue_latency.push(msg)
               }
               t[:name] = __method__
             else
@@ -120,7 +162,7 @@ module Roma
         end
       end
       t[:name] = __method__
-      true      
+      true
     end
 
     def asyncev_start_balance_process(args)
@@ -148,7 +190,7 @@ module Roma
         end
       end
       t[:name] = __method__
-      true      
+      true
     end
 
     def asyncev_redundant(args)
@@ -193,7 +235,7 @@ module Roma
         @log.warn("async redundant failed:#{k}\e#{hname} #{clk} -> #{nid}")
         return false # retry
       end
-      true      
+      true
     end
 
     def asyncev_reqpushv(args)
@@ -243,6 +285,57 @@ module Roma
       t[:name] = __method__
     end
 
+    def asyncev_start_auto_recover_process(args)
+      @log.debug("#{__method__} #{args.inspect}")
+      ###run_join don't have possibility to be true in this case.
+      #if @stats.run_join
+      #  @log.error("#{__method__}:join process running")
+      #  return true
+      #end
+      if @stats.run_recover
+        @log.error("#{__method__}:recover process running.")
+        return false
+      end
+      if @stats.run_balance
+        @log.error("#{__method__}:balance process running")
+        return true
+      end
+
+      @rttable.auto_recover_status = "preparing"
+      t = Thread::new do
+        begin
+          timeout(@rttable.auto_recover_time){
+            loop{ 
+              sleep 1
+              break if @rttable.auto_recover_status != "preparing"
+              #break if @stats.run_join #run_join don't have possibility to be true in this case.
+              break if @stats.run_recover
+              break if @stats.run_balance
+            }
+          }
+          @log.debug("inactivated AUTO_RECOVER")
+        rescue
+          case @rttable.lost_action
+            when :auto_assign, :shutdown
+              @stats.run_recover = true
+              @rttable.auto_recover_status = "executing"
+                begin
+                  @log.debug("auto recover start")
+                  acquired_recover_process
+                rescue => e
+                  @log.error("#{__method__}:#{e.inspect} #{$@}")
+                ensure
+                  @stats.run_recover = false
+                  @rttable.auto_recover_status = "waiting"
+                end
+            when :no_action
+              @log.debug("auto recover NOT start. Because lost action is [no_action]")
+          end
+        end      
+      end
+      t[:name] = __method__
+    end
+
     def asyncev_start_release_process(args)
       @log.debug("#{__method__} #{args}")
       if @stats.run_iterate_storage
@@ -269,7 +362,7 @@ module Roma
       @log.info("#{__method__}:start")
 
       exclude_nodes = @rttable.exclude_nodes_for_recover(@stats.ap_str, @stats.rep_host)
-      
+
       @do_acquired_recover_process = true
       loop do
         break unless @do_acquired_recover_process
@@ -293,7 +386,7 @@ module Roma
     ensure
       @do_acquired_recover_process = false
     end
- 
+
     def join_process
       @log.info("#{__method__}:start")
       count = 0
@@ -309,7 +402,7 @@ module Roma
           @log.warn("#{__method__}:vnode dose not found")
           return false
         end
-        ret = req_push_a_vnode(vn, nodes[0], is_primary)      
+        ret = req_push_a_vnode(vn, nodes[0], is_primary)
         if ret == :rejected
           sleep 5
         else
@@ -317,10 +410,10 @@ module Roma
           count += 1
         end
       end
-      @log.info("#{__method__} has done.")
     rescue => e
       @log.error("#{e.inspect} #{$@}")
     ensure
+      @log.info("#{__method__} has done.")
       @do_join_process = false
     end
 
@@ -339,7 +432,7 @@ module Roma
           @log.warn("#{__method__}:vnode dose not found")
           return false
         end
-        ret = req_push_a_vnode(vn, nodes[0], is_primary)      
+        ret = req_push_a_vnode(vn, nodes[0], is_primary)
         if ret == :rejected
           sleep 5
         else
@@ -383,7 +476,7 @@ module Roma
       @rttable.proc_failed(src_nid)
       false
     end
- 
+
     def release_process
       @log.info("#{__method__}:start.")
 
@@ -397,7 +490,7 @@ module Roma
         @rttable.each_vnode do |vn, nids|
           break unless @do_release_process
           if nids.include?(@stats.ap_str)
-            
+
             to_nid, new_nids = @rttable.select_node_for_release(@stats.ap_str, @stats.rep_host, nids)
             unless sync_a_vnode_for_release(vn, to_nid, new_nids)
               @log.warn("#{__method__}:error at vn=#{vn} to_nid=#{to_nid} new_nid=#{new_nids}")
@@ -413,10 +506,10 @@ module Roma
       @do_release_process = false
       Roma::Messaging::ConPool.instance.close_all
     end
- 
+
     def sync_a_vnode_for_release(vn, to_nid, new_nids)
       nids = @rttable.search_nodes(vn)
-      
+
       if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
         @log.debug("#{__method__}:#{vn} #{to_nid}")
         # change routing data at the vnode and synchronize a data
@@ -444,7 +537,7 @@ module Roma
         if clk.is_a?(Integer) == false
           clk,new_nids = @rttable.search_nodes_with_clk(vn)
         end
-        
+
         cmd = "setroute #{vn} #{clk - 1}"
         new_nids.each{ |nn| cmd << " #{nn}"}
         res = async_broadcast_cmd("#{cmd}\r\n")
@@ -459,7 +552,7 @@ module Roma
 
     def sync_a_vnode(vn, to_nid, is_primary=nil)
       nids = @rttable.search_nodes(vn)
-      
+
       if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
         @log.debug("#{__method__}:#{vn} #{to_nid} #{is_primary}")
         # change routing data at the vnode and synchronize a data
@@ -488,7 +581,7 @@ module Roma
         if clk.is_a?(Integer) == false
           clk,nids = @rttable.search_nodes_with_clk(vn)
         end
-        
+
         cmd = "setroute #{vn} #{clk - 1}"
         nids.each{ |nn| cmd << " #{nn}"}
         res = async_broadcast_cmd("#{cmd}\r\n")
@@ -534,7 +627,7 @@ module Roma
       con = Roma::Messaging::ConPool.instance.get_connection(nid)
 
       @do_push_a_vnode_stream = true
-      
+
       con.write("spushv #{hname} #{vn}\r\n")
 
       res = con.gets # READY\r\n or error string
@@ -631,6 +724,51 @@ module Roma
       @log.info("#{__method__}:stop")
     end
 
+    def asyncev_calc_latency_average(args)
+      latency,cmd = args
+      #@log.debug(__method__)
+
+      if !@stats.latency_data.key?(cmd) #only first execute target cmd
+        @stats.latency_data[cmd].store("latency", Array.new())
+        @stats.latency_data[cmd].store("latency_max", Hash.new())
+        @stats.latency_data[cmd]["latency_max"].store("current", 0)
+        @stats.latency_data[cmd].store("latency_min", Hash.new())
+        @stats.latency_data[cmd]["latency_min"].store("current", 99999)
+        @stats.latency_data[cmd].store("time", Time.now.to_i)
+      end
+
+      begin
+        @stats.latency_data[cmd]["latency"].delete_at(0) if @stats.latency_data[cmd]["latency"].length >= 10
+        @stats.latency_data[cmd]["latency"].push(latency)
+
+        @stats.latency_data[cmd]["latency_max"]["current"] = latency if latency > @stats.latency_data[cmd]["latency_max"]["current"]
+        @stats.latency_data[cmd]["latency_min"]["current"] = latency if latency < @stats.latency_data[cmd]["latency_min"]["current"]
+
+      rescue =>e
+        @log.error("#{__method__}:#{e.inspect} #{$@}")
+
+      ensure
+        if @stats.latency_check_time_count != nil && Time.now.to_i - @stats.latency_data[cmd]["time"] > @stats.latency_check_time_count
+          average = @stats.latency_data[cmd]["latency"].inject(0.0){|r,i| r+=i }/@stats.latency_data[cmd]["latency"].size
+          max = @stats.latency_data[cmd]["latency_max"]["current"]
+          min = @stats.latency_data[cmd]["latency_min"]["current"]
+          @log.debug("Latency average[#{cmd}]: #{sprintf("%.8f", average)}"+
+                     "(denominator=#{@stats.latency_data[cmd]["latency"].length}"+
+                     " max=#{sprintf("%.8f", max)}"+
+                     " min=#{sprintf("%.8f", min)})"
+                    )
+
+          @stats.latency_data[cmd]["time"] =  Time.now.to_i
+          @stats.latency_data[cmd]["latency_past"] = @stats.latency_data[cmd]["latency"]
+          @stats.latency_data[cmd]["latency"] = []
+          @stats.latency_data[cmd]["latency_max"]["past"] = @stats.latency_data[cmd]["latency_max"]["current"]
+          @stats.latency_data[cmd]["latency_max"]["current"] = 0
+          @stats.latency_data[cmd]["latency_min"]["past"] = @stats.latency_data[cmd]["latency_min"]["current"]
+          @stats.latency_data[cmd]["latency_min"]["current"] = 99999
+        end
+      end
+      true
+    end
 
   end # module AsyncProcess
 

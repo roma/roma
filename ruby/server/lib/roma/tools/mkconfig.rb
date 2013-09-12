@@ -7,8 +7,7 @@ module Roma
   class Mkconfig
     TREE_TOP = "menu"
     LIB_PATH = Pathname(__FILE__).dirname.parent.parent
-    CONFIG_PATH = File.join("roma", "config.rb")
-    CONFIG_FULL_PATH = File.expand_path(File.join(LIB_PATH, CONFIG_PATH))
+    CONFIG_TEMPLATE_PATH = File.expand_path(File.join(LIB_PATH, "roma/config.rb"))
     CONFIG_OUT_PATH = File.expand_path(File.join(Pathname.pwd, "config.rb"))
     PLUGIN_DIR = File.expand_path(File.join(LIB_PATH, File.join("roma", "plugin")))
     BNUM_COEFFICIENT = 2 #reccomend1-4.
@@ -20,7 +19,7 @@ module Roma
     PHP_CONNECTION = 256
     KB = 1024
     GB = 1024 * 1024 * 1024
-    OS_MEMORY_SIZE = 2 * GB
+    OS_MEMORY_SIZE = 1 * GB
     END_MSG = ["exit", "quit", "balse"]
 
     class Base
@@ -34,61 +33,60 @@ module Roma
           path_name: menu
           message: Please select by number.
           choice:
-            - Select storage 
+            - Select storage
             - Select plugin
             - Calculate File Descriptor
             - Save
           next:
             - storage
             - plugin
-            - fd_server
+            - language
             - save
+
         storage:
           name: selected_storage
           path_name: storage
-          message: Please select by number.
+          message: Which storage will you use?
           choice:
             - Ruby Hash
             - Tokyo Cabinet
+          default: 1
           next:
             - menu
             - memory
         memory:
           name: memory_size_GB
           path_name:
-          message: How big memory size? Please measure in GB.
+          float_flg: on
+          message: How big memory size in 1 server? Please measure in GB.
+          default: 0.6
           next: process
         process:
           name: process_num
           path_name:
           message: How many run ROMA process per machine?
+          default: 2
           next: server
         server:
           name: server_num
           path_name:
           message: How many machine run as ROMA server?
+          default: 1
           next: data
         data:
           name: data_num
           path_name:
           message: How many data will you store?
-          next: key
-        key:
-          name: key_size_KB
-          path_name:
-          message: How big is key size per data? Please measure in KB.
-          next: value
-        value:
-          name: value_size_KB
-          path_name:
-          message: How big is value size per data? Please measure in KB.
+          default: 10000
           next: menu
+
         plugin:
           name: selected_plugin
           path_name: plugin
-          message: Please select by number.
+          message: Please select which plugin will you use.(plugin_storage.rb was already set)
           choice:
             #{load_path(PLUGIN_DIR) << "Select all plugins"}
+          default: 1
           next:
             #{
               r = Array.new
@@ -100,23 +98,26 @@ module Roma
         continue:
           name:
           path_name: 
-          message: Please select by number.
+          message: Will you use other plugin?
           choice:
             - Select more
             - No more
+          default: 2
           next:
             - plugin
+            - check_plugin
+        check_plugin:
+          name:
+          path_name: 
+          message: ROMA requires plugin_storage.rb or substitute plugin.Will you continue without plugin_storage.rb?
+          choice:
+            - Add plugin_storage.rb
+            - Not necessary
+          default: 2
+          next:
+            - add_plugin
             - menu
-        fd_server:
-          name: server_num
-          path_name: FileDescriptor
-          message: How many machine run as ROMA server?
-          next: fd_client
-        fd_client:
-          name: client_num 
-          path_name:
-          message: How many machine run as ROMA client?
-          next: language
+
         language:
           name: client_language
           path_name:
@@ -125,11 +126,26 @@ module Roma
             - Ruby
             - Java
             - PHP
+          default: 3
           next:
-            - menu
-            - menu
-            - menu
+            - fd_server
+            - fd_server
+            - fd_server
+        fd_server:
+          name: server_num
+          path_name: FileDescriptor
+          message: How many machine run as ROMA server?
+          default: 1
+          next: fd_client
+        fd_client:
+          name: client_num 
+          path_name:
+          message: How many machine run as ROMA client?
+          default: 1
+          next: menu
+
         save: END
+
         YAML
       end
 
@@ -144,17 +160,20 @@ module Roma
       def load_path(path)
         ret = Array.new
         files = Dir::entries(path)
+        files.delete("plugin_stub.rb") if files.include?("plugin_stub.rb")
+        files.delete("plugin_storage.rb") if files.include?("plugin_storage.rb")
+
         files.each do |file|
           ret << file if File::ftype(File.join(path, file)) == "file"
         end
+
         ret
       end
 
       def print_question(key)
         target = all[key]
-
+        #print question
         print "#{target["message"]}\n"
-
         if target.key?("choice")
           target["choice"].each_with_index do |k, i|
             print "[#{i + 1}] #{k}\n"
@@ -256,24 +275,22 @@ module Roma
 
     class Calculate
       def self.get_bnum(res)
+        res["server"] = res["fd_server"] if !res["server"]
         ans = res["data"].value.to_i * BNUM_COEFFICIENT * REDUNDANCY / res["server"].value.to_i / TC_FILE
         return ans
       end
 
       def self.get_xmsize_max(res)
-        ans = (res["memory"].value.to_i * GB - OS_MEMORY_SIZE) / res["process"].value.to_i / TC_FILE
+        ans = (res["memory"].value.to_f * GB - OS_MEMORY_SIZE) / res["process"].value.to_i / TC_FILE
         if ans <= 0
-          ans = res["memory"].value.to_i * GB / 2 / res["process"].value.to_i / TC_FILE
+          ans = res["memory"].value.to_f * GB / 2 / res["process"].value.to_i / TC_FILE
         end
+        ans = ans.to_i
         return ans
       end
 
-      def self.get_xmsize_min(res)
-        ans = (res["key"].value.to_i * KB + res["value"].value.to_i * KB) * res["data"].value.to_i * REDUNDANCY / res["server"].value.to_i / res["process"].value.to_i / TC_FILE
-        ans = ans
-      end
-
       def self.get_fd(res)
+        res["fd_server"] = res["server"] if !res["fd_server"]
         res["fd_server"].value.to_i * connection_num(res) + (res["fd_client"].value.to_i- 1) * DEFAULT_ROMA_CONNECTION * 2
       end
 
@@ -292,9 +309,19 @@ module Roma
     end
 
     def initialize(mode = :no_menu)
+      # confirming overwrite
+      if File.exist?(CONFIG_OUT_PATH)
+        print("Config.rb already exist in current directory. \nWill you overwrite?[y/n]")
+        if gets.chomp! != "y"
+          p "config.rb  were not created!"
+          exit
+        end
+      end
+
       @base = Base.new
       @results = Hash::new
       @next_hash = TREE_TOP
+
       begin
         @defaults = load_config([:STORAGE_CLASS, :STORAGE_OPTION, :PLUGIN_FILES])
       rescue LoadError
@@ -309,7 +336,7 @@ module Roma
     end
 
     def load_config(targets)
-      require CONFIG_PATH
+      require CONFIG_TEMPLATE_PATH
       d_value = Hash.new
       Config.constants.each do |cnst|
         if targets.include?(cnst)
@@ -321,16 +348,28 @@ module Roma
 
     def mkconfig(mode)
       skip = skip_menu!(mode)
+
       while true
         clear_screen
-        skip.call if @next_hash == "menu"
+
+        if @next_hash == "add_plugin"
+          @results["plugin"].value.unshift("plugin_storage.rb")
+          @next_hash = "menu"
+        end
+
+        skip.call if @next_hash == "menu" || @next_hash == "server" || @next_hash == "fd_server" || @next_hash == "check_plugin"
         break if end?(@base[@next_hash])
+        puts "if you dosen't input anything, default value is set."
         Box.print_with_box(@defaults)
         print_status(@results)
         @base.print_question(@next_hash)
         input = get_input(@base[@next_hash])
+
+        # if specific words(balse, exit, quit) was inputed, mkconfig.rb was finished.
         if END_MSG.include?(input)
-          break if exit?
+          p "config.rb  were not created!"
+          break
+
         else
           @results = store_result(@results, @base, @next_hash, input)
           @next_hash = @base.next(@next_hash, input)
@@ -343,15 +382,37 @@ module Roma
     end
 
     def skip_menu!(menu)
-      return Proc.new {} if menu == :with_menu
+      # in case of "-m" or "--with_menu" option was used
+      if menu == :with_menu
+        return Proc.new do
+          if @next_hash == "server" && @results["fd_server"]
+            @next_hash = @base["server"]["next"]
+          elsif @next_hash == "fd_server" && @results["server"]
+            @next_hash = "fd_client"
+          elsif @next_hash == "check_plugin" && @results["plugin"].value.include?("plugin_storage.rb")
+            @next_hash = "menu"
+          end
+        end
+      end
 
+      # in case of "-m" or "--with_menu" option was NOT used
       i = 0
       return Proc.new do
-        @next_hash = @base["menu"]["next"][i]
-        i += 1
+        if @next_hash == "menu"
+          @next_hash = @base["menu"]["next"][i]
+          i += 1
+        elsif @next_hash == "server" && @results["fd_server"]
+          @next_hash = @base["server"]["next"]
+        elsif @next_hash == "fd_server" && @results["server"]
+          @next_hash = "fd_client"
+        elsif @next_hash == "check_plugin" && @results["plugin"].value.include?("plugin_storage.rb")
+          @next_hash = "language"
+          i += 1
+        end
       end
     end
 
+    #judge whether data inputting finish or not
     def end?(s)
       if s == "END"
         save_data(@results)
@@ -373,6 +434,10 @@ module Roma
 
       while !correct_in?(hash,input)
         input = receiver.get_line
+        if input == ""
+          #set defaults value
+          input = hash["default"]
+        end
       end
 
       input
@@ -383,7 +448,7 @@ module Roma
         return true
       end
 
-      if hash == "continue"
+      if hash["next"] == "continue"
         if (input == "y" || input == "n")
           return true
         end
@@ -393,30 +458,19 @@ module Roma
             return true
           end
         else
-          if 0 < input.to_i
-            return true
+          if hash["float_flg"]
+            if 0 < input.to_f
+              return true
+            end
+          else  
+            if 0 < input.to_i
+              return true
+            end
           end
         end
       end
 
       return false
-    end
-
-    def exit?
-      question = "Settings are not saved. Really exit? [y/n]\n"
-      receiver = Input.new
-      input = ""
-
-      print question
-      input = receiver.get_line
-      if input == "y"
-        print "bye.\n"
-        true
-      else
-        print "Continue.\n"
-        sleep 1
-        false
-      end
     end
 
     def store_result(results, base, hash, input)
@@ -447,6 +501,7 @@ module Roma
       return results
     end
 
+    #make config.rb based on input data
     def save_data(res)
       if res.key?("storage")
         if res["storage"].value == "Ruby Hash"
@@ -463,13 +518,13 @@ module Roma
         end
       end
 
-      if res.key?("fd_server")
+      if res.key?("language")
         fd = Calculate.get_fd(res)
-        print "\r\nPlease set FD bigger than #{fd}.\r\n\r\n" 
+        print "\r\nPlease set FileDescriptor bigger than #{fd}.\r\n\r\n" 
       end
 
       body = ""
-      open(CONFIG_FULL_PATH, "r") do |f|
+      open(CONFIG_TEMPLATE_PATH, "r") do |f|
         body = f.read
       end
 
@@ -487,6 +542,7 @@ module Roma
       end
 
       if res.key?("plugin")
+        res["plugin"].value.unshift("plugin_storage.rb")
         body = ch_assign(body, "PLUGIN_FILES", res["plugin"].value)
       end
 
@@ -504,20 +560,26 @@ module Roma
       results = load_config([:STORAGE_CLASS, :STORAGE_OPTION, :PLUGIN_FILES])
       print "\r\nAfter\r\n"
       Box.print_with_box(results)
-      print "\r\nMkconfig is finish.\r\n\r\n"
+      print "\r\nMkconfig is finish.\r\n"
+      print "\r\nIf you need, change directory path about LOG, RTTABLE, STORAGE, WB and other setting.\r\n\r\n"
     end
 
+    # sep means separating right and left part(config.rb style)
     def ch_assign(text, exp, sep = " = ", str)
       sep = " = " if sep == "="
       text = text.gsub(/(\s*#{exp}).*/) do |s|
         name = $1
         if str.class == String
           if str =~ /::/ || str =~ /^\d+$/
-            name + sep + str
+            # storage type
+           name + sep + str
           else
-            name + sep + str.inspect
+            # require & storage option
+           name + sep + str.inspect
           end
         else
+          # plugin
+          # "to_s" equal "inspect" in Ruby 1.9
           name + sep + str.to_s.sub("\\", "")
         end
       end

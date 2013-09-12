@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 
 require 'roma/client/rclient'
 require 'roma/messaging/con_pool'
@@ -194,6 +193,6 @@ class RClientTestForceForward < RClientTest
         @rd.v_idx[d & @search_mask][1]
       end
     }
-  end  
+  end
 
 end
