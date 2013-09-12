@@ -6,7 +6,7 @@ module Roma
 
     module SQLite3_Ext
       def put(k,v)
-        if RUBY_VERSION >= "1.9.2"
+        if RUBY_VERSION >= "1.9.1"
           k = k.encode("ascii-8bit") if k.encoding != Encoding::ASCII_8BIT
         end
         if self.execute("select count(*) from t_roma where key=?",k)[0][0].to_i==0
@@ -17,7 +17,7 @@ module Roma
       end
 
       def get(k)
-        if RUBY_VERSION >= "1.9.2"
+        if RUBY_VERSION >= "1.9.1"
           k = k.encode("ascii-8bit") if k.encoding != Encoding::ASCII_8BIT
         end
         r = self.execute("select * from t_roma where key=?",k)
@@ -26,7 +26,7 @@ module Roma
       end
 
       def out(k)
-        if RUBY_VERSION >= "1.9.2"
+        if RUBY_VERSION >= "1.9.1"
           k = k.encode("ascii-8bit") if k.encoding != Encoding::ASCII_8BIT
         end
         return nil if get(k) == nil

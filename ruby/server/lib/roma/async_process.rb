@@ -410,10 +410,10 @@ module Roma
           count += 1
         end
       end
-      @log.info("#{__method__} has done.")
     rescue => e
       @log.error("#{e.inspect} #{$@}")
     ensure
+      @log.info("#{__method__} has done.")
       @do_join_process = false
     end
 
