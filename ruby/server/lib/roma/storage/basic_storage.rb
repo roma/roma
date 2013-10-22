@@ -47,6 +47,7 @@ module Roma
 
         @each_cache_lock = Mutex::new
         @each_clean_up_lock = Mutex::new
+        @stat_lock = Mutex::new
       end
 
       def get_stat
@@ -482,9 +483,30 @@ module Roma
 
         ret = [vn, last, clk, expt, v]
         if expt == 0
+          # for the deleted mark
           return ret if db_put(vn, k, pack_header(*ret[0..3]))
         else
           return ret if db_put(vn, k, pack_data(*ret))
+        end
+        nil
+      end
+
+      def load_stream_dump_for_cachecleaning(vn, last, clk, expt, k, v)
+        n = @hdiv[vn]
+        buf = @hdb[n].get(k)
+        if buf
+          data = unpack_header(buf)
+          if last - data[1] < @logic_clock_expire && cmp_clk(clk,data[2]) <= 0
+            return nil
+          end
+        end
+
+        ret = [vn, last, clk, expt, v]
+        if expt == 0
+          # for the deleted mark
+          return ret if @hdb[n].put(k, pack_header(*ret[0..3]))
+        else
+          return ret if @hdb[n].put(k, pack_data(*ret))
         end
         nil
       end
@@ -581,6 +603,18 @@ module Roma
       end
 
       # Calls the geven block, 
+      # passes the cache(@hdbc) element.
+      # +dn+:: number of database
+      # +keys+:: key list
+      def each_cache_by_keys(dn, keys)
+        keys.each do |k|
+          v = @hdbc[dn].get(k)
+          vn, last, clk, expt, val = unpack_data(v)
+          yield [vn, last, clk, expt, k, val]
+        end
+      end
+
+      # Calls the geven block, 
       # passes the cache(@hdbc) element as the spushv command data format.
       # +dn+:: number of database
       # +keys+:: key list
@@ -628,45 +662,47 @@ module Roma
       end
 
       def set_db_stat(dn, stat)
-        case @dbs[dn]
-        when :normal
-          if stat == :safecopy_flushing
-            # open cache
-            @hdbc[dn] = open_db("#{@storage_path}/#{dn}.cache.#{@ext_name}")
-            stop_clean_up { @dbs[dn] = stat }
-            stat
-          else
-            false
-          end
-        when :safecopy_flushing
-          if stat == :safecopy_flushed
-            @dbs[dn] = stat
-          else
-            false
-          end
-        when :safecopy_flushed
-          if stat == :cachecleaning
-            @dbs[dn] = stat
-          else
-            false
-          end
-        when :cachecleaning
-          if stat == :normal
-            @dbs[dn] = stat
-            # remove cache
-            close_db(@hdbc[dn])
-            @hdbc[dn] = nil
-            if File.exist?("#{@storage_path}/#{dn}.cache.#{@ext_name}")
-              File.unlink("#{@storage_path}/#{dn}.cache.#{@ext_name}")
+        @stat_lock.synchronize do
+          case @dbs[dn]
+          when :normal
+            if stat == :safecopy_flushing
+              # open cache
+              @hdbc[dn] = open_db("#{@storage_path}/#{dn}.cache.#{@ext_name}")
+              stop_clean_up { @dbs[dn] = stat }
+              stat
+            else
+              false
             end
-            stat
-          elsif stat == :safecopy_flushing
-            @dbs[dn] = stat
+          when :safecopy_flushing
+            if stat == :safecopy_flushed
+              @dbs[dn] = stat
+            else
+              false
+            end
+          when :safecopy_flushed
+            if stat == :cachecleaning
+              @dbs[dn] = stat
+            else
+              false
+            end
+          when :cachecleaning
+            if stat == :normal
+              @dbs[dn] = stat
+              # remove cache
+              close_db(@hdbc[dn])
+              @hdbc[dn] = nil
+              if File.exist?("#{@storage_path}/#{dn}.cache.#{@ext_name}")
+                File.unlink("#{@storage_path}/#{dn}.cache.#{@ext_name}")
+              end
+              stat
+            elsif stat == :safecopy_flushing
+              @dbs[dn] = stat
+            else
+              false
+            end
           else
             false
           end
-        else
-          false
         end
       end
 
