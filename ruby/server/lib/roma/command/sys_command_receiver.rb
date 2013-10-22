@@ -1,3 +1,4 @@
+require 'roma/async_process'
 
 module Roma
   module Command
@@ -565,23 +566,23 @@ module Roma
           if st.dbs[dn] != :normal
             return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
           end
-          #
-          #
-          #
-          send_data("-> safecopy\r\n")
+          if st.set_db_stat(dn, :safecopy_flushing) == false
+            return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
+          end
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_flush_process',[hname, dn]))
         elsif s[2] ==  'normal'
           if st.dbs[dn] != :safecopy_flushed
             return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
           end
-          #
-          #
-          #
-          send_data("-> normal\r\n")
+          if st.set_db_stat(dn, :cachecleaning) == false
+            return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
+          end
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_cachecleaning_process',[hname, dn]))
         else
           return send_data("CLIENT_ERROR status parse error\r\n")
         end
         
-        send_data("CHANGED\r\n")
+        send_data("PUSHED\r\n")
       end
 
       private 
