@@ -33,6 +33,7 @@ module Roma
         @hdbc = []
         # status of a database
         @dbs = []
+        @log_fd = nil
 
         @hdiv = Hash.new(0)
 
@@ -103,15 +104,18 @@ module Roma
         create_div_hash
         mkdir_p(@storage_path)
         @divnum.times do |i|
-          # open a database
+          # open database file
           @hdb[i] = open_db("#{@storage_path}/#{i}.#{@ext_name}")
-          # TODO
-          # 1.open a status file
-          # 2.open a cache file, if status is not in :normal status.
-          @dbs[i] = :normal
-          # opan a database cache
-          @hdbc[i] = nil
+          # check cache file
+          if File.exist?(cache_file_name(i))
+            @hdbc[i] = open_db(cache_file_name(i))
+            stop_clean_up { @dbs[i] = :safecopy_flushed }
+          else
+            @dbs[i] = :normal
+            @hdbc[i] = nil
+          end
         end
+        open_log
       end
 
       def closedb
@@ -120,6 +124,7 @@ module Roma
         buf.each{ |h| close_db(h) if h }
         buf = @hdbc; @hdbc = []
         buf.each{ |h| close_db(h) if h }
+        close_log
       end
 
 
@@ -661,32 +666,40 @@ module Roma
         @hdb[dn].sync
       end
 
+      def cache_file_name(dn)
+        "#{@storage_path}/#{dn}.cache.#{@ext_name}"
+      end
+
       def set_db_stat(dn, stat)
         @stat_lock.synchronize do
           case @dbs[dn]
           when :normal
             if stat == :safecopy_flushing
               # open cache
-              @hdbc[dn] = open_db("#{@storage_path}/#{dn}.cache.#{@ext_name}")
+              @hdbc[dn] = open_db(cache_file_name(dn))
               stop_clean_up { @dbs[dn] = stat }
+              write_log("#{dn} #{stat.to_s}")
               stat
             else
               false
             end
           when :safecopy_flushing
             if stat == :safecopy_flushed
+              write_log("#{dn} #{stat.to_s}")
               @dbs[dn] = stat
             else
               false
             end
           when :safecopy_flushed
             if stat == :cachecleaning
+              write_log("#{dn} #{stat.to_s}")
               @dbs[dn] = stat
             else
               false
             end
           when :cachecleaning
             if stat == :normal
+              write_log("#{dn} #{stat.to_s}")
               @dbs[dn] = stat
               # remove cache
               close_db(@hdbc[dn])
@@ -696,6 +709,7 @@ module Roma
               end
               stat
             elsif stat == :safecopy_flushing
+              write_log("#{dn} #{stat.to_s}")
               @dbs[dn] = stat
             else
               false
@@ -704,6 +718,49 @@ module Roma
             false
           end
         end
+      end
+
+      def get_logfile_list
+        l={}
+        files=Dir.glob("#{@storage_path}/status.log.*")
+        files.each{ |file|
+          if /$.+status\.log\.(\d+)$/=~file
+            l[$1.to_i]=$&
+          end
+        }
+        # sorted by old order
+        l.to_a.sort{|a,b| a[0]<=>b[0]}
+      end
+
+      def open_log
+        logs = get_logfile_list
+        if logs.length == 0
+          @log_name="#{@storage_path}/status.log.1"
+        else
+          if File::stat("#{@fname}.#{logs.last[0]}").size == 0
+            @log_name="#{@fname}.#{logs.last[0]}"
+          else
+            @log_name="#{@fname}.#{logs.last[0]+1}"
+          end
+        end
+        @log_fd=File.open(@log_name,"a")
+      end
+
+      def write_log(line)
+        # log rotation
+        if File::stat(@log_name).size > 1000 * 1024
+          close_log
+          open_log
+        end
+        t = Time.now
+        tstr = "#{t.strftime('%Y-%m-%dT%H:%M:%S')}.#{t.usec}"
+        @log_fd.write("#{tstr} #{line}\n")
+        @log_fd.flush
+      end
+
+      def close_log
+        @log_fd.close if @log_fd
+        @log_fd = nil
       end
 
     end # class BasicStorage
