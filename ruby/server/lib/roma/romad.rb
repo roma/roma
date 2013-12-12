@@ -511,6 +511,8 @@ module Roma
           @stats.run_storage_clean_up
         stop_clean_up
       end
+    rescue Exception =>e
+      @log.error("#{e}\n#{$@}")
     end
 
     def timer_event_10sec
