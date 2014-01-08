@@ -1,15 +1,14 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 require 'optparse'
 require 'roma/routing/routing_data'
 
-# ダイジェストのビット数
+# digest bit count
 dgst_bits=32
-# 分割ビット数 (dgst_bits >= div_bits)
+# dividing bit count (dgst_bits >= div_bits)
 div_bits=9
-# 冗長度 (nodes.length >= rn)
+# redundancy (nodes.length >= rn)
 rn=2
-# ホスト名の重複許可
+# permit redundant on single host
 repeathost=false
 
 opts = OptionParser.new
@@ -30,12 +29,12 @@ end
 
 if dgst_bits < div_bits
   STDERR.puts "The hash bits should be divide bits or more."
-  exit!  
+  exit!
 end
 
 if div_bits > 32
   STDERR.puts "The upper bound of divide bits is 32."
-  exit!    
+  exit!
 end
 
 if nodes.length < rn

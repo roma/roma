@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 
 require 'roma/client/rclient'
 require 'roma/messaging/con_pool'
@@ -83,7 +82,7 @@ rescue =>e
   false
 end
 
-# vnode をコピーするテスト
+# test of copying vnode
 class CopyDataTest < Test::Unit::TestCase
   include RomaTestUtils
 
@@ -98,10 +97,10 @@ class CopyDataTest < Test::Unit::TestCase
     @th.kill
     $gs.close
     Roma::Messaging::ConPool::instance.close_all
-  end  
+  end
 
   def test_spushv
-    # vn = 0 のキー
+    # key wihch's vn = 0
     keys = []
     n = 1000
     n.times{|i|
@@ -124,7 +123,7 @@ class CopyDataTest < Test::Unit::TestCase
   def push_a_vnode_stream(hname, vn, nid, keys)
     con = Roma::Messaging::ConPool.instance.get_connection(nid)
     con.write("spushv #{hname} #{vn}\r\n")
-    
+
     res = con.gets # READY\r\n or error string
     if res != "READY\r\n"
       con.close
@@ -137,7 +136,7 @@ class CopyDataTest < Test::Unit::TestCase
       con.write(data)
     }
     con.write("\0"*20) # end of steram
-    
+
     res = con.gets # STORED\r\n or error string
     Roma::Messaging::ConPool.instance.return_connection(nid,con)
     res.chomp! if res
@@ -155,7 +154,7 @@ class CopyDataTest < Test::Unit::TestCase
     dat[0] = reqpushv('roma',0)
     assert_not_nil( dat[0] )
     dat[0] = reqpushv('roma',0)
-    assert_not_nil( dat[0] )  # 同じ vnode を2度アクセスしても良いことを確認
+    assert_not_nil( dat[0] )  # confirming twice access to same node
 
     dat[1] = reqpushv('roma',536870912)
     assert_not_nil( dat[1] )
@@ -184,7 +183,7 @@ class CopyDataTest < Test::Unit::TestCase
     $dat[vn]
   end
 
-  # n 個の dummy data を set
+  # set dummy data of n count
   def make_dummy(n)
     n.times{|i|
       assert( @rc.set(i.to_s,i.to_s)=="STORED" )
@@ -230,5 +229,5 @@ class CopyDataTest < Test::Unit::TestCase
     @log.error("#{e}\n#{$@}")
     false
   end
-  
+
 end

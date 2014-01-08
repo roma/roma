@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 require 'roma/logging/rlogger'
 require 'roma/messaging/con_pool'
 require 'roma/routing/routing_data'
 require 'roma/client/sender'
 
 module Roma
-  
+
   class Watcher
 
     def initialize
@@ -18,13 +17,13 @@ module Roma
     end
 
   end # class Watcher
-  
+
 end # module Roma
 
 
 w = Roma::Watcher.new
 
-# 監視ノードの定義
+# define the watch list of node
 nodes = ['roma0:11211','roma0:11212','roma0:11213','roma0:11214']
 
 nodes.each{|nid|

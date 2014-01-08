@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 #
 # usage:mkrecent dgst-bits div-bits divnum storage-path1 storage-path2 recent-storage-path
 #
@@ -13,7 +12,7 @@ module Roma
   Storage::autoload(:SQLite3Storage,'roma/storage/sqlite3_storage')
 
   class MakeRecentData
-    
+
     def initialize(argv = nil)
       if argv.length != 6
         STDERR.puts "usage:mkrecent dgst-bits div-bits divnum storage-path1 storage-path2 recent-storage-path"
@@ -38,7 +37,7 @@ module Roma
         STDERR.puts "#{@recentpath} exists."
         exit
       end
-      
+
       Dir::mkdir(@recentpath)
 
       Dir::glob("#{@strgpath1}/*").each{|dir|
@@ -66,7 +65,7 @@ module Roma
         @st1.closedb
         exit
       end
- 
+
       if @st1.class != @st2.class
         STDERR.puts "#{p1} and #{p2} that file type is different."
         @st1.closedb
