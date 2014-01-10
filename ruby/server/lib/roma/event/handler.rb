@@ -96,7 +96,6 @@ module Roma
       end
 
       def unbind
-        @log.debug("Roma::Event::Handler.unbind called")
         @connected=false
         begin
           @fiber.resume
@@ -144,7 +143,7 @@ module Roma
 
       def dispatcher
         @stats = Roma::Stats.instance
-        @log.debug("Roma::Event::Handler.dipatcher called")
+        #@log.debug("Roma::Event::Handler.dipatcher called")
         while(@connected) do
           @enter_time = nil
           next unless s=gets
