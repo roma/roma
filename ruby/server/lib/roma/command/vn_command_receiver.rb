@@ -45,14 +45,20 @@ module Roma
         count = rcount = 0
         @log.debug("#{__method__}:#{s.inspect} received.")
         loop {
-          context_bin = read_bytes(20, 100)
+          context_bin = read_bytes(20, @stats.spushv_read_timeout)
           vn, last, clk, expt, klen = context_bin.unpack('NNNNN')
           break if klen == 0 # end of dump ?
           k = read_bytes(klen)
-          vlen_bin = read_bytes(4, 100)
+          vlen_bin = read_bytes(4, @stats.spushv_read_timeout)
           vlen, =  vlen_bin.unpack('N')
           if vlen != 0
-            v = read_bytes(vlen, 100)
+            if klen > @stats.spushv_klength_warn
+              @log.warn("#{__method__}:Too long key: key = #{k}")
+            end
+            if vlen > @stats.spushv_vlength_warn
+              @log.warn("#{__method__}:Too long value: key = #{k} vlen = #{vlen}")
+            end
+            v = read_bytes(vlen, @stats.spushv_read_timeout)
 
             createhash(s[1]) unless @storages[s[1]]
             if @storages[s[1]].load_stream_dump(vn, last, clk, expt, k, v)

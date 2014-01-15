@@ -462,11 +462,11 @@ module Roma
       Roma::Messaging::ConPool.instance.return_connection(src_nid,con)
       # waiting for pushv
       count = 0
-      while @rttable.search_nodes(vn).include?(@stats.ap_str)==false && count < 300
+      while @rttable.search_nodes(vn).include?(@stats.ap_str)==false && count < @stats.reqpushv_timeout_count
         sleep 0.1
         count += 1
       end
-      if count >= 300
+      if count >= @stats.reqpushv_timeout_count
         @log.warn("#{__method__}:request has been time-out.vn=#{vn} nid=#{src_nid}")
         return :timeout
       end
