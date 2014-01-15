@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 require 'roma/logging/rlogger'
 require 'roma/routing/routing_data'
 require 'roma/routing/merkle_tree'
@@ -48,7 +47,7 @@ module Roma
           elsif nids.include?(ap)
             sn += 1
           end
-          short += 1 if nids.length < @rd.rn 
+          short += 1 if nids.length < @rd.rn
         }
 
         ret = {}
@@ -83,12 +82,12 @@ module Roma
         @rd.v_idx.keys
       end
 
-      # ハッシュ値からvnode idを返す
+      # get vnode id from hash value
       def get_vnode_id(d)
         d & @search_mask
       end
 
-      # vnode があるノードIDの配列を返す
+      # get array of node ID which have vnode
       # +vn+: vnode id
       def search_nodes(vn)
         @rd.v_idx[vn].clone
@@ -96,11 +95,11 @@ module Roma
         nil
       end
 
-      # 離脱ノードを検索リストから削除する
-      # +nid+: 離脱ノード
+      # delete dropping node from list
+      # +nid+: dropping node
       def leave(nid)
         @rd.nodes.delete(nid)
-        # リストから nid を消す
+        # delet nid from list
         @rd.v_idx.each_pair{ |vn, nids|
           nids.delete_if{ |nid2| nid2 == nid}
           if nids.length == 0
@@ -144,7 +143,7 @@ module Roma
         @fail_cnt.delete(nid)
       end
 
-      # v_idx から nodes を再構築する
+      # Reconstruct vnodes from v_idx
       def create_nodes_from_v_idx
         @rd.create_nodes_from_v_idx
       end

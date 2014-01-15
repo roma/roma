@@ -143,11 +143,13 @@ module Roma
 
       def dispatcher
         @stats = Roma::Stats.instance
+        #@log.debug("Roma::Event::Handler.dipatcher called")
         while(@connected) do
           @enter_time = nil
           next unless s=gets
           @enter_time = Time.now
           s=s.chomp.split(/ /)
+          # check whether comand was send or not? and check this command listed on ROMA?
           if s[0] && @@ev_list.key?(s[0].downcase)
             send(@@ev_list[s[0].downcase],s)
             @lastcmd=s
@@ -161,12 +163,17 @@ module Roma
             @log.warn("command error:#{s}")
             send_data("ERROR\r\n")
             close_connection_after_writing
+            next
           end
 
           # hilatency check
           ps = Time.now - @enter_time
           if ps > @stats.hilatency_warn_time
             @log.warn("hilatency occurred in #{@lastcmd} put in a #{ps} seconds")
+          end
+          # check latency average
+          if @stats.latency_check_cmd.include?(@lastcmd[0])
+            Roma::AsyncProcess::queue_latency.push(Roma::AsyncMessage.new('calc_latency_average', [ps, @lastcmd[0]]))
           end
 
           d = EM.connection_count - @@ccl_start
@@ -245,6 +252,7 @@ module Roma
       def conn_get_stat
         ret = {}
         ret["connection.count"] = EM.connection_count
+        ret["connection.descriptor_table_size"] = EM.set_descriptor_table_size
         ret["connection.continuous_limit"] = Handler.get_ccl
         ret["connection.accepted_connection_expire_time"] = Handler.connection_expire_time
         ret["connection.handler_instance_count"] = Handler.connections.length

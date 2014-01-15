@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-# -*- coding: utf-8 -*-
 #
 # usage:recoverlost address port storage-path [yyyymmddhhmmss]
 #
@@ -15,7 +14,7 @@ module Roma
   Storage::autoload(:SQLite3Storage,'roma/storage/sqlite3_storage')
 
   class RecoverLost
-    
+
     def initialize(pname, pushv_cmd, argv, alldata = false)
       if alldata == false && argv.length < 4
         puts "usage:#{pname} address port storage-path [yyyymmddhhmmss]"
@@ -36,7 +35,7 @@ module Roma
         STDERR.puts "port was not numeric."
         exit
       end
-      
+
       if @ymdhms && (@ymdhms.length != 14 || @ymdhms =~ /\D/)
         STDERR.puts "yyyymmddhhmmss format mismatch."
         exit
@@ -84,7 +83,7 @@ module Roma
         next unless File::directory?(dir)
         hname = dir[dir.rindex('/')+1..-1]
         yield hname,dir
-      }      
+      }
     end
 
     def get_routing_data(nid)
@@ -121,7 +120,7 @@ module Roma
       ext = File::extname(Dir::glob("#{path}/0.*")[0])[1..-1]
       # count a number of divided files
       divnum = Dir::glob("#{path}/*.#{ext}").length
-        
+
       st = new_storage(ext)
       st.divnum = divnum
       st.vn_list = vn_list
@@ -163,9 +162,9 @@ module Roma
         }
 
         if nodes == nil || nodes.length == 0
-          cmd = "setroute #{vn} #{@rd.v_clk[vn]} #{nid}\r\n"
-          exit unless send_cmd(nid ,cmd)
-          broadcast_cmd(cmd, nid)
+          cmd = "setroute #{vn} #{@rd.v_clk[vn]} #{nids[0]}\r\n"
+          exit unless send_cmd(nids[0] ,cmd)
+          broadcast_cmd(cmd, nids[0])
         end
       }
     end
@@ -242,7 +241,7 @@ module Roma
         else
           wd = [vn, last, 0, expt, k.length, k, 0].pack("NNNNNa#{k.length}N")
         end
-       
+
         con.write(wd)
         sleep @stream_copy_wait_param
       }
@@ -293,10 +292,10 @@ module Roma
       else
         wd = [vn, last, 0, expt, k.length, k, 0].pack("NNNNNa#{k.length}N")
       end
-       
+
       con.write(wd)
       sleep @stream_copy_wait_param
-  
+
       con.write("\0"*20) # end of steram
 
       res = con.gets # STORED\r\n or error string

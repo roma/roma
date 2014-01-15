@@ -1,3 +1,28 @@
+*0.8.13 (Sep 12 2013)*
+
+* change target ruby version about encoding problem (upper 1.9.2 => upper 1.9.1) [hiroaki-iwase] e56d2f4
+* modify end message of join. [hiroaki-iwase] a649dfb
+* modify typo [hiroaki-iwase] c47802b
+* fix:for a problem of encording on 1.9.2 [junji torii] 3501622
+* modify ongoing setting changing cmd. [hiroaki-iwase] 190db49
+* Add new async process for calculate latency average & add some commands for change setting. [hiroaki-iwase] 49dc9cb
+* add new function "calculate latency average" [hiroaki-iwase] 40b6266
+* Add command of changing CONNECTION_POOL_EXPTIME & DEFAULT_LOST_ACTION & CONNECTION_DESCRIPTOR_TABLE_SIZE & WRITEBEHIND_SHIFT_SIZE [hiroaki-iwase] de757af
+* add vnode balancing logic [junji torii] bfa16cd
+* add *_rttable_sub_nid commands [junji torii] 8bd4a31
+* add auto_recover function [hiroaki-iwase] 473df72
+* modify message when execute "balse" [hiroaki-iwase] a3d61b1
+* add node-id substitution feature in routingdump command. [junji torii] a3693e8
+* fixed recoverlost_lib's value error [hiroaki-iwase] deb9430
+* add log output(info level) when new wb file was created. [hiroaki-iwase] dcec49a
+* add new function "calculate latency average" [hiroaki-iwase] 4158ccd
+* Add DNS caching function. [Hiroki Matsue] abf4464
+* Modify some default values. Change plugin selecting(plugin_storage.rb is set without question). [hiroaki-iwase] d2542f0
+* add command of changing CONNECTION_EMPOOL_EXPTIME. [hiroaki-iwase] 1d3df93
+* improve mkconfig.rb [hiroaki-iwase] 74be88d
+* remove utf-8 manifesto # -*- coding: utf-8 -*-" # encoding: utf-8 [hiroaki-iwase] d54e30c
+* translate comment JP to ENG [hiroaki-iwase] 1b091fd
+
 *0.8.12 (Feb 12 2013)*
 
 * refactor: for protocol [Hiroki Matsue] a6f9152

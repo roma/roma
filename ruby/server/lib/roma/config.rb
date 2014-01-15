@@ -8,6 +8,8 @@ module Roma
 
     # :no_action | :auto_assign | :shutdown
     DEFAULT_LOST_ACTION = :auto_assign
+    # to use a auto recover function, AUTO_RECOVER is to set true
+    AUTO_RECOVER = false
 
     # failover setting
     # threshold of failover occurrence
@@ -49,6 +51,10 @@ module Roma
     CONNECTION_EMPOOL_EXPTIME = 30
     # max length of the eventmachine's connection pool
     CONNECTION_EMPOOL_MAX = 15
+
+    # lookup hostname to the nameserver everytime or only first time.
+    # if set true, the result of lookup will keep.
+    DNS_CACHING = false
 
     # storage setting
     STORAGE_CLASS = Roma::Storage::RubyHashStorage

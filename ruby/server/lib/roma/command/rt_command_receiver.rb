@@ -111,6 +111,69 @@ module Roma
         send_data("CLIENT_ERROR\r\n")
       end
 
+      # set_auto_recover [true|false] <sec>
+      def ev_set_auto_recover(s)
+        #check argument
+        if /^true$|^false$/ !~ s[1]
+          return send_data("CLIENT_ERROR arguments must be true or false\r\n")
+        elsif s.length != 2 && s.length != 3
+          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
+        elsif s.length == 3 && s[2].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+        res = broadcast_cmd("rset_auto_recover #{s[1]} #{s[2]}\r\n")
+        if s[1] == "true"
+          @rttable.auto_recover = true
+        elsif s[1] == "false"
+          @rttable.auto_recover = false
+        end
+        @rttable.auto_recover_status = "waiting"
+        @rttable.auto_recover_time = s[2].to_i if s[2]
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_auto_recover(s)
+        if /^true$|^false$/ !~ s[1]
+          return send_data("CLIENT_ERROR arguments must be true or false #{s[1]} #{s[1].class} \r\n")
+        elsif s.length != 2 && s.length != 3
+          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
+        elsif s.length == 3 && s[2].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+        if s[1] == "true"
+          @rttable.auto_recover = true
+        elsif s[1] == "false"
+          @rttable.auto_recover = false
+        end
+        @rttable.auto_recover_status = "waiting"
+        @rttable.auto_recover_time = s[2].to_i if s[2]
+        send_data("STORED\r\n")
+      end
+
+      # set_lost_action [auto_assign|shutdown]
+      def ev_set_lost_action(s)
+        if s.length != 2 || /^auto_assign$|^shutdown$/ !~ s[1]
+          return send_data("CLIENT_ERROR changing lost_action must be auto_assign or shutdown\r\n")
+        elsif /^auto_assign$|^shutdown$/ !~ @rttable.lost_action
+          return send_data("CLIENT_ERROR can use this command only current lost action is auto_assign or shutdwn mode\r\n")
+        end
+        res = broadcast_cmd("rset_lost_action #{s[1]}\r\n")
+        @rttable.lost_action = s[1].to_sym
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+      
+      def ev_rset_lost_action(s)
+        if s.length != 2 || /^auto_assign$|^shutdown$/ !~ s[1]
+          return send_data("CLIENT_ERROR changing lost_action must be auto_assign or shutdown\r\n")
+        elsif /^auto_assign$|^shutdown$/ !~ @rttable.lost_action
+          return send_data("CLIENT_ERROR can use this command only current lost action is auto_assign or shutdwn mode\r\n")
+        end
+        @rttable.lost_action = s[1].to_sym
+        send_data("STORED\r\n")
+      end  
+
       # set_threshold_for_failover <n>
       def ev_set_threshold_for_failover(s)
         if s.length != 2 || s[1].to_i == 0

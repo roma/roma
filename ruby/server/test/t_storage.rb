@@ -304,7 +304,7 @@ class TCStorageTest < Test::Unit::TestCase
     n.times{|i|
       @st.set(3,"key3-#{i}",0,Time.now.to_i-100,"val3-#{i}")
     }
-    # 10 kyes deleted
+    # 10 keys deleted
     cnt=0
     @st.each_clean_up(Time.now.to_i-100,vnhash){|k,vn|
       assert_equal(3, vn)
