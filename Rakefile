@@ -39,8 +39,8 @@ EXEC_TABLE = Dir.entries(base + 'bin').reject{ |d| d =~ /^\.+$/ || d =~ /^sample
 require File.expand_path(File.join('ruby', 'server', 'lib', 'roma', 'version'), File.dirname(__FILE__))
 VER_NUM = Roma::VERSION
 
-if VER_NUM =~ /([0-9.]+)$/
-  CURRENT_VERSION = $1
+if VER_NUM =~ /([0-9.p-]+)$/
+  CURRENT_VERSION = $1.delete("-")
 else
   CURRENT_VERSION = "0.0.0"
 end
