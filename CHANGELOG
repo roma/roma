@@ -1,3 +1,11 @@
+*0.8.13-p1 (Jan 15 2014)*
+
+* add timeout parameter for a vnode copy [junji torii] 0522750
+* remove some debug log [hiroaki-iwase] 94d96dc
+* Add Gemfile. [Hiroki Matsue] 9029bf8
+* Ignore test related files. [Hiroki Matsue] 556a931
+* fix:add rescue in timer_event_1sec [junji torii] 11cc4ea
+
 *0.8.13 (Sep 12 2013)*
 
 * change target ruby version about encoding problem (upper 1.9.2 => upper 1.9.1) [hiroaki-iwase] e56d2f4
