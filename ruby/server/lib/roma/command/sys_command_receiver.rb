@@ -855,12 +855,12 @@ module Roma
         send_data("STORED\r\n")
       end
 
-      # set_spushv_klength_warn <B>
+      # set_spushv_klength_warn <byte>
       def ev_set_spushv_klength_warn(s)
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments\n\r")        
         end
-        if s[1].to_f <= 0
+        if s[1].to_i <= 0
           return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
         end
         res = broadcast_cmd("rset_spushv_klength_warn #{s[1]}\r\n")
@@ -870,24 +870,24 @@ module Roma
         send_data("#{res}\r\n")
       end
  
-      # rset_set_spushv_klength_warn <B>
+      # rset_set_spushv_klength_warn <byte>
       def ev_rset_spushv_klength_warn(s)
         if s.length != 2   
           return send_data("CLIENT_ERROR number of arguments\n\r")
         end
-        if s[1].to_f <= 0
+        if s[1].to_i <= 0
           return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
         end 
         @stats.spushv_klength_warn = s[1].to_i 
         send_data("STORED\r\n") 
       end
 
-      # set_spushv_vlength_warn <B>
+      # set_spushv_vlength_warn <byte>
       def ev_set_spushv_vlength_warn(s)
         if s.length != 2
           return send_data("CLIENT_ERROR number of arguments\n\r")       
         end
-        if s[1].to_f <= 0
+        if s[1].to_i <= 0
           return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
         end
         res = broadcast_cmd("rset_spushv_vlength_warn #{s[1]}\r\n")
@@ -897,12 +897,12 @@ module Roma
         send_data("#{res}\r\n")
       end
  
-      # rset_set_spushv_vlength_warn <B>
+      # rset_set_spushv_vlength_warn <byte>
       def ev_rset_spushv_vlength_warn(s)
         if s.length != 2   
           return send_data("CLIENT_ERROR number of arguments\n\r")
         end
-        if s[1].to_f <= 0
+        if s[1].to_i <= 0
           return send_data("CLIENT_ERROR size value must be larger than 0\r\n")
         end 
         @stats.spushv_vlength_warn = s[1].to_i 
