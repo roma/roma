@@ -854,6 +854,58 @@ module Roma
 
         send_data("STORED\r\n")
       end
+      
+      # set_spushv_read_timeout <sec>
+      def ev_set_spushv_read_timeout(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        res = broadcast_cmd("rset_spushv_read_timeout #{s[1]}\r\n")
+        @stats.spushv_read_timeout = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_spushv_read_timeout <sec>
+      def ev_rset_spushv_read_timeout(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        @stats.spushv_read_timeout = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_reqpushv_timeout_count <sec>
+      def ev_set_reqpushv_timeout_count(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        res = broadcast_cmd("rset_reqpushv_timeout_count #{s[1]}\r\n")
+        @stats.reqpushv_timeout_count = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # ev_rset_reqpushv_timeout_count <sec>
+      def ev_rset_reqpushv_timeout_count(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        @stats.reqpushv_timeout_count = s[1].to_i
+        send_data("STORED\r\n")
+      end
 
       # set_spushv_klength_warn <byte>
       def ev_set_spushv_klength_warn(s)
@@ -866,7 +918,6 @@ module Roma
         res = broadcast_cmd("rset_spushv_klength_warn #{s[1]}\r\n")
         @stats.spushv_klength_warn = s[1].to_i 
         res[@stats.ap_str] = "STORED"
-
         send_data("#{res}\r\n")
       end
  
@@ -893,7 +944,6 @@ module Roma
         res = broadcast_cmd("rset_spushv_vlength_warn #{s[1]}\r\n")
         @stats.spushv_vlength_warn = s[1].to_i
         res[@stats.ap_str] = "STORED"
-
         send_data("#{res}\r\n")
       end
  
