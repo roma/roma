@@ -98,7 +98,7 @@ module Roma
       @wb_command_map = {}
       @latency_log = false
       @latency_check_cmd =["get", "set", "delete"]
-      @latency_check_time_count = nil
+      @latency_check_time_count = false
       @latency_data = Hash.new { |hash,key| hash[key] = {} } #double hash
       @spushv_klength_warn = 1024 # 1kB
       @spushv_vlength_warn = 1024 * 1024 # 1MB
