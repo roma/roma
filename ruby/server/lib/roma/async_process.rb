@@ -748,7 +748,7 @@ module Roma
         @log.error("#{__method__}:#{e.inspect} #{$@}")
 
       ensure
-        if @stats.latency_check_time_count != nil && Time.now.to_i - @stats.latency_data[cmd]["time"] > @stats.latency_check_time_count
+        if @stats.latency_check_time_count && Time.now.to_i - @stats.latency_data[cmd]["time"] > @stats.latency_check_time_count
           average = @stats.latency_data[cmd]["latency"].inject(0.0){|r,i| r+=i }/@stats.latency_data[cmd]["latency"].size
           max = @stats.latency_data[cmd]["latency_max"]["current"]
           min = @stats.latency_data[cmd]["latency_min"]["current"]
