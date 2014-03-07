@@ -90,7 +90,7 @@ module Roma
 
       def get_connection(ap)
         ret = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
-        if ret && ret.last_access < Time.now - @expire_time
+        if ret && @expire_time != 0 && ret.last_access < Time.now - @expire_time
           ret.close_connection if ret.connected
           ret = nil
           Logging::RLogger.instance.info("EM connection expired at #{ap},remains #{@pool[ap].length}")
