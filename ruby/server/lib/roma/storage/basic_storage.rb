@@ -747,6 +747,7 @@ module Roma
       end
 
       def write_log(line)
+        return unless @log_name
         # log rotation
         if File::stat(@log_name).size > 1000 * 1024
           close_log
