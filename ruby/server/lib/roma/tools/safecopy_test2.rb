@@ -7,11 +7,13 @@ require 'roma/client/rclient'
 @tmax = 0
 @tmin = 100
 
+@m = Mutex.new
+
 Thread.new do
   sleep_time=10
   while(true)
     sleep sleep_time
-    printf("qps=%d max=%f min=%f ave=%f\n",@cnt/sleep_time,@tmax,@tmin,sleep_time/@cnt.to_f)
+    printf("\s\sqps=%d max=%f min=%f ave=%f\n",@cnt/sleep_time,@tmax,@tmin,sleep_time/@cnt.to_f)
     @cnt=0
     @tmax=0
     @tmin=100
@@ -44,7 +46,7 @@ def random_rquest_sender(ini_nodes, n)
 end
 
 def set_counts(ini_nodes, range, key_prefix, value)
-  puts "#{__method__} #{range} #{value}"
+  puts "\s\s#{__method__} #{range} #{value}"
   rc=Roma::Client::RomaClient.new(ini_nodes)
   @range_cnt = 0
 
@@ -61,7 +63,7 @@ def set_counts(ini_nodes, range, key_prefix, value)
 end
 
 def check_count(ini_nodes, range, key_prefix, value)
-  puts "#{__method__} #{range} #{value}"
+  puts "\s\s#{__method__} #{range} #{value}"
   rc=Roma::Client::RomaClient.new(ini_nodes)
 
   range.each do |i|
@@ -138,48 +140,67 @@ def test_change_status
   sleep(5)
 
   10.times do |n|
-    p "#{n+1}th loop(#{n}.tc)****************************************************************** " 
+    puts "\n#{n+1}th loop(#{n}.tc)****************************************************************** " 
 
     #========================================================================================
     #flushing(normal => safecopy_flushed)
     flush_loop_count = 0
+    @range_cnt = 0
+    @flag = false
+
     t = Thread.new {
       loop{
         flush_loop_count += 1
         set_counts(ARGV, 0...1000, "flushing_key", flush_loop_count)
+        @flag = true
       }
     }
-    p set_storage_status(nid, n, 'safecopy')
-    p wait_status(nid, n, :safecopy_flushed)
+    while !@flag do 
+      sleep(1)
+    end
+    puts "\s\s#{set_storage_status(nid, n, 'safecopy')}"
+    puts "#{wait_status(nid, n, :safecopy_flushed)}"
 
     t.kill
+
     flushing_range_cnt = @range_cnt
-    p safecopy_stats(nid)
+    puts "\s\s#{safecopy_stats(nid)}\n\n"
 
     #========================================================================================
     #Caching(safecopy_flushed => normal)
     #sleep(30)
     cache_loop_count = 0
-    t = Thread.new { 
+    @range_cnt = 0
+    @flag = false
+    t = Thread.new {
       loop{
         cache_loop_count += 1
         set_counts(ARGV, 0...1000, "caching_key", cache_loop_count)
+        @flag = true
       }
     }
-    p set_storage_status(nid, n, 'normal')
-    p wait_status(nid, n, :normal)
+    while !@flag do 
+      sleep(1)
+    end
 
-    t.kill
+    puts "\s\s#{set_storage_status(nid, n, 'normal')}"
+    puts "#{wait_status(nid, n, :normal)}"
+    
+    t.kill   
+
     caching_range_cnt = @range_cnt
-    p safecopy_stats(nid)
+    puts "\s\s#{safecopy_stats(nid)}"
 
     #========================================================================================
     #check
+    puts "\n[Check]"
+    puts "\s\sflshing key"
     check_count(ARGV, 0..flushing_range_cnt, "flushing_key", flush_loop_count)
     check_count(ARGV, flushing_range_cnt+1...1000, "flushing_key", flush_loop_count-1)
 
+    puts "\n\s\scaching key"
     check_count(ARGV, 0..caching_range_cnt, "caching_key", cache_loop_count)
-    check_count(ARGV, caching_range_cnt+1...1000, "caching_key", cache_loop_count-1)
+    check_count(ARGV, caching_range_cnt+1...1000, "caching_key", cache_loop_count-1) if cache_loop_count != 1
   end
 end
 
