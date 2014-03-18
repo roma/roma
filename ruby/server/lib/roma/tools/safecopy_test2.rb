@@ -155,8 +155,10 @@ def test_change_status
         @flag = true
       }
     }
-    while !@flag do 
+    while !@flag do
+      puts "\s\s[debug]sleep flushing start"
       sleep(1)
+      puts "\s\s[debug]sleep flushing end"
     end
     puts "\s\s#{set_storage_status(nid, n, 'safecopy')}"
     puts "#{wait_status(nid, n, :safecopy_flushed)}"
@@ -180,7 +182,9 @@ def test_change_status
       }
     }
     while !@flag do 
+      puts "\s\s[debug]sleep caching start"
       sleep(1)
+      puts "\s\s[debug]sleep caching end"
     end
 
     puts "\s\s#{set_storage_status(nid, n, 'normal')}"
@@ -194,7 +198,7 @@ def test_change_status
     #========================================================================================
     #check
     puts "\n[Check]"
-    puts "\s\sflshing key"
+    puts "\s\sflushing key"
     check_count(ARGV, 0..flushing_range_cnt, "flushing_key", flush_loop_count)
     check_count(ARGV, flushing_range_cnt+1...1000, "flushing_key", flush_loop_count-1)
 
@@ -217,6 +221,7 @@ param = { :num=>10000, :th=>1 }
 opts = OptionParser.new
 
 opts.on("-r", "--round", "round request"){|v| param[:round] = v }
+opts.on("-c", "--count [x]", "counts of the test times"){|v| param[:count] = v.to_i }
 
 opts.banner = "usage:#{File.basename($0)} [options] addr:port"
 opts.parse!(ARGV)
@@ -229,7 +234,12 @@ end
 if param.key?(:round)
   test_round
 else
-  test_change_status
+  param[:count] = 1 if !param.key?(:count)
+
+  param[:count].times do |count|
+    puts "#{count+1}th test========================================================================================="
+    test_change_status
+  end
 end
 
 puts "#{File.basename($0)} has done."
