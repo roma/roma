@@ -163,6 +163,7 @@ def test_change_status
     puts "\s\s#{set_storage_status(nid, n, 'safecopy')}"
     puts "#{wait_status(nid, n, :safecopy_flushed)}"
 
+    #sleep(5)
     t.kill
 
     flushing_range_cnt = @range_cnt
@@ -190,6 +191,7 @@ def test_change_status
     puts "\s\s#{set_storage_status(nid, n, 'normal')}"
     puts "#{wait_status(nid, n, :normal)}"
     
+    #sleep(5)
     t.kill   
 
     caching_range_cnt = @range_cnt
