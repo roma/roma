@@ -56,6 +56,10 @@ module Roma
           "WHERE type='table' ORDER BY name;"
         self.execute( sql ).flatten
       end
+
+      def sync
+        true
+      end
     end
 
     class SQLite3Storage < BasicStorage

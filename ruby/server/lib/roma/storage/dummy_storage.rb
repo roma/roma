@@ -21,8 +21,6 @@ module Roma
       def incr(vn, k, d, v); end
       def decr(vn, k, d, v); end
       def true_length; 100; end
-      def add_vnode(vn); end
-      def del_vnode(vn); end
       def clean_up(t); end
 
       def load(dmp); 10 end
