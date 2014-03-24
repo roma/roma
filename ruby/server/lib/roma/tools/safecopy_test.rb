@@ -3,18 +3,18 @@ require 'optparse'
 require 'date'
 require 'roma/client/rclient'
 
-@@cnt = 0
-@@tmax = 0
-@@tmin = 100
+@cnt = 0
+@tmax = 0
+@tmin = 100
 
 Thread.new do
   sleep_time=10
   while(true)
     sleep sleep_time
-    printf("qps=%d max=%f min=%f ave=%f\n",@@cnt/sleep_time,@@tmax,@@tmin,sleep_time/@@cnt.to_f)
-    @@cnt=0
-    @@tmax=0
-    @@tmin=100
+    printf("qps=%d max=%f min=%f ave=%f\n",@cnt/sleep_time,@tmax,@tmin,sleep_time/@cnt.to_f)
+    @cnt=0
+    @tmax=0
+    @tmin=100
   end
 end
 
@@ -37,9 +37,9 @@ def random_rquest_sender(ini_nodes, n)
       puts "del k=#{i} #{res}" if res != 'DELETED' && res != 'NOT_FOUND'
     end
     t=(DateTime.now - ts).to_f * 86400.0
-    @@tmax=t if t > @@tmax
-    @@tmin=t if t < @@tmin
-    @@cnt+=1
+    @tmax=t if t > @tmax
+    @tmin=t if t < @tmin
+    @cnt+=1
   end
 end
 
@@ -52,9 +52,9 @@ def set_counts(ini_nodes, range, c)
     res=rc.set("key_#{i}","#{c}")
     puts "set k=#{i} #{res}" if res==nil || res.chomp != 'STORED'
     t=(DateTime.now - ts).to_f * 86400.0
-    @@tmax=t if t > @@tmax
-    @@tmin=t if t < @@tmin
-    @@cnt+=1
+    @tmax=t if t > @tmax
+    @tmin=t if t < @tmin
+    @cnt+=1
   end
 end
 
@@ -69,9 +69,9 @@ def check_count(ini_nodes, range, c)
       puts "error k=key_#{i} #{res}" 
     end
     t=(DateTime.now - ts).to_f * 86400.0
-    @@tmax=t if t > @@tmax
-    @@tmin=t if t < @@tmin
-    @@cnt+=1
+    @tmax=t if t > @tmax
+    @tmin=t if t < @tmin
+    @cnt+=1
   end
 end
 
