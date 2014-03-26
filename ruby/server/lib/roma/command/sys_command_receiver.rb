@@ -1,3 +1,5 @@
+require 'roma/async_process'
+
 module Roma
   module Command
 
@@ -1024,6 +1026,48 @@ module Roma
 
         $roma.wb_writer.shift_size = s[1].to_i
         send_data("STORED\r\n")
+      end
+
+      # set_storage_status [number of file][safecopy|normal]{hash_name}
+      def ev_set_storage_status(s)
+        if s.length < 3
+          return send_data("CLIENT_ERROR number of arguments (#{s.length - 1} for 2)\r\n")
+        end
+
+        if s.length >= 4
+          hname = s[3]
+        else
+          hname = 'roma'
+        end
+        st = @storages[hname]
+        unless st
+          return send_data("CLIENT_ERROR hash_name = #{hanme} dose not found\r\n")
+        end
+        dn = s[1].to_i
+        if st.divnum <= dn
+          return send_data("CLIENT_ERROR divnum <= #{dn}\r\n")
+        end
+        if s[2] == 'safecopy'
+          if st.dbs[dn] != :normal
+            return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
+          end
+          if st.set_db_stat(dn, :safecopy_flushing) == false
+            return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
+          end
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_flush_process',[hname, dn]))
+        elsif s[2] ==  'normal'
+          if st.dbs[dn] != :safecopy_flushed
+            return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
+          end
+          if st.set_db_stat(dn, :cachecleaning) == false
+            return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
+          end
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_cachecleaning_process',[hname, dn]))
+        else
+          return send_data("CLIENT_ERROR status parse error\r\n")
+        end
+        
+        send_data("PUSHED\r\n")
       end
 
       private 

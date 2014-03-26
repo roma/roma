@@ -770,6 +770,90 @@ module Roma
       true
     end
 
+    def asyncev_start_storage_flush_process(args)
+      hname, dn = args
+      @log.debug("#{__method__} #{args.inspect}")
+      
+      st = @storages[hname]
+      if st.dbs[dn] != :safecopy_flushing
+        @log.error("Can not flush storage. stat = #{st.dbs[dn]}")
+        return true
+      end
+      t = Thread::new do
+        begin
+          st.flush_db(dn)
+          st.set_db_stat(dn,:safecopy_flushed)
+          @log.info("#{__method__}:storage has flushed. (#{hname}, #{dn})")
+        rescue =>e
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
+        ensure
+        end
+      end
+      t[:name] = __method__
+      true
+    end
+
+    def asyncev_start_storage_cachecleaning_process(args)
+      hname, dn = args
+      @log.debug("#{__method__} #{args.inspect}")
+      
+      st = @storages[hname]
+      if st.dbs[dn] != :cachecleaning
+        @log.error("Can not start cachecleaning process. stat = #{st.dbs[dn]}")
+        return true
+      end
+      t = Thread::new do
+        begin
+          storage_cachecleaning_process(hname, dn)
+        rescue =>e
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
+        ensure
+        end
+      end
+      t[:name] = __method__
+      true
+    end
+
+    def storage_cachecleaning_process(hname, dn)
+      count = 0
+      rcount = 0
+      st = @storages[hname]
+      
+      @do_storage_cachecleaning_process = true
+      loop do
+        # get keys in a cache up to 100 kyes
+        keys = st.get_keys_in_cache(dn)
+        break if keys == nil || keys.length == 0
+        break unless @do_storage_cachecleaning_process
+        
+        # @log.debug("#{__method__}:#{keys.length} keys found")
+        
+        # copy cache -> db
+        st.each_cache_by_keys(dn, keys) do |vn, last, clk, expt, k, v|
+          break unless @do_storage_cachecleaning_process
+          if st.load_stream_dump_for_cachecleaning(vn, last, clk, expt, k, v)
+            count += 1
+            # @log.debug("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was stored.")
+          else
+            rcount += 1
+            # @log.debug("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was rejected.")
+          end
+        end
+
+        # remove keys in a cache
+        keys.each { |key| st.out_cache(dn, key) }
+      end
+      if @do_storage_cachecleaning_process == false
+        @log.warn("#{__method__}:uncompleted")
+      else
+        st.set_db_stat(dn,:normal)
+      end
+      @log.debug("#{__method__}:#{count} keys loaded.")
+      @log.debug("#{__method__}:#{rcount} keys rejected.") if rcount > 0
+    ensure
+      @do_storage_cachecleaning_process = false
+    end
+
   end # module AsyncProcess
 
 end # module Roma
