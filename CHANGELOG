@@ -1,3 +1,15 @@
+*0.8.14 (Mar 26 2014)*
+
+* add timeout parameter for a vnode copy [junji torii] 0522750
+* add command to change routing_trans_timeout [Rui Bando] 8247698
+* Added command to change klength and vlength limit when vnode copy [Paras Patel] fd14206
+* Add spushv_read_timeout and reqpushv_timeout_count set Method [Paras Patel] 264d3ec
+* fix : add rescue in timer_event_1sec [junji torii] 11cc4ea
+* fix : warning of class variable access from toplevel(for adjust Ruby2.1.1) [junji torii] 9df1a5c
+* fix : modify default value(nil -> false) of autorecover func [hiroaki-iwase] 30b18c5
+* add snapshot function [junji torii] 2ab928f
+* add safecopy_integration_test for snapshot [hiroaki-iwase] 8e799c1
+
 *0.8.13-p1 (Jan 15 2014)*
 
 * add timeout parameter for a vnode copy [junji torii] 0522750
