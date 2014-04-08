@@ -34,6 +34,8 @@ module Roma
         # status of a database
         @dbs = []
         @log_fd = nil
+        # file number list of a each_vn_dump while
+        @each_vn_dump_vnodes = []
 
         @hdiv = Hash.new(0)
 
@@ -58,6 +60,7 @@ module Roma
         ret['storage.option'] = @option
         ret['storage.each_vn_dump_sleep'] = @each_vn_dump_sleep
         ret['storage.each_vn_dump_sleep_count'] = @each_vn_dump_sleep_count
+        ret['storage.each_vn_dump_files'] = @each_vn_dump_files.inspect
         ret['storage.each_clean_up_sleep'] = @each_clean_up_sleep
         ret['storage.logic_clock_expire'] = @logic_clock_expire
         ret['storage.safecopy_stats'] = @dbs.inspect
@@ -524,42 +527,24 @@ module Roma
       end
 
       def each_vn_dump(target_vn)
-        @do_each_vn_dump = true
         n = @hdiv[target_vn]
-        if @dbs[n] == :normal
-          # in case of :normal status
+        @stat_lock.synchronize do
+          return false if @dbs[n] != :normal
+          return false if @each_vn_dump_vnodes.include?(target_vn)
+          @each_vn_dump_vnodes << target_vn
+        end
+
+        begin
+          @do_each_vn_dump = true
           each_unpacked_db(target_vn, @hdb) do |vn, last, clk, expt, k, val|
             return unless @do_each_vn_dump
             yield vn_dump_pack(vn, last, clk, expt, k, val)
           end
-        else
-          # in case of out of :normal status
-          @each_cache_lock.synchronize do
-            each_unpacked_db(target_vn, @hdbc) do |cvn, clast, cclk, cexpt, k, cval|
-              return unless @do_each_vn_dump
-              data = @hdb[n].get(k)
-              if data
-                vn, last, clk, expt, val = unpack_data(data)
-                #puts "#{k} #{clk} #{cclk} #{cmp_clk(clk, cclk)} #{val}"
-                if cmp_clk(clk, cclk) > 0
-                  yield vn_dump_pack(vn, last, clk, expt, k, val)
-                else
-                  yield vn_dump_pack(cvn, clast, cclk, cexpt, k, cval)
-                end
-              else
-                yield vn_dump_pack(cvn, clast, cclk, cexpt, k, cval)
-              end
-            end
-          end
-          each_unpacked_db(target_vn, @hdb) do |vn, last, clk, expt, k, val|
-            return unless @do_each_vn_dump
-            unless @hdbc[n].get(k)
-              yield vn_dump_pack(vn, last, clk, expt, k, val)
-            end
-          end
+        ensure
+          @each_vn_dump_vnodes.delete(target_vn)
         end
-      ensure
-        @do_each_vn_dump = false
+
+        true
       end
 
       def vn_dump_pack(vn, last, clk, expt, k, val)
@@ -674,6 +659,9 @@ module Roma
         @stat_lock.synchronize do
           case @dbs[dn]
           when :normal
+            @each_vn_dump_vnodes.each do |vn|
+              return false if dn == @hdiv[vn]
+            end
             if stat == :safecopy_flushing
               # open cache
               @hdbc[dn] = open_db(cache_file_name(dn))

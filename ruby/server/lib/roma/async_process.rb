@@ -543,7 +543,7 @@ module Roma
         return res.chomp
       end
 
-      @storages[hname].each_vn_dump(vn){|data|
+      res_dump = @storages[hname].each_vn_dump(vn) do |data|
 
         unless @do_push_a_vnode_stream
           con.close
@@ -553,12 +553,16 @@ module Roma
 
         con.write(data)
         sleep @stats.stream_copy_wait_param
-      }
+      end
       con.write("\0"*20) # end of steram
 
       res = con.gets # STORED\r\n or error string
       Roma::Messaging::ConPool.instance.return_connection(nid,con)
       res.chomp! if res
+      if res_dump == false
+        @log.error("#{__method__}:each_vn_dump in hname=#{hname} vn=#{vn} nid=#{nid}")
+        return "CANCELED"
+      end
       res
     rescue =>e
       @log.error("#{e}\n#{$@}")

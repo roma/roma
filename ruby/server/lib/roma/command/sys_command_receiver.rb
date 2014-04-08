@@ -567,7 +567,7 @@ module Roma
             return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
           end
           if st.set_db_stat(dn, :safecopy_flushing) == false
-            return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
+            return send_data("CLIENT_ERROR storage[#{dn}] status can't changed\r\n")
           end
           Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_flush_process',[hname, dn]))
         elsif s[2] ==  'normal'
@@ -575,7 +575,7 @@ module Roma
             return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
           end
           if st.set_db_stat(dn, :cachecleaning) == false
-            return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
+            return send_data("CLIENT_ERROR storage[#{dn}] status can't changed\r\n")
           end
           Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_cachecleaning_process',[hname, dn]))
         else
