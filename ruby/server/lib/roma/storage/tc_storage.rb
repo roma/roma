@@ -51,24 +51,18 @@ module Roma
       end
 
       def opendb
-        create_div_hash
-        mkdir_p(@storage_path)
-
         @fname_lock = "#{@storage_path}/lock"
         if File.exist?(@fname_lock)
           raise RuntimeError.new("Lock file already exists.")
         end
-        open(@fname_lock,"w"){}
 
-        @divnum.times{ |i|
-          @hdb[i] = open_db("#{@storage_path}/#{i}.#{@ext_name}")
-        }
+        super
+
+        open(@fname_lock,"w"){}
       end
 
       def closedb
-        stop_clean_up
-        buf = @hdb; @hdb = []
-        buf.each{ |hdb| close_db(hdb) }
+        super
 
         File.unlink(@fname_lock) if @fname_lock
         @fname_lock = nil
@@ -193,6 +187,7 @@ module Roma
         opts += "#bnum=#{prop['bnum']}" if prop.key?('bnum')
         opts += "#capnum=#{prop['capnum']}" if prop.key?('capnum')
         opts += "#capsiz=#{prop['capsiz']}" if prop.key?('capsiz')
+
         opts = nil unless opts.length > 0
         opts
       end

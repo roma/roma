@@ -63,6 +63,14 @@ module Roma
     attr_accessor :latency_data
     #attr_accessor :latency_denominator
 
+    # for vnode copy parameter
+    attr_accessor :spushv_klength_warn
+    attr_accessor :spushv_vlength_warn
+    attr_accessor :spushv_read_timeout
+    attr_accessor :reqpushv_timeout_count
+
+    attr_accessor :routing_trans_timeout
+
     def initialize
       @config_path = nil
       @run_recover = false
@@ -90,8 +98,13 @@ module Roma
       @wb_command_map = {}
       @latency_log = false
       @latency_check_cmd =["get", "set", "delete"]
-      @latency_check_time_count = nil
+      @latency_check_time_count = false
       @latency_data = Hash.new { |hash,key| hash[key] = {} } #double hash
+      @spushv_klength_warn = 1024 # 1kB
+      @spushv_vlength_warn = 1024 * 1024 # 1MB
+      @spushv_read_timeout = 100
+      @reqpushv_timeout_count = 300 # 0.1 * 300 sec
+      @routing_trans_timeout = 3600 * 3 # 3hr
     end
 
     def ap_str
@@ -132,6 +145,11 @@ module Roma
       ret['stats.latency_log']  = @latency_log
       ret['stats.latency_check_cmd']  = @latency_check_cmd
       ret['stats.latency_check_time_count']  = @latency_check_time_count
+      ret['stats.spushv_klength_warn'] = @spushv_klength_warn
+      ret['stats.spushv_vlength_warn'] = @spushv_vlength_warn
+      ret['stats.spushv_read_timeout'] = @spushv_read_timeout
+      ret['stats.reqpushv_timeout_count'] = @reqpushv_timeout_count
+      ret['stats.routing_trans_timeout'] = @routing_trans_timeout
       ret
     end
 

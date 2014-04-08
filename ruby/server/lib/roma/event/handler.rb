@@ -50,7 +50,15 @@ module Roma
         @@connection_expire_time
       end
 
-      attr_accessor :timeout
+      @@timeout = 10
+      def self.timeout=(n)
+        @@timeout = n
+      end
+
+      def self.timeout
+        @@timeout
+      end
+
       attr_reader :connected
       attr_reader :lastcmd
       attr_reader :last_access
@@ -71,7 +79,6 @@ module Roma
 
         @storages = storages
         @rttable = rttable
-        @timeout = 10
         @log = Roma::Logging::RLogger.instance
         @last_access = Time.now
       end
@@ -223,7 +230,7 @@ module Roma
           else
             remain = size - @rbuf.size
             Fiber.yield(remain)
-            if Time.now.to_i - t > @timeout * mult
+            if Time.now.to_i - t > @@timeout * mult
               @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} read_bytes time out");
               close_connection
               return nil

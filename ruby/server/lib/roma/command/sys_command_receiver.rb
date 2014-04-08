@@ -1,3 +1,4 @@
+require 'roma/async_process'
 
 module Roma
   module Command
@@ -430,7 +431,7 @@ module Roma
           res[@stats.ap_str] = "ACTIVATED"
         elsif s[1] =="off"
           @stats.latency_check_cmd = [] #reset
-          @stats.latency_check_time_count = nil
+          @stats.latency_check_time_count = false
           @stats.latency_log = false
           res[@stats.ap_str] = "DEACTIVATED"
         end
@@ -459,13 +460,13 @@ module Roma
           s.each_index {|idx|
             @stats.latency_check_cmd.push(s[idx]) if idx >= 3
           }
-          @stats.latency_check_time_count = s[1].to_i
+          @stats.latency_check_time_count = s[2].to_i
           @stats.latency_log = true
           send_data("ACTIVATED\r\n")
         elsif s[1] =="off"
           @latency_data = Hash.new { |hash,key| hash[key] = {}}
           @stats.latency_check_cmd = []
-          @stats.latency_check_time_count = nil
+          @stats.latency_check_time_count = false
           @stats.latency_log = false
           send_data("DEACTIVATED\r\n")
         end
@@ -581,7 +582,7 @@ module Roma
           @stats.latency_check_time_count = s[1].to_i
           @stats.latency_log = true
         elsif s[1] == "nil"
-          @stats.latency_check_time_count = nil
+          @stats.latency_check_time_count = false
           @stats.latency_log = false
         end
         res[@stats.ap_str] = "CHANGED"
@@ -599,7 +600,7 @@ module Roma
           @stats.latency_check_time_count = s[1].to_i
           @stats.latency_log = true
         elsif s[1] == "nil"
-          @stats.latency_check_time_count = nil
+          @stats.latency_check_time_count = false
           @stats.latency_log = false
         end
         @stats.latency_check_time_count = s[1].to_i
@@ -828,6 +829,138 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_routing_trans_timeout <sec>
+      def ev_set_routing_trans_timeout(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_f <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        res = broadcast_cmd("rset_routing_trans_timeout #{s[1]}\r\n")
+        @stats.routing_trans_timeout = s[1].to_f
+        res[@stats.ap_str] = "STORED"
+
+        send_data("#{res}\r\n")
+      end
+
+      # rset_set_routing_trans_timeout <sec>
+      def ev_rset_routing_trans_timeout(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_f <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        @stats.routing_trans_timeout = s[1].to_f
+
+        send_data("STORED\r\n")
+      end
+      
+      # set_spushv_read_timeout <sec>
+      def ev_set_spushv_read_timeout(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        res = broadcast_cmd("rset_spushv_read_timeout #{s[1]}\r\n")
+        @stats.spushv_read_timeout = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_spushv_read_timeout <sec>
+      def ev_rset_spushv_read_timeout(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        @stats.spushv_read_timeout = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_reqpushv_timeout_count <sec>
+      def ev_set_reqpushv_timeout_count(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        res = broadcast_cmd("rset_reqpushv_timeout_count #{s[1]}\r\n")
+        @stats.reqpushv_timeout_count = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      # ev_rset_reqpushv_timeout_count <sec>
+      def ev_rset_reqpushv_timeout_count(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR time value must be lager than 0\r\n")
+        end
+        @stats.reqpushv_timeout_count = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_spushv_klength_warn <byte>
+      def ev_set_spushv_klength_warn(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")        
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
+        end
+        res = broadcast_cmd("rset_spushv_klength_warn #{s[1]}\r\n")
+        @stats.spushv_klength_warn = s[1].to_i 
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+ 
+      # rset_set_spushv_klength_warn <byte>
+      def ev_rset_spushv_klength_warn(s)
+        if s.length != 2   
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
+        end 
+        @stats.spushv_klength_warn = s[1].to_i 
+        send_data("STORED\r\n") 
+      end
+
+      # set_spushv_vlength_warn <byte>
+      def ev_set_spushv_vlength_warn(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")       
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
+        end
+        res = broadcast_cmd("rset_spushv_vlength_warn #{s[1]}\r\n")
+        @stats.spushv_vlength_warn = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+ 
+      # rset_set_spushv_vlength_warn <byte>
+      def ev_rset_spushv_vlength_warn(s)
+        if s.length != 2   
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1].to_i <= 0
+          return send_data("CLIENT_ERROR size value must be larger than 0\r\n")
+        end 
+        @stats.spushv_vlength_warn = s[1].to_i 
+        send_data("STORED\r\n") 
+      end
+
       # wb_command_map <hash string>
       # ex.
       # {:set=>1,:append=>2,:delete=>3}
@@ -895,6 +1028,48 @@ module Roma
         send_data("STORED\r\n")
       end
 
+      # set_storage_status [number of file][safecopy|normal]{hash_name}
+      def ev_set_storage_status(s)
+        if s.length < 3
+          return send_data("CLIENT_ERROR number of arguments (#{s.length - 1} for 2)\r\n")
+        end
+
+        if s.length >= 4
+          hname = s[3]
+        else
+          hname = 'roma'
+        end
+        st = @storages[hname]
+        unless st
+          return send_data("CLIENT_ERROR hash_name = #{hanme} dose not found\r\n")
+        end
+        dn = s[1].to_i
+        if st.divnum <= dn
+          return send_data("CLIENT_ERROR divnum <= #{dn}\r\n")
+        end
+        if s[2] == 'safecopy'
+          if st.dbs[dn] != :normal
+            return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
+          end
+          if st.set_db_stat(dn, :safecopy_flushing) == false
+            return send_data("CLIENT_ERROR storage[#{dn}] != :normal status\r\n")
+          end
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_flush_process',[hname, dn]))
+        elsif s[2] ==  'normal'
+          if st.dbs[dn] != :safecopy_flushed
+            return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
+          end
+          if st.set_db_stat(dn, :cachecleaning) == false
+            return send_data("CLIENT_ERROR storage[#{dn}] != :safecopy_flushed status\r\n")
+          end
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_cachecleaning_process',[hname, dn]))
+        else
+          return send_data("CLIENT_ERROR status parse error\r\n")
+        end
+        
+        send_data("PUSHED\r\n")
+      end
+
       private 
 
       def dcnice(p)
@@ -960,3 +1135,4 @@ module Roma
     end # module SystemCommandReceiver
   end # module Command
 end # module Roma
+

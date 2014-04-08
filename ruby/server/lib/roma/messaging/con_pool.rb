@@ -21,7 +21,7 @@ module Roma
 
       def get_connection(ap)
         ret,last = @pool[ap].shift if @pool.key?(ap) && @pool[ap].length > 0
-        if ret && last < Time.now - @expire_time
+        if ret && @expire_time != 0 && last < Time.now - @expire_time
           ret.close
           ret = nil
           Logging::RLogger.instance.info("connection expired at #{ap},remains #{@pool[ap].length}")

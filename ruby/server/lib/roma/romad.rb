@@ -541,7 +541,7 @@ module Roma
         @log.warn("failover disable now!!")
       else
         version_check
-        @rttable.delete_old_trans
+        @rttable.delete_old_trans(@stats.routing_trans_timeout)
         start_sync_routing_process
       end
 
