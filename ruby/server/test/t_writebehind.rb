@@ -235,11 +235,32 @@ class WriteBehindTest < FileWriterTest
     wb0 = read_wb("#{wb_path}/0.wb")
     assert_equal(1, wb0.length)
     wb0.each do |last, cmd, key, val|
+      puts "#{cmd} #{key} #{val.inspect}"
       assert_equal(1, cmd)
       assert_equal("abc", key)
       assert_equal("value abc", val)
     end
   end
+
+  def test_wb2_set2
+    send_cmd("localhost_11211", "wb_command_map {:set=>1, :set__prev=>2}")
+    assert_equal("STORED", @rc.set("abc","val1",0,true))
+    assert_equal("STORED", @rc.set("abc","val2",0,true))
+    send_cmd("localhost_11211", "writebehind_rotate roma")
+
+    res = [[1,"abc","val1"], [2,"abc","val1"], [1,"abc","val2"]]
+    wb0 = read_wb("#{wb_path}/0.wb")
+    assert_equal(3, wb0.length)
+    i = 0
+    wb0.each do |last, cmd, key, val|
+      # puts "#{cmd} #{key} #{val.inspect} #{i}"
+      assert_equal(res[i][0], cmd)
+      assert_equal(res[i][1], key)
+      assert_equal(res[i][2], val)
+      i+=1
+    end
+  end
+
 
   def test_wb2_storage_commands
     h = {:set=>1,:delete=>2,:add=>3,:replace=>4,:append=>5,:prepend=>6,:cas=>7,:incr=>8,:decr=>9,:set_expt=>10}
@@ -256,16 +277,73 @@ class WriteBehindTest < FileWriterTest
     assert_equal("STORED", res)
     assert_equal(129, @rc.incr("abc"))
     assert_equal(128, @rc.decr("abc"))
-    ## test for set_expt TODO
+    res = send_cmd("localhost_11211", "set_expt abc 100")
+    assert_equal("STORED", res.chomp)
     send_cmd("localhost_11211", "writebehind_rotate roma")
 
 
-    res = {1=>'1',2=>'1',3=>'1',4=>'2',5=>'23',6=>'123',7=>'128',8=>'129',9=>'128'}
+    res = {1=>'1',2=>'1',3=>'1',4=>'2',5=>'23',6=>'123',7=>'128',8=>'129',9=>'128', 10=>nil}
     wb0 = read_wb("#{wb_path}/0.wb")
-    assert_equal(9, wb0.length)
+    assert_equal(10, wb0.length)
     wb0.each do |last, cmd, key, val|
       # puts "#{cmd} #{key} #{val.inspect}"
-      assert_equal(res[cmd], val)
+      assert_equal(res[cmd], val) if res[cmd]
+    end
+  end
+
+  def test_wb2_storage_commands2
+    h = {
+      :set=>1, :set__prev=>11,
+      :delete=>2, :delete__prev=>12,
+      :add=>3, :add__prev=>13,
+      :replace=>4, :replace__prev=>14,
+      :append=>5,:append__prev=>15,
+      :prepend=>6,:prepend__prev=>16,
+      :cas=>7,:cas__prev=>17,
+      :incr=>8,:incr__prev=>18,
+      :decr=>9,:decr__prev=>19,
+      :set_expt=>10,:set_expt__prev=>20
+    }
+    send_cmd("localhost_11211", "wb_command_map #{h}")
+    assert_equal("STORED", @rc.set("abc","1",0,true))
+    assert_equal("DELETED", @rc.delete("abc"))
+    assert_equal("STORED", @rc.add("abc","1",0,true))
+    assert_equal("STORED", @rc.replace("abc","2",0,true))
+    assert_equal("STORED", @rc.append("abc","3"))
+    assert_equal("STORED", @rc.prepend("abc","1"))
+    res = @rc.cas("abc", 0, true) do |v|
+      v = "128"
+    end
+    assert_equal("STORED", res)
+    assert_equal(129, @rc.incr("abc"))
+    assert_equal(128, @rc.decr("abc"))
+    res = send_cmd("localhost_11211", "set_expt abc 100")
+    assert_equal("STORED", res.chomp)
+
+    send_cmd("localhost_11211", "writebehind_rotate roma")
+
+    res = [
+           [1, "abc", "1"], [12, "abc", "1"],
+           [2, "abc", "1"],
+           [3, "abc", "1"], [14, "abc", "1"],
+           [4, "abc", "2"], [15, "abc", "2"],
+           [5, "abc", "23"],[16, "abc", "23"],
+           [6, "abc", "123"], [17, "abc", "123"],
+           [7, "abc", "128"], [18, "abc", "128"],
+           [8, "abc", "129"], [19, "abc", "129"],
+           [9, "abc", "128"],
+           [20, "abc"], [10, "abc"]
+          ]
+
+    wb0 = read_wb("#{wb_path}/0.wb")
+    assert_equal(18, wb0.length)
+    i = 0
+    wb0.each do |last, cmd, key, val|
+      # puts "#{cmd} #{key} #{val.inspect}"
+      assert_equal(res[i][0], cmd)
+      assert_equal(res[i][1], key)
+      assert_equal(res[i][2], val) if res.length < 3
+      i += 1
     end
   end
 
