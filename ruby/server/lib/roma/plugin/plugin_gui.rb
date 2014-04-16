@@ -5,7 +5,7 @@ module Roma
     module PluginGui
       include ::Roma::CommandPlugin
 
-      def ev_get_routing_list(s)
+      def ev_get_routing_history(s)
         routing_path  = get_config_stat["config.RTTABLE_PATH"]
         f_list = Dir.glob("#{routing_path}/*")
         contents = ""
@@ -13,7 +13,9 @@ module Roma
           contents << File.read(fname)
         }
         routing_list = contents.scan(/[\d\.]+_[\d]+/).uniq
-        send_data("#{routing_list}\r\n")
+        routing_list.each{|routing|
+          send_data("#{routing}\r\n")
+        }
         send_data("END\r\n")
       end
 
