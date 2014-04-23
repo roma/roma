@@ -414,7 +414,7 @@ class WriteBehindTest < FileWriterTest
     assert_equal('CLEARED', @rc.map_clear("abc"))
     send_cmd("localhost_11211", "writebehind_rotate roma")
 
-    res = {1=>'value1',2=>{},3=>{}}
+    res = {1=>{"mapkey1"=>"value1"},2=>{},3=>{}}
     wb0 = read_wb("#{wb_path}/0.wb")
     assert_equal(4, wb0.length)
     wb0.each do |last, cmd, key, val|
@@ -424,6 +424,43 @@ class WriteBehindTest < FileWriterTest
       end
       # puts "#{cmd} #{key} #{val.inspect}"
       assert_equal(res[cmd], val)
+    end
+  end
+
+  def test_wb2_map_commands2
+    h = {
+      :map_set=>1, :map_set__prev=>11, 
+      :map_delete=>2, :map_delete__prev=>12,
+      :map_clear=>3, :map_clear__prev=>13
+    }
+    send_cmd("localhost_11211", "wb_command_map #{h}")
+    assert_equal('STORED', @rc.map_set('abc','mapkey1','value1'))
+    assert_equal('STORED', @rc.map_set('abc','mapkey2','value2'))
+    assert_equal('DELETED', @rc.map_delete('abc', 'mapkey1'))
+    assert_equal('STORED', @rc.map_set('abc','mapkey1','value1'))
+    assert_equal('CLEARED', @rc.map_clear("abc"))
+    send_cmd("localhost_11211", "writebehind_rotate roma")
+
+    res = [
+           [1, {"mapkey1"=>"value1"}],
+           [11, {"mapkey1"=>"value1"}], [1, {"mapkey1"=>"value1", "mapkey2"=>"value2"}],
+           [12, {"mapkey1"=>"value1", "mapkey2"=>"value2"}], [2, {"mapkey2"=>"value2"}],
+           [11, {"mapkey2"=>"value2"}], [1, {"mapkey2"=>"value2", "mapkey1"=>"value1"}],
+           [13, {"mapkey2"=>"value2", "mapkey1"=>"value1"}], [3, {}]
+
+    ]
+    wb0 = read_wb("#{wb_path}/0.wb")
+    assert_equal(res.length, wb0.length)
+    cnt = 0
+    wb0.each do |last, cmd, key, val|
+      begin
+        val = Marshal.load(val)
+      rescue
+      end
+      #puts "#{cmd} #{key} #{val.inspect}"
+      assert_equal(res[cnt][0], cmd)
+      assert_equal(res[cnt][1], val)
+      cnt += 1
     end
   end
 
