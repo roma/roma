@@ -12,7 +12,7 @@ module Roma
         f_list.each{|fname|
           contents << File.read(fname)
         }
-        routing_list = contents.scan(/[-\.a-zA-Z\d]+_[\d]+/).uniq
+        routing_list = contents.scan(/[-\.a-zA-Z\d]+_[\d]+/).uniq.sort
         routing_list.each{|routing|
           send_data("#{routing}\r\n")
         }
