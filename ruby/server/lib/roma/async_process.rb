@@ -366,7 +366,8 @@ module Roma
       @do_acquired_recover_process = true
       loop do
         break unless @do_acquired_recover_process
-
+        break if @rttable.num_of_vn(@stats.ap_str)[2] == 0 # short vnodes
+        
         vn, nodes, is_primary = @rttable.select_vn_for_recover(exclude_nodes)
         break unless vn
 
