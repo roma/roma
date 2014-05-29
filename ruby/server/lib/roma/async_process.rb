@@ -511,7 +511,7 @@ module Roma
     def sync_a_vnode_for_release(vn, to_nid, new_nids)
       nids = @rttable.search_nodes(vn)
 
-      if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
+      if nids.include?(to_nid)==false
         @log.debug("#{__method__}:#{vn} #{to_nid}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid

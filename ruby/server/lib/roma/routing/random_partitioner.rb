@@ -66,7 +66,8 @@ module Roma
           nids.each{|nid| buf.delete(nid) }
         end
         
-        to_nid = buf[rand(buf.length)]
+        buf.delete_if{|instance| instance == ap_str}
+        to_nid = buf.sample
         new_nids = nids.map{|n| n == ap_str ? to_nid : n }
         [to_nid, new_nids]
       end
