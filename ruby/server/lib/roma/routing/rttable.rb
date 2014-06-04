@@ -35,10 +35,9 @@ module Roma
         init_mtree
       end
 
-      def get_stat(ap)
-
+      def num_of_vn(ap)
         pn = sn = short = lost = 0
-        @rd.v_idx.each_pair{|vn, nids|
+        @rd.v_idx.each_pair do |vn, nids|
           if nids == nil || nids.length == 0
             lost += 1
             next
@@ -48,8 +47,12 @@ module Roma
             sn += 1
           end
           short += 1 if nids.length < @rd.rn
-        }
+        end
+        [pn, sn, short, lost]
+      end
 
+      def get_stat(ap)
+        pn, sn, short, lost = num_of_vn(ap)
         ret = {}
         ret['routing.redundant'] = @rn
         ret['routing.nodes.length'] = nodes.length

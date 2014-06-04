@@ -366,7 +366,8 @@ module Roma
       @do_acquired_recover_process = true
       loop do
         break unless @do_acquired_recover_process
-
+        break if @rttable.num_of_vn(@stats.ap_str)[2] == 0 # short vnodes
+        
         vn, nodes, is_primary = @rttable.select_vn_for_recover(exclude_nodes)
         break unless vn
 
@@ -510,7 +511,7 @@ module Roma
     def sync_a_vnode_for_release(vn, to_nid, new_nids)
       nids = @rttable.search_nodes(vn)
 
-      if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
+      if nids.include?(to_nid)==false
         @log.debug("#{__method__}:#{vn} #{to_nid}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid
