@@ -488,12 +488,18 @@ module Roma
 
       @do_release_process = true
       while(@rttable.has_node?(@stats.ap_str)) do
+        break unless @do_release_process
         @rttable.each_vnode do |vn, nids|
           break unless @do_release_process
           if nids.include?(@stats.ap_str)
 
             to_nid, new_nids = @rttable.select_node_for_release(@stats.ap_str, @stats.rep_host, nids)
-            unless sync_a_vnode_for_release(vn, to_nid, new_nids)
+            res = sync_a_vnode_for_release(vn, to_nid, new_nids)
+            if res == :abort
+              @log.error("#{__method__}:release_process aborted due to SERVER_ERROR received.")
+              @do_release_process = false
+            end
+            if res == false
               @log.warn("#{__method__}:error at vn=#{vn} to_nid=#{to_nid} new_nid=#{new_nids}")
               redo
             end
@@ -524,6 +530,7 @@ module Roma
           if res != "STORED"
             @rttable.rollback(vn)
             @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+            return :abort if res.start_with?("SERVER_ERROR")
             return false
           end
         }
