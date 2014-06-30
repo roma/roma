@@ -21,8 +21,13 @@ module Roma
       end
 
       def ev_enabled_repetition_host_in_routingdump(s)
-        rcv = send_cmd(@stats.ap_str, "routingdump json\r\n")
-        hash = JSON.parse(rcv)
+        rt = @rttable
+        rd = @rttable.sub_nid_rd(@addr)
+        rt = Roma::Routing::RoutingTable.new(rd) if rd
+
+        dmp = rt.dump_json
+        hash = JSON.parse(dmp)
+
         repetition = false
         hash[2].each_value{|value|
           host = []
