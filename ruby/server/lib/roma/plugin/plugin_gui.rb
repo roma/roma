@@ -45,6 +45,24 @@ module Roma
           send_data("false\r\n")
         end
       end
+
+      def ev_get_routing_event(s)
+        routing_path  = get_config_stat["config.RTTABLE_PATH"]
+        f_list = Dir.glob("#{routing_path}/#{@stats.ap_str}*")
+
+        event_list = ""
+        f_list.each{|fname|
+          event_list << File.read(fname)
+        }
+
+        event_list.each_line{|line|
+          if line =~ /join|leave/
+            send_data("#{line}")
+          end
+        }
+        send_data("END\r\n")
+      end
+
     end
   end
 end
