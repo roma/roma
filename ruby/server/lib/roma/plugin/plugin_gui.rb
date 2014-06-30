@@ -50,16 +50,12 @@ module Roma
         routing_path  = get_config_stat["config.RTTABLE_PATH"]
         f_list = Dir.glob("#{routing_path}/#{@stats.ap_str}*")
 
-        event_list = ""
         f_list.each{|fname|
-          event_list << File.read(fname)
+          IO.foreach(fname){|line|
+            send_data(line) if line =~ /join|leave/
+          }
         }
 
-        event_list.each_line{|line|
-          if line =~ /join|leave/
-            send_data("#{line}")
-          end
-        }
         send_data("END\r\n")
       end
 
