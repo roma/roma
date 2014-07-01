@@ -615,14 +615,31 @@ module Roma
       if @rttable.rn == 1
         return [new_nid]
       end
-      if nodes.length > @rttable.rn
-        nodes.delete(new_nid)
-        nodes.delete(nodes.last)
-        nodes << new_nid
+      # [node_a, node_b, new_nid]
+      nodes.delete(new_nid)
+      # [node_a, node_b]
+
+      if nodes.length >= @rttable.rn
+        host = new_nid.split(/[:_]/)[0]
+        buf = [] # list of a same host
+        nodes.each do |nid|
+          buf << nid if nid.split(/[:_]/)[0] == host
+        end
+        if buf.length > 0
+          # include same host
+          # delete a last one, due to save a primary node
+          nodes.delete(buf.last)
+        else
+          nodes.delete(nodes.last)
+        end
       end
+
       if is_primary
-        nodes.delete(new_nid)
+        # [new_nid, node_a]
         nodes.insert(0,new_nid)
+      else
+        # [node_a, new_nid]
+        nodes << new_nid
       end
       nodes
     end
