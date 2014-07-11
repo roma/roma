@@ -165,7 +165,7 @@ module Roma
 
       def get_replaced_rd(regxp, replace)
         rd = Marshal.load(dump)
-        
+
         rd.nodes.map! do |nid|
           nid.sub(regxp, replace)
         end
@@ -177,7 +177,7 @@ module Roma
         end
         rd
       end
-      
+
       def check_netmask?(addr, mask)
         if addr =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/
           iaddr = ($1.to_i  << 24) + ($2.to_i << 16) + ($3.to_i << 8) + $4.to_i
@@ -195,7 +195,7 @@ module Roma
         end
         (iaddr & imask) == (imask_addr & imask)
       end
-      
+
     end # class RoutingTable
 
   end # module Routing

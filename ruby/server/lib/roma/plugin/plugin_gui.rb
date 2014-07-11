@@ -6,6 +6,7 @@ module Roma
     module PluginGui
       include ::Roma::CommandPlugin
 
+      #[ToDO] change to background process
       def ev_get_routing_history(s)
         routing_path  = get_config_stat["config.RTTABLE_PATH"]
         f_list = Dir.glob("#{routing_path}/*")
@@ -46,19 +47,7 @@ module Roma
         end
       end
 
-      def ev_get_routing_event(s)
-        routing_path  = get_config_stat["config.RTTABLE_PATH"]
-        f_list = Dir.glob("#{routing_path}/#{@stats.ap_str}*")
-
-        f_list.each{|fname|
-          IO.foreach(fname){|line|
-            send_data(line) if line =~ /join|leave/
-          }
-        }
-
-        send_data("END\r\n")
-      end
-
+      #[ToDO] change to background process
       # get_logs [line count]
       def ev_get_logs(s)
         if s.length != 2
