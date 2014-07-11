@@ -21,32 +21,6 @@ module Roma
         send_data("END\r\n")
       end
 
-      def ev_enabled_repetition_host_in_routingdump(s)
-        rt = @rttable
-        rd = @rttable.sub_nid_rd(@addr)
-        rt = Roma::Routing::RoutingTable.new(rd) if rd
-
-        dmp = rt.dump_json
-        hash = JSON.parse(dmp)
-
-        repetition = false
-        hash[2].each_value{|value|
-          host = []
-          value.map{|instance|
-            host << instance.split("_")[0]
-          }
-          if host.uniq!
-            repetition = true
-            break
-          end
-        }
-        if repetition
-          send_data("true\r\n")
-        else
-          send_data("false\r\n")
-        end
-      end
-
       #[ToDO] change to background process
       # get_logs [line count]
       def ev_get_logs(s)

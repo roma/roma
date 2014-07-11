@@ -131,6 +131,20 @@ module Roma
         @rd.dump_binary
       end
 
+      def check_repetition_in_routing
+        @rd.v_idx.each_value{|value|
+          host = []
+          value.each{|instance|
+            host << instance.split("_")[0]
+          }
+          if host.uniq!
+            return true
+          end
+        }
+
+        false
+      end
+
       def proc_failed(nid)
         t = Time.now
         if t - @fail_time > @fail_cnt_gap
