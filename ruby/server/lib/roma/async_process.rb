@@ -894,6 +894,57 @@ module Roma
       #Roma::Messaging::ConPool.instance.close_all
     end
 
+
+
+
+
+    def asyncev_start_get_logs(args)
+      @log.debug("#{__method__} #{args}")
+      t = Thread::new do
+        begin
+          get_logs(args)
+        rescue => e
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
+        ensure
+          @stats.run_gather_logs = false
+        end
+      end
+      t[:name] = __method__
+    end
+
+    def get_logs(args)
+      @log.info("#{__method__}:start.")
+
+      log_path =  Config::LOG_PATH
+      log_file = "#{log_path}/#{@stats.ap_str}.log"
+
+      raw_logs = []
+      f = File.new(log_file)
+      f.each_line{|line|
+        raw_logs << line
+      }
+
+      sliced_logs = []
+      if raw_logs.size > args[0]
+        sliced_logs = raw_logs.slice(-args[0]..-1)
+      else
+        sliced_logs = raw_logs
+      end
+
+      @rttable.logs = sliced_logs
+      #sliced_logs.each{|line|
+      #  send_data(line)
+      #}
+
+      @log.info("#{__method__} has done.")
+    rescue =>e
+      @log.error("#{e}\n#{$@}")
+    ensure
+      @stats.run_gather_logs = false
+      #Roma::Messaging::ConPool.instance.close_all
+    end
+
+
   end # module AsyncProcess
 
 end # module Roma

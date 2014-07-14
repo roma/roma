@@ -22,34 +22,35 @@ module Roma
       end
 
       #[ToDO] change to background process
-      # get_logs [line count]
+      # get_logs [line count] [LOG_LEVEL]
       def ev_get_logs(s)
-        if s.length != 2
-          return send_data("CLIENT_ERROR number of arguments (#{s.length-1} for 1)\r\n")
+        if s.length != 2 && s.length != 3
+          return send_data("CLIENT_ERROR number of arguments (#{s.length-1} for 1..2)\r\n")
         end
 
-        get_line_count = s[1].to_i
-        log_path = get_config_stat["config.LOG_PATH"]
-        log_file = "#{log_path}/#{@stats.ap_str}.log"
+        line_count = s[1].to_i
+        log_level  = s[2].chomp if s[2]
 
-        raw_logs = []
-        f = File.new(log_file)
-        f.each_line{|line|
-          raw_logs << line
-        }
+        @stats.run_gather_logs = true
 
-        sliced_logs = []
-        if raw_logs.size > get_line_count
-          sliced_logs = raw_logs.slice(-get_line_count..-1)
-        else
-          sliced_logs = raw_logs
+        Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [line_count, log_level]))
+
+        begin
+          50.times{|count|
+            sleep 0.1
+            break unless @stats.run_gather_logs
+            raise if count == 49
+          }
+
+          #send_data("#{@rttable.logs}\r\n")
+          @rttable.logs.each{|log|
+            send_data(log)
+          }
+
+          send_data("END\r\n")
+        rescue
+          send_data("CLIENT_ERROR\r\n")
         end
-
-        sliced_logs.each{|line|
-          send_data(line)
-        }
-
-        send_data("END\r\n")
       end
 
     end

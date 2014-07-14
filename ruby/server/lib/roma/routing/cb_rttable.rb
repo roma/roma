@@ -20,6 +20,7 @@ module Roma
       attr_accessor :auto_recover_status
       attr_accessor :auto_recover_time
       attr_accessor :event
+      attr_accessor :logs
       attr_reader :version_of_nodes
       attr_reader :min_version
 
@@ -36,6 +37,7 @@ module Roma
         @auto_recover_status="waiting"
         @auto_recover_time=1800
         @event = []
+        @logs = []
         @enabled_failover=false
         @lock = Mutex.new
         @version_of_nodes = Hash.new(0)
