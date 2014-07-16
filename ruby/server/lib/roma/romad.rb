@@ -413,6 +413,10 @@ module Roma
           @log.error("AUTO_RECOVER is off or Unavailable value is set to [DEFAULT_LOST_ACTION] => #{@rttable.lost_action}")
         end
       }
+
+      if Roma::Config.const_defined?(:ROUTING_EVENT_LIMIT_LINE)
+        @rttable.event_limit_line = Roma::Config::ROUTING_EVENT_LIMIT_LINE
+      end
       Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_routing_event'))
     end
 

@@ -20,6 +20,7 @@ module Roma
       attr_accessor :auto_recover_status
       attr_accessor :auto_recover_time
       attr_accessor :event
+      attr_accessor :event_limit_line
       attr_accessor :logs
       attr_reader :version_of_nodes
       attr_reader :min_version
@@ -37,6 +38,7 @@ module Roma
         @auto_recover_status="waiting"
         @auto_recover_time=1800
         @event = []
+        @event_limit_line = 1000
         @logs = []
         @enabled_failover=false
         @lock = Mutex.new
@@ -52,6 +54,7 @@ module Roma
         ret['routing.auto_recover_status'] = @auto_recover_status.to_s
         ret['routing.auto_recover_time'] = @auto_recover_time
         ret['routing.event'] = @event
+        ret['routing.event_limit_line'] = @event_limit_line
         ret['routing.version_of_nodes'] = @version_of_nodes.inspect
         ret['routing.min_version'] = @min_version
         ret
@@ -210,9 +213,7 @@ module Roma
           @rd.nodes << nid
           @rd.nodes.sort!
           write_log("join #{nid}")
-          t = Time.now
-          tstr = "#{t.strftime('%Y-%m-%dT%H:%M:%S')}.#{t.usec}"
-          @event << ("#{tstr} join #{nid}")
+          set_event(nid, 'join')
         end
       end
 
@@ -238,9 +239,7 @@ module Roma
 
         @log.warn("#{nid} just failed.")
         write_log("leave #{nid}")
-        t = Time.now
-        tstr = "#{t.strftime('%Y-%m-%dT%H:%M:%S')}.#{t.usec}"
-        @event << ("#{tstr} leave #{nid}")
+        set_event(nid, __method__)
 
         lost_vnodes=[]
         short_vnodes=[]
@@ -271,6 +270,14 @@ module Roma
         end
         @fail_cnt.delete(nid)
       end
+
+      def set_event(nid, process)
+        t = Time.now
+        tstr = "#{t.strftime('%Y-%m-%dT%H:%M:%S')}.#{t.usec}"
+        @event.shift if @event.size >= @event_limit_line
+        @event << ("#{tstr} #{process} #{nid}")
+      end
+      private :set_event
 
       def set_route_and_inc_clk_inside_sync(vn, nodes)
         @rd.v_idx[vn] = nodes

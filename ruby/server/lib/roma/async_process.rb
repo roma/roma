@@ -883,21 +883,19 @@ module Roma
 
       f_list.each{|fname|
         IO.foreach(fname){|line|
-          @rttable.event << line.chomp if line =~ /join|leave/
+          if line =~ /join|leave/
+            @rttable.event.shift if @rttable.event.size >= @rttable.event_limit_line
+            @rttable.event << line.chomp 
+          end
         }
       }
 
       @log.info("#{__method__} has done.")
     rescue =>e
       @log.error("#{e}\n#{$@}")
-    ensure
-      #Roma::Messaging::ConPool.instance.close_all
     end
 
-
-
-
-
+    #[toDO] have to change logic
     def asyncev_start_get_logs(args)
       @log.debug("#{__method__} #{args}")
       t = Thread::new do
@@ -912,6 +910,7 @@ module Roma
       t[:name] = __method__
     end
 
+    #[toDO] have to change logic
     def get_logs(args)
       @log.info("#{__method__}:start.")
 

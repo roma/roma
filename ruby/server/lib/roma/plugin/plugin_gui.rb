@@ -6,7 +6,7 @@ module Roma
     module PluginGui
       include ::Roma::CommandPlugin
 
-      #[ToDO] change to background process
+      # get_routing_history
       def ev_get_routing_history(s)
         routing_path  = get_config_stat["config.RTTABLE_PATH"]
         f_list = Dir.glob("#{routing_path}/*")
@@ -21,7 +21,7 @@ module Roma
         send_data("END\r\n")
       end
 
-      #[ToDO] change to background process
+      #[ToDO] have to change logic
       # get_logs [line count] [LOG_LEVEL]
       def ev_get_logs(s)
         if s.length != 2 && s.length != 3
