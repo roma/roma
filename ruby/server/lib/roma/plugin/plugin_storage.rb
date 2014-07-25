@@ -505,10 +505,16 @@ module Roma
           return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
         end
 
+        expt = s[3].to_i
+        if expt < 0
+          @log.error("set:wrong expt time(#{s})")
+          return send_data("CLIENT_ERROR Wrong expt time.\r\n")
+        end
+
         bytes = s[4].to_i
         if bytes < 0
-          @log.error("set:wrong key size(#{s})")
-          return send_data("CLIENT_ERROR Wrong key size.\r\n")
+          @log.error("set:wrong value size(#{s})")
+          return send_data("CLIENT_ERROR Wrong value size.\r\n")
         end
 
         key,hname = s[1].split("\e")
@@ -520,14 +526,14 @@ module Roma
         nodes = @rttable.search_nodes_for_write(vn)
         if nodes[0] != @nid
           @log.warn("forward #{fnc} key=#{key} vn=#{vn} to #{nodes[0]}")
-          res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{s[3]} #{s[4]}\r\n#{v}\r\n")
+          res = send_cmd(nodes[0],"f#{fnc} #{s[1]} #{d} #{expt} #{s[4]}\r\n#{v}\r\n")
           if res == nil || res.start_with?("ERROR")
             return send_data("SERVER_ERROR Message forward failed.\r\n")
           end
           return send_data("#{res}\r\n")
         end
 
-        store(fnc, hname, vn, key, d, s[3].to_i, v, nodes[1..-1])
+        store(fnc, hname, vn, key, d, expt, v, nodes[1..-1])
       end
 
       def fset(fnc,s)

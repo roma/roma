@@ -1070,6 +1070,44 @@ module Roma
         send_data("PUSHED\r\n")
       end
 
+      # set_run_snapshot [true|false]
+      def ev_set_run_snapshot(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1] !~ /true|false/
+          return send_data("CLIENT_ERROR value must be true or false\r\n")
+        end
+        @stats.run_snapshot = s[1]
+        send_data("STORED\r\n")
+      end
+
+      # set_last_snapshot_date [%Y/%m/%d %H:%M:%S]
+      def ev_set_last_snapshot(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1] !~ /^\d+\/\d+\/\d+T\d+:\d+:\d+$/
+          return send_data("CLIENT_ERROR format is [%Y/%m/%dT%H:%M:%S]\r\n")
+        end
+        res = broadcast_cmd("rset_last_snapshot #{s[1]}\r\n")
+        @stats.last_snapshot = s[1]
+        res[@stats.ap_str] = "PUSHED"
+        send_data("#{res}\r\n")
+      end
+
+      # rset_last_snapshot(s)
+      def ev_rset_last_snapshot(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        if s[1] !~ /^\d+\/\d+\/\d+T\d+:\d+:\d+$/
+          return send_data("CLIENT_ERROR format is [%Y/%m/%dT%H:%M:%S]\r\n")
+        end
+        @stats.last_snapshot = s[1]
+        send_data("PUSHED\r\n")
+      end
+
       private 
 
       def dcnice(p)
