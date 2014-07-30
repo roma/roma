@@ -904,7 +904,7 @@ module Roma
         rescue => e
           @log.error("#{__method__}:#{e.inspect} #{$@}")
         ensure
-          @stats.run_gather_logs = false
+          @stats.gui_run_gather_logs = false
         end
       end
       t[:name] = __method__
@@ -939,7 +939,7 @@ module Roma
     rescue =>e
       @log.error("#{e}\n#{$@}")
     ensure
-      @stats.run_gather_logs = false
+      @stats.gui_run_gather_logs = false
       #Roma::Messaging::ConPool.instance.close_all
     end
 

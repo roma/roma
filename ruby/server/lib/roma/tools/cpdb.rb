@@ -9,7 +9,7 @@ module Roma
 
     def initialize(addr, port)
       @con = TCPSocket.open(addr, port)
-      set_run_snapshot_status('true')
+      set_gui_run_snapshot_status('true')
       get_storage_info
     end
 
@@ -82,14 +82,14 @@ module Roma
       @con.gets
     end
 
-    def set_run_snapshot_status(status)
-      @con.puts "set_run_snapshot #{status}\r\n"
+    def set_gui_run_snapshot_status(status)
+      @con.puts "set_gui_run_snapshot #{status}\r\n"
       @con.gets
     end
 
-    def set_last_snapshot
+    def set_gui_last_snapshot
       t = Time.now.strftime('%Y/%m/%dT%H:%M:%S')
-      @con.puts "set_last_snapshot #{t}\r\n"
+      @con.puts "set_gui_last_snapshot #{t}\r\n"
       @con.gets
     end
 
@@ -99,7 +99,7 @@ module Roma
     end
 
     def close
-      set_run_snapshot_status('false')
+      set_gui_run_snapshot_status('false')
       @con.close if @con
     end
 
@@ -115,7 +115,7 @@ sc = Roma::SafeCopy.new("localhost", ARGV[0].to_i)
 
 begin
   sc.backup_all
-  sc.set_last_snapshot
+  sc.set_gui_last_snapshot
 ensure
   sc.close
 end

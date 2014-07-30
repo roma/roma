@@ -31,14 +31,14 @@ module Roma
         line_count = s[1].to_i
         log_level  = s[2].chomp if s[2]
 
-        @stats.run_gather_logs = true
+        @stats.gui_run_gather_logs = true
 
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [line_count, log_level]))
 
         begin
           50.times{|count|
             sleep 0.1
-            break unless @stats.run_gather_logs
+            break unless @stats.gui_run_gather_logs
             raise if count == 49
           }
 

@@ -32,11 +32,7 @@ module Roma
     attr_accessor :run_join
     attr_accessor :run_balance
 
-    attr_accessor :run_snapshot
-    attr_accessor :run_gather_logs
-
     attr_accessor :last_clean_up
-    attr_accessor :last_snapshot
     attr_accessor :spushv_protection
 
     # proc param
@@ -75,6 +71,11 @@ module Roma
 
     attr_accessor :routing_trans_timeout
 
+    # for GUI tool
+    attr_accessor :gui_run_snapshot
+    attr_accessor :gui_run_gather_logs
+    attr_accessor :gui_last_snapshot
+
     def initialize
       @config_path = nil
       @run_recover = false
@@ -85,10 +86,10 @@ module Roma
       @run_release = false
       @run_join = false
       @run_balance = false
-      @run_snapshot = false
-      @run_gather_logs = false
+      @gui_run_snapshot = false
+      @gui_run_gather_logs = false
       @last_clean_up = Time.now
-      @last_snapshot = []
+      @gui_last_snapshot = []
       @spushv_protection = false
       @stream_copy_wait_param = 0.0001
       @dcnice = 3
@@ -135,9 +136,9 @@ module Roma
       ret['stats.run_release'] = @run_release
       ret['stats.run_join'] = @run_join
       ret['stats.run_balance'] = @run_balance
-      ret['stats.run_snapshot'] = @run_snapshot
+      ret['stats.gui_run_snapshot'] = @gui_run_snapshot
       ret['stats.last_clean_up'] = @last_clean_up
-      ret['stats.last_snapshot'] = @last_snapshot
+      ret['stats.gui_last_snapshot'] = @gui_last_snapshot
       ret['stats.spushv_protection'] = @spushv_protection
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
       ret['stats.dcnice'] = @dcnice
