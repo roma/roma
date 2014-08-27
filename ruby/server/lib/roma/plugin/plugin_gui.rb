@@ -32,6 +32,10 @@ module Roma
           return send_data("CLIENT_ERROR limitation is 100 lines\r\n")
         end
 
+        if @stats.gui_run_gather_logs
+          return send_data("CANCELED gathering process is already going\r\n")
+        end
+
         begin
           @stats.gui_run_gather_logs = true
           Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [line_count]))
@@ -44,6 +48,7 @@ module Roma
         end
       end
 
+      # show_logs
       def ev_show_logs(s)
         if @stats.gui_run_gather_logs
           send_data("Not finished gathering\r\n")
