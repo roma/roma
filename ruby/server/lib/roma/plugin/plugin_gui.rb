@@ -21,38 +21,41 @@ module Roma
         send_data("END\r\n")
       end
 
-      #[ToDO] have to change logic
-      # get_logs [line count] [LOG_LEVEL]
-      def ev_get_logs(s)
-        if s.length != 2 && s.length != 3
-          return send_data("CLIENT_ERROR number of arguments (#{s.length-1} for 1..2)\r\n")
+      # get_logs [line count]
+      def ev_gather_logs(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments (#{s.length-1} for 1)\r\n")
         end
 
         line_count = s[1].to_i
-        log_level  = s[2].chomp if s[2]
-
-        @stats.gui_run_gather_logs = true
-
-        Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [line_count, log_level]))
+        if line_count > 100
+          return send_data("CLIENT_ERROR limitation is 100 lines\r\n")
+        end
 
         begin
-          50.times{|count|
-            sleep 0.1
-            break unless @stats.gui_run_gather_logs
-            raise if count == 49
-          }
+          @stats.gui_run_gather_logs = true
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [line_count]))
 
-          #send_data("#{@rttable.logs}\r\n")
-          @rttable.logs.each{|log|
-            send_data(log)
-          }
-
-          send_data("END\r\n")
+          send_data("STARTED\r\n")
         rescue
+          @stats.gui_run_gather_logs = false
+          @rttable.logs = []
           send_data("CLIENT_ERROR\r\n")
         end
       end
 
-    end
-  end
-end
+      def ev_show_logs(s)
+        if @stats.gui_run_gather_logs
+          send_data("Not finished gathering\r\n")
+        else
+          @rttable.logs.each{|log|
+            send_data(log)
+          }
+          send_data("END\r\n")
+          @rttable.logs.clear
+        end
+      end
+
+    end # end of module PluginGui
+  end # end of module CommandPlugin
+end # end of modlue Roma

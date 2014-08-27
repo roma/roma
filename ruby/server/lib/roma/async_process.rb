@@ -895,7 +895,6 @@ module Roma
       @log.error("#{e}\n#{$@}")
     end
 
-    #[toDO] have to change logic
     def asyncev_start_get_logs(args)
       @log.debug("#{__method__} #{args}")
       t = Thread::new do
@@ -910,39 +909,43 @@ module Roma
       t[:name] = __method__
     end
 
-    #[toDO] have to change logic
     def get_logs(args)
-      @log.info("#{__method__}:start.")
+      @log.debug("#{__method__}:start.")
 
       log_path =  Config::LOG_PATH
       log_file = "#{log_path}/#{@stats.ap_str}.log"
 
       raw_logs = []
-      f = File.new(log_file)
-      f.each_line{|line|
-        raw_logs << line
+      start_time = Time.now
+      File.open(log_file){|f|
+        f.each_line{|line|
+          # hilatency check
+          ps = Time.now - start_time
+          if ps > 5
+            @log.warn("gather_logs process was failed.")
+            raise
+          end
+
+          raw_logs << line
+        }
       }
 
       sliced_logs = []
       if raw_logs.size > args[0]
         sliced_logs = raw_logs.slice(-args[0]..-1)
       else
+        raw_logs.shift
         sliced_logs = raw_logs
       end
 
       @rttable.logs = sliced_logs
-      #sliced_logs.each{|line|
-      #  send_data(line)
-      #}
-
       @log.info("#{__method__} has done.")
     rescue =>e
+      @rttable.logs = []
       @log.error("#{e}\n#{$@}")
     ensure
       @stats.gui_run_gather_logs = false
-      #Roma::Messaging::ConPool.instance.close_all
     end
-
 
   end # module AsyncProcess
 
