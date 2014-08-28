@@ -33,7 +33,7 @@ module Roma
         end
 
         if @stats.gui_run_gather_logs
-          return send_data("CANCELED gathering process is already going\r\n")
+          return send_data("CLIENT_ERROR gathering process is already going\r\n")
         end
 
         begin

@@ -926,7 +926,7 @@ module Roma
             raise
           end
 
-          raw_logs << line
+          raw_logs << line unless line.chomp == '.'
         }
       }
 
@@ -934,7 +934,7 @@ module Roma
       if raw_logs.size > args[0]
         sliced_logs = raw_logs.slice(-args[0]..-1)
       else
-        raw_logs.shift
+        raw_logs.shift # remove first line(date of log file was created)
         sliced_logs = raw_logs
       end
 
