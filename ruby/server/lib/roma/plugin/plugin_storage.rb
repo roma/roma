@@ -141,6 +141,12 @@ module Roma
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
           return
         end
+
+        if @stats.wb_command_map.key?(:delete__prev)
+          data = @storages[hname].get(vn, key, d)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:delete__prev], key, data) if data
+        end
+        
         res = @storages[hname].delete(vn, key, d)
         @stats.delete_count += 1
 
@@ -177,6 +183,12 @@ module Roma
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
           return
         end
+
+        if @stats.wb_command_map.key?(:delete__prev)
+          data = @storages[hname].get(vn, key, d)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:delete__prev], key, data) if data
+        end
+        
         res = @storages[hname].delete(vn, key, d)
         @stats.delete_count += 1
 
@@ -311,12 +323,20 @@ module Roma
           return
         end
 
+        if @stats.wb_command_map.key?(:set_expt__prev)
+@log.debug(":set_export__prev")
+          # [vn, t, clk, expt, val]
+          data = @storages[hname].get_raw(vn, key, d)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt__prev], key, data[3].to_s) if data
+        end
+
         expt = chg_time_expt(s[2].to_i)
         ret = @storages[hname].set_expt(vn, key, d, expt)
 
         if ret
-          if @stats.wb_command_map.key?(:set_export)
-            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], k, expt.to_s)
+          if @stats.wb_command_map.key?(:set_expt)
+@log.debug(":set_export")
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], key, expt.to_s)
           end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           send_data("STORED\r\n")
@@ -342,12 +362,18 @@ module Roma
           return
         end
 
+        if @stats.wb_command_map.key?(:set_expt__prev)
+          # [vn, t, clk, expt, val]
+          data = @storages[hname].get_raw(vn, key, d)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt__prev], key, data[3].to_s) if data
+        end
+
         expt = chg_time_expt(s[2].to_i)
         ret = @storages[hname].set_expt(vn, key, d, expt)
 
         if ret
-          if @stats.wb_command_map.key?(:set_export)
-            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], k, expt.to_s)
+          if @stats.wb_command_map.key?(:set_expt)
+            Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], key, expt.to_s)
           end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           send_data("STORED\r\n")
@@ -431,6 +457,12 @@ module Roma
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
           return
         end
+
+        if @stats.wb_command_map.key?("#{fnc.to_s}__prev".to_sym)
+          data = @storages[hname].get(vn, k, d)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map["#{fnc.to_s}__prev".to_sym], k, data) if data
+        end
+
         ret = @storages[hname].send(fnc, vn, k, d, expt ,v)
         @stats.write_count += 1
 
@@ -451,6 +483,11 @@ module Roma
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
           return
+        end
+
+        if @stats.wb_command_map.key?(:cas__prev)
+          data = @storages[hname].get(vn, k, d)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:cas__prev], k, data) if data
         end
 
         ret = @storages[hname].cas(vn, k, d, clk, expt ,v)
@@ -553,6 +590,12 @@ module Roma
           send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
           return
         end
+
+        if @stats.wb_command_map.key?("#{fnc.to_s}__prev".to_sym)
+          data = @storages[hname].get(vn, k, d)
+          Roma::WriteBehindProcess::push(hname, @stats.wb_command_map["#{fnc.to_s}__prev".to_sym], k, data) if data
+        end
+
         res = @storages[hname].send(fnc, vn, k, d, v)
         @stats.write_count += 1
 

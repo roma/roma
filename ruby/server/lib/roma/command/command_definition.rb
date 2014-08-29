@@ -119,6 +119,11 @@ module Roma
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
+              if stored && @stats.wb_command_map.key?("#{cmd}__prev".to_sym)
+                Roma::WriteBehindProcess::push(params.hash_name,
+                                               @stats.wb_command_map["#{cmd}__prev".to_sym],
+                                               params.key, stored.value)
+              end
               ctx = CommandContext.new(s, params, stored)
 
               ret = instance_exec(ctx, &block)
@@ -137,7 +142,9 @@ module Roma
 
                 if ret
                   if @stats.wb_command_map.key?(cmd.to_sym)
-                    Roma::WriteBehindProcess::push(ctx.params.hash_name, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ret[4])
+                    Roma::WriteBehindProcess::push(ctx.params.hash_name,
+                                                   @stats.wb_command_map[cmd.to_sym],
+                                                   ctx.params.key, ret[4])
                   end
                   redundant(ctx.params.nodes[1..-1], ctx.params.hash_name,
                             ctx.params.key, ctx.params.digest, ret[2],
@@ -223,8 +230,15 @@ module Roma
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
                 @storages[params.hash_name].get_raw(params.vn, params.key, params.digest)
               stored = nil if stored.vn == nil || Time.now.to_i > stored.expt
-              ctx = CommandContext.new(s, params, stored)
 
+              if stored && @stats.wb_command_map.key?("#{cmd}__prev".to_sym)
+                Roma::WriteBehindProcess::push(params.hash_name,
+                                               @stats.wb_command_map["#{cmd}__prev".to_sym],
+                                               params.key, stored.value)
+              end
+
+              ctx = CommandContext.new(s, params, stored)
+              
               ret = instance_exec(ctx, &block)
               if ret.instance_of? Array
                 flg, expt, value, count, msg = ret
@@ -241,7 +255,9 @@ module Roma
 
                 if ret
                   if @stats.wb_command_map.key?(cmd.to_sym)
-                    Roma::WriteBehindProcess::push(ctx.params.hash_name, @stats.wb_command_map[cmd.to_sym], ctx.params.key, ctx.params.value)
+                    Roma::WriteBehindProcess::push(ctx.params.hash_name,
+                                                   @stats.wb_command_map[cmd.to_sym],
+                                                   ctx.params.key, ret[4])
                   end
                   redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
                             ctx.params.key, ctx.params.digest, ret[2], 
