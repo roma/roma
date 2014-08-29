@@ -444,7 +444,7 @@ class TCStorageTest < Test::Unit::TestCase
       @st.delete(0, "key#{i}", 0)
     }
     count = 0
-    @st.each_vn_dump(0){|data|
+    res = @st.each_vn_dump(0){|data|
       vn, last, clk, expt, klen = data.slice!(0..19).unpack('NNNNN')
       k = data.slice!(0..(klen-1))
       vlen, = data.slice!(0..3).unpack('N')
@@ -457,6 +457,7 @@ class TCStorageTest < Test::Unit::TestCase
       assert_nil( @st.load_stream_dump(vn, last, clk, expt, k, v) )
       @st.load_stream_dump(2, last, clk, expt, k, v)
     }
+    assert(res)
     assert_equal(100,count)
     
     count = 0
@@ -493,34 +494,40 @@ class TCStorageTest < Test::Unit::TestCase
     }
 
     count = 0
-    @st.each_vn_dump(0){|data|
+    res = @st.each_vn_dump(0){|data|
       vn, last, clk, expt, klen = data.slice!(0..19).unpack('NNNNN')
       k = data.slice!(0..(klen-1))
       vlen, = data.slice!(0..3).unpack('N')
       v = data
       count += 1
 #      puts "#{vn} #{last} #{clk} #{expt} #{klen} #{k} #{vlen} #{v}"
-      assert_match(/key\d/, k)
-      if k[3..-1].to_i < 80
-        assert_match("val#{k[3..-1]}", v)
-      elsif k[3..-1].to_i < 90
-        assert_match("val#{k[3..-1].to_i + 1}", v)
-      else
-        assert(vlen == 0)
-      end
-
-      assert_nil( @st.load_stream_dump(vn, last, clk, expt, k, v) )
-      @st.load_stream_dump(2, last, clk, expt, k, v)
     }
-    assert_equal(100,count)
-    
-    count = 0
-    @st.each_vn_dump(1){|data| count += 1 }
-    assert_equal(0,count )
+    assert_equal(false, res)
+    assert_equal(0, count)
+  end
 
-    count = 0
-    @st.each_vn_dump(2){|data| count += 1 }
-    assert_equal(100,count )
+  def test_db_stat_with_each_vn_dump
+    n = 100 # number of data
+    m = 10 # number of vnode
+    # set data
+    n.times do |i|
+      m.times do|vn|
+        @st.set(vn,"key#{vn}_#{i}",0,0x7fffffff,"val#{i}")
+      end
+    end
+
+    m.times do |vn|
+      dn = @st.instance_eval{ @hdiv[vn] }
+      count = 0
+      res = @st.each_vn_dump(vn) do
+        assert_equal(false, @st.each_vn_dump(vn){})
+        assert_equal(:normal, @st.dbs[dn])
+        assert_equal(false, @st.set_db_stat(dn, :safecopy_flushing))
+        count += 1
+      end
+      assert_equal(n, count)
+      assert(res)
+    end
   end
 
   def test_db_stat

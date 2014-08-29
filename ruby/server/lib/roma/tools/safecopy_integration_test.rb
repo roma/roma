@@ -53,8 +53,16 @@ def set_counts(ini_nodes, range, key_prefix, value)
   range.each do |i|
     ts = DateTime.now
     @range_cnt = i
-    res=rc.set("#{key_prefix}_#{i}","#{value}")
-    puts "set #{key_prefix}_#{i}=#{value} #{res}" if res==nil || res.chomp != 'STORED'
+    res = nil
+    begin
+      res=rc.set("#{key_prefix}_#{i}","#{value}")
+      raise "set #{key_prefix}_#{i}=#{value} #{res}" if res==nil || res.chomp != 'STORED'
+    rescue => e
+      puts "error:s#{__method__}: #{e}"
+      puts "retry"
+      sleep 0.1
+      retry
+    end
     t=(DateTime.now - ts).to_f * 86400.0
     @tmax=t if t > @tmax
     @tmin=t if t < @tmin
@@ -68,7 +76,14 @@ def check_count(ini_nodes, range, key_prefix, value)
 
   range.each do |i|
     ts = DateTime.now
-    res = rc.get("#{key_prefix}_#{i}")
+    res = nil
+    begin
+      res = rc.get("#{key_prefix}_#{i}")
+    rescue => e
+      puts "error: #{e}"
+      sleep 1
+      retry
+    end
     if res != value.to_s
       puts "error k=#{key_prefix}_#{i} #{res}" 
     end
@@ -116,7 +131,15 @@ def safecopy_stats(nid)
 end
 
 def set_storage_status(nid, fno, stat)
-  send_cmd(ARGV[0], "set_storage_status #{fno} #{stat}")
+  cnt = 0
+  begin
+    res = send_cmd(ARGV[0], "set_storage_status #{fno} #{stat}")
+    res.chomp! if res
+    puts res if cnt > 0
+    sleep 0.5
+    cnt += 1
+  end while res != 'PUSHED'
+  res
 end
 
 def wait_status(nid, fno, stat)
@@ -140,7 +163,7 @@ def test_change_status
   sleep(5)
 
   10.times do |n|
-    puts "\n#{n+1}th loop(#{n}.tc)****************************************************************** " 
+    puts "\n#{n+1}th loop(#{n}.tc) " + "*" * 70 
 
     #========================================================================================
     #flushing(normal => safecopy_flushed)
@@ -155,11 +178,9 @@ def test_change_status
         @flag = true
       }
     }
-    while !@flag do
-      puts "\s\s[debug]sleep flushing start"
-      sleep(1)
-      puts "\s\s[debug]sleep flushing end"
-    end
+    puts "\s\s[debug]sleep flushing start"
+    sleep(1) while !@flag
+    puts "\s\s[debug]sleep flushing end"
     puts "\s\s#{set_storage_status(nid, n, 'safecopy')}"
     puts "#{wait_status(nid, n, :safecopy_flushed)}"
 
@@ -167,6 +188,7 @@ def test_change_status
     t.kill
 
     flushing_range_cnt = @range_cnt
+    puts "flushing_range_cnt = #{@range_cnt}"
     puts "\s\s#{safecopy_stats(nid)}\n\n"
 
     #========================================================================================
@@ -182,11 +204,9 @@ def test_change_status
         @flag = true
       }
     }
-    while !@flag do 
-      puts "\s\s[debug]sleep caching start"
-      sleep(1)
-      puts "\s\s[debug]sleep caching end"
-    end
+    puts "\s\s[debug]sleep caching start"
+    sleep(1) while !@flag
+    puts "\s\s[debug]sleep caching end"
 
     puts "\s\s#{set_storage_status(nid, n, 'normal')}"
     puts "#{wait_status(nid, n, :normal)}"
@@ -195,6 +215,7 @@ def test_change_status
     t.kill   
 
     caching_range_cnt = @range_cnt
+    puts "caching_range_cnt = #{@range_cnt}"
     puts "\s\s#{safecopy_stats(nid)}"
 
     #========================================================================================
@@ -239,7 +260,7 @@ else
   param[:count] = 1 if !param.key?(:count)
 
   param[:count].times do |count|
-    puts "#{count+1}th test========================================================================================="
+    puts "#{count+1}th test " + "=" * 70
     test_change_status
   end
 end
