@@ -28,8 +28,8 @@ module Roma
         end
 
         line_count = s[1].to_i
-        if line_count > 100
-          return send_data("CLIENT_ERROR limitation is 100 lines\r\n")
+        if line_count < 1 || line_count > 100
+          return send_data("CLIENT_ERROR line counts is restricted to between 1-100 lines\r\n")
         end
 
         if @stats.gui_run_gather_logs
