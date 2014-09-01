@@ -305,7 +305,7 @@ module Roma
       t = Thread::new do
         begin
           timeout(@rttable.auto_recover_time){
-            loop{ 
+            loop{
               sleep 1
               break if @rttable.auto_recover_status != "preparing"
               #break if @stats.run_join #run_join don't have possibility to be true in this case.
@@ -331,7 +331,7 @@ module Roma
             when :no_action
               @log.debug("auto recover NOT start. Because lost action is [no_action]")
           end
-        end      
+        end
       end
       t[:name] = __method__
     end
@@ -366,6 +366,7 @@ module Roma
       @do_acquired_recover_process = true
       loop do
         break unless @do_acquired_recover_process
+        break if @rttable.num_of_vn(@stats.ap_str)[2] == 0 # short vnodes
 
         vn, nodes, is_primary = @rttable.select_vn_for_recover(exclude_nodes)
         break unless vn
@@ -487,12 +488,18 @@ module Roma
 
       @do_release_process = true
       while(@rttable.has_node?(@stats.ap_str)) do
+        break unless @do_release_process
         @rttable.each_vnode do |vn, nids|
           break unless @do_release_process
           if nids.include?(@stats.ap_str)
 
             to_nid, new_nids = @rttable.select_node_for_release(@stats.ap_str, @stats.rep_host, nids)
-            unless sync_a_vnode_for_release(vn, to_nid, new_nids)
+            res = sync_a_vnode_for_release(vn, to_nid, new_nids)
+            if res == :abort
+              @log.error("#{__method__}:release_process aborted due to SERVER_ERROR received.")
+              @do_release_process = false
+            end
+            if res == false
               @log.warn("#{__method__}:error at vn=#{vn} to_nid=#{to_nid} new_nid=#{new_nids}")
               redo
             end
@@ -510,7 +517,7 @@ module Roma
     def sync_a_vnode_for_release(vn, to_nid, new_nids)
       nids = @rttable.search_nodes(vn)
 
-      if nids.include?(to_nid)==false || (is_primary && nids[0]!=to_nid)
+      if nids.include?(to_nid)==false
         @log.debug("#{__method__}:#{vn} #{to_nid}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid
@@ -523,6 +530,7 @@ module Roma
           if res != "STORED"
             @rttable.rollback(vn)
             @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+            return :abort if res.start_with?("SERVER_ERROR")
             return false
           end
         }
@@ -773,7 +781,7 @@ module Roma
     def asyncev_start_storage_flush_process(args)
       hname, dn = args
       @log.debug("#{__method__} #{args.inspect}")
-      
+
       st = @storages[hname]
       if st.dbs[dn] != :safecopy_flushing
         @log.error("Can not flush storage. stat = #{st.dbs[dn]}")
@@ -796,7 +804,7 @@ module Roma
     def asyncev_start_storage_cachecleaning_process(args)
       hname, dn = args
       @log.debug("#{__method__} #{args.inspect}")
-      
+
       st = @storages[hname]
       if st.dbs[dn] != :cachecleaning
         @log.error("Can not start cachecleaning process. stat = #{st.dbs[dn]}")
@@ -818,16 +826,16 @@ module Roma
       count = 0
       rcount = 0
       st = @storages[hname]
-      
+
       @do_storage_cachecleaning_process = true
       loop do
         # get keys in a cache up to 100 kyes
         keys = st.get_keys_in_cache(dn)
         break if keys == nil || keys.length == 0
         break unless @do_storage_cachecleaning_process
-        
+
         # @log.debug("#{__method__}:#{keys.length} keys found")
-        
+
         # copy cache -> db
         st.each_cache_by_keys(dn, keys) do |vn, last, clk, expt, k, v|
           break unless @do_storage_cachecleaning_process
@@ -852,6 +860,91 @@ module Roma
       @log.debug("#{__method__}:#{rcount} keys rejected.") if rcount > 0
     ensure
       @do_storage_cachecleaning_process = false
+    end
+
+    def asyncev_start_get_routing_event(args)
+      @log.debug("#{__method__} #{args}")
+      t = Thread::new do
+        begin
+          get_routing_event
+        rescue => e
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
+        ensure
+        end
+      end
+      t[:name] = __method__
+    end
+
+    def get_routing_event
+      @log.info("#{__method__}:start.")
+
+      routing_path = Config::RTTABLE_PATH
+      f_list = Dir.glob("#{routing_path}/#{@stats.ap_str}*")
+
+      f_list.each{|fname|
+        IO.foreach(fname){|line|
+          if line =~ /join|leave/
+            @rttable.event.shift if @rttable.event.size >= @rttable.event_limit_line
+            @rttable.event << line.chomp 
+          end
+        }
+      }
+
+      @log.info("#{__method__} has done.")
+    rescue =>e
+      @log.error("#{e}\n#{$@}")
+    end
+
+    def asyncev_start_get_logs(args)
+      @log.debug("#{__method__} #{args}")
+      t = Thread::new do
+        begin
+          get_logs(args)
+        rescue => e
+          @log.error("#{__method__}:#{e.inspect} #{$@}")
+        ensure
+          @stats.gui_run_gather_logs = false
+        end
+      end
+      t[:name] = __method__
+    end
+
+    def get_logs(args)
+      @log.debug("#{__method__}:start.")
+
+      log_path =  Config::LOG_PATH
+      log_file = "#{log_path}/#{@stats.ap_str}.log"
+
+      raw_logs = []
+      start_time = Time.now
+      File.open(log_file){|f|
+        f.each_line{|line|
+          # hilatency check
+          ps = Time.now - start_time
+          if ps > 5
+            @log.warn("gather_logs process was failed.")
+            raise
+          end
+
+          raw_logs << line unless line.chomp == '.'
+        }
+      }
+
+      sliced_logs = []
+      if raw_logs.size > args[0]
+        sliced_logs = raw_logs.slice(-args[0]..-1)
+      else
+        raw_logs.shift # remove first line(date of log file was created)
+        sliced_logs = raw_logs
+      end
+
+      @rttable.logs = sliced_logs
+      @log.info("#{__method__} has done.")
+    rescue =>e
+      @rttable.logs = []
+      @log.error("#{e}\n#{$@}")
+    ensure
+      @stats.gui_run_gather_logs = false
     end
 
   end # module AsyncProcess

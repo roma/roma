@@ -60,6 +60,19 @@ module Roma
         end
       end
 
+      def ev_enabled_repetition_in_routing?(s)
+        rt = @rttable
+        rd = @rttable.sub_nid_rd(@addr)
+        rt = Roma::Routing::RoutingTable.new(rd) if rd
+
+        if s.length == 1
+          repetition = rt.check_repetition_in_routing
+          send_data("#{repetition}\r\n")
+        else
+          send_data("CLIENT_ERROR\r\n")
+        end
+      end
+
       # setroute <vnode-id> <clock> <node-id> ...
       def ev_setroute(s)
         if s.length < 4

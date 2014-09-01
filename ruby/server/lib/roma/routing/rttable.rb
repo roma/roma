@@ -35,10 +35,9 @@ module Roma
         init_mtree
       end
 
-      def get_stat(ap)
-
+      def num_of_vn(ap)
         pn = sn = short = lost = 0
-        @rd.v_idx.each_pair{|vn, nids|
+        @rd.v_idx.each_pair do |vn, nids|
           if nids == nil || nids.length == 0
             lost += 1
             next
@@ -48,8 +47,12 @@ module Roma
             sn += 1
           end
           short += 1 if nids.length < @rd.rn
-        }
+        end
+        [pn, sn, short, lost]
+      end
 
+      def get_stat(ap)
+        pn, sn, short, lost = num_of_vn(ap)
         ret = {}
         ret['routing.redundant'] = @rn
         ret['routing.nodes.length'] = nodes.length
@@ -128,6 +131,20 @@ module Roma
         @rd.dump_binary
       end
 
+      def check_repetition_in_routing
+        @rd.v_idx.each_value{|value|
+          host = []
+          value.each{|instance|
+            host << instance.split("_")[0]
+          }
+          if host.uniq!
+            return true
+          end
+        }
+
+        false
+      end
+
       def proc_failed(nid)
         t = Time.now
         if t - @fail_time > @fail_cnt_gap
@@ -162,7 +179,7 @@ module Roma
 
       def get_replaced_rd(regxp, replace)
         rd = Marshal.load(dump)
-        
+
         rd.nodes.map! do |nid|
           nid.sub(regxp, replace)
         end
@@ -174,7 +191,7 @@ module Roma
         end
         rd
       end
-      
+
       def check_netmask?(addr, mask)
         if addr =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/
           iaddr = ($1.to_i  << 24) + ($2.to_i << 16) + ($3.to_i << 8) + $4.to_i
@@ -192,7 +209,7 @@ module Roma
         end
         (iaddr & imask) == (imask_addr & imask)
       end
-      
+
     end # class RoutingTable
 
   end # module Routing
