@@ -26,6 +26,7 @@ module Roma
 
     # routing setting
     RTTABLE_PATH = '.'
+    ROUTING_EVENT_LIMIT_LINE = 1000
 
     # connection setting
 

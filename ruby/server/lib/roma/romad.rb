@@ -13,7 +13,7 @@ require 'roma/routing/cb_rttable'
 require 'timeout'
 
 module Roma
-  
+
   class Romad
     include AsyncProcess
     include WriteBehindProcess
@@ -49,7 +49,7 @@ module Roma
       @storages.each{|hashname,st|
         st.opendb
       }
-      
+
       start_async_process
       start_wb_process
       timer
@@ -84,7 +84,7 @@ module Roma
           Event::Handler::connections.clear
 
           EventMachine::run do
-            EventMachine.start_server('0.0.0.0', @stats.port, 
+            EventMachine.start_server('0.0.0.0', @stats.port,
                                       Roma::Command::Receiver,
                                       @storages, @rttable)
             # a management of connections lives
@@ -109,7 +109,7 @@ module Roma
                     end
                   end
                 }
-                dellist.each{|k| 
+                dellist.each{|k|
                   @log.info("delete connection lastcmd = #{k.lastcmd}")
                   Event::Handler::connections.delete(k)
                 }
@@ -194,7 +194,7 @@ module Roma
 
     def initialize_wb_writer
       @wb_writer = Roma::WriteBehind::FileWriter.new(
-                                                     Roma::Config::WRITEBEHIND_PATH, 
+                                                     Roma::Config::WRITEBEHIND_PATH,
                                                      Roma::Config::WRITEBEHIND_SHIFT_SIZE,
                                                      @log)
     end
@@ -223,7 +223,7 @@ module Roma
         Event::Handler.class_eval{
           alias gets2 gets
           undef gets
-          
+
           def gets
             ret = gets2
             @log.info("command log:#{ret.chomp}") if ret
@@ -231,7 +231,7 @@ module Roma
           end
         }
       end
-      
+
       if @stats.join_ap
         Command::Receiver::mk_evlist
       else
@@ -280,7 +280,7 @@ module Roma
       opts.on_tail("-v", "--version", "Show version") {
         puts "romad.rb #{Roma::VERSION}"; exit
       }
-      
+
       opts.on("-n", "--name [name]") { |v| @stats.name = v }
 
       @stats.enabled_repetition_host_in_routing = false
@@ -311,7 +311,7 @@ module Roma
       unless @stats.port =~ /^\d+$/
         raise OptionParser::ParseError.new('Port number is not numeric.')
       end
-      
+
       @stats.join_ap.sub!(':','_') if @stats.join_ap
       if @stats.join_ap && !(@stats.join_ap =~ /^.+_\d+$/)
         raise OptionParser::ParseError.new('[address:port] can not parse.')
@@ -327,7 +327,7 @@ module Roma
       if Config.const_defined? :STORAGE_PATH
         path = "#{Roma::Config::STORAGE_PATH}/#{@stats.ap_str}"
       end
-      
+
       if Config.const_defined? :STORAGE_CLASS
         st_class = Config::STORAGE_CLASS
       end
@@ -379,11 +379,11 @@ module Roma
           @rttable = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
         end
       end
-      
+
       if Roma::Config.const_defined?(:RTTABLE_SUB_NID)
         @rttable.sub_nid = Roma::Config::RTTABLE_SUB_NID
       end
-      
+
       if Roma::Config.const_defined?(:ROUTING_FAIL_CNT_THRESHOLD)
         @rttable.fail_cnt_threshold = Roma::Config::ROUTING_FAIL_CNT_THRESHOLD
       end
@@ -413,6 +413,11 @@ module Roma
           @log.error("AUTO_RECOVER is off or Unavailable value is set to [DEFAULT_LOST_ACTION] => #{@rttable.lost_action}")
         end
       }
+
+      if Roma::Config.const_defined?(:ROUTING_EVENT_LIMIT_LINE)
+        @rttable.event_limit_line = Roma::Config::ROUTING_EVENT_LIMIT_LINE
+      end
+      Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_routing_event'))
     end
 
     def initialize_rttable_join
@@ -490,7 +495,7 @@ module Roma
       Messaging::ConPool.instance.return_connection(nid,con)
       rcv
     rescue Exception
-      nil      
+      nil
     end
 
     def timer
@@ -631,11 +636,11 @@ module Roma
         @stats.run_sync_routing = false
       }
       t[:name] = 'sync_routing'
-    end    
+    end
 
     def routing_hash_comparison(nid,id='0')
       return :skip if @stats.run_join || @stats.run_recover || @stats.run_balance
-      
+
       h = async_send_cmd(nid,"mklhash #{id}\r\n")
       if h && h.start_with?("ERROR") == false && @rttable.mtree.get(id) != h
         if (id.length - 1) == @rttable.div_bits
@@ -652,12 +657,12 @@ module Roma
     def sync_routing(nid,id)
       vn = @rttable.mtree.to_vn(id)
       @log.warn("vn=#{vn} inconsistent")
-      
+
       res = async_send_cmd(nid,"getroute #{vn}\r\n")
       return if res == nil || res.start_with?("ERROR")
       clk,*nids = res.split(' ')
       clk = @rttable.set_route(vn, clk.to_i, nids)
-      
+
       if clk.is_a?(Integer) == false
         clk,nids = @rttable.search_nodes_with_clk(vn)
         cmd = "setroute #{vn} #{clk-1}"
@@ -715,7 +720,7 @@ module Roma
       @log.error("#{e}\n#{$@}")
       nil
     end
-    
+
     def stop
       @storages.each_value{|st|
         st.closedb

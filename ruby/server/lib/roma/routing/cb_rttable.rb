@@ -19,6 +19,9 @@ module Roma
       attr_accessor :auto_recover
       attr_accessor :auto_recover_status
       attr_accessor :auto_recover_time
+      attr_accessor :event
+      attr_accessor :event_limit_line
+      attr_accessor :logs
       attr_reader :version_of_nodes
       attr_reader :min_version
 
@@ -34,6 +37,9 @@ module Roma
         @auto_recover=false
         @auto_recover_status="waiting"
         @auto_recover_time=1800
+        @event = []
+        @event_limit_line = 1000
+        @logs = []
         @enabled_failover=false
         @lock = Mutex.new
         @version_of_nodes = Hash.new(0)
@@ -47,11 +53,13 @@ module Roma
         ret['routing.auto_recover'] = @auto_recover.to_s
         ret['routing.auto_recover_status'] = @auto_recover_status.to_s
         ret['routing.auto_recover_time'] = @auto_recover_time
+        ret['routing.event'] = @event
+        ret['routing.event_limit_line'] = @event_limit_line
         ret['routing.version_of_nodes'] = @version_of_nodes.inspect
         ret['routing.min_version'] = @min_version
         ret
       end
-      
+
       def set_version(nid,ver)
         @version_of_nodes[nid] = ver
         @min_version = find_min_version
@@ -64,11 +72,11 @@ module Roma
       end
 
       def set_leave_proc(&block)
-        @leave_proc=block        
+        @leave_proc=block
       end
 
       def set_lost_proc(&block)
-        @lost_proc=block        
+        @lost_proc=block
       end
 
       def set_recover_proc(&block)
@@ -86,13 +94,13 @@ module Roma
             @log_name="#{@fname}.#{log_list.last[0]+1}"
           end
         end
-        @log_fd=File.open(@log_name,"a")      
+        @log_fd=File.open(@log_name,"a")
       end
 
       def write_log_setroute(vn, clk, nids)
         log="setroute #{vn} #{clk}"
         nids.each{ |nid| log << " #{nid}" }
-        write_log(log)        
+        write_log(log)
       end
 
       def write_log(line)
@@ -119,7 +127,7 @@ module Roma
         buf = self.nodes
         buf.delete(ap_str)
         hosts = []
-        
+
         unless rep_host
           buf.each{ |node|
             host = node.split(/[:_]/)[0]
@@ -128,7 +136,7 @@ module Roma
         else
           hosts = buf
         end
-        
+
         hosts.length < @rd.rn
       end
 
@@ -168,7 +176,7 @@ module Roma
           end
         }
         idx = short_idx if short_idx.length > 0
-          
+
         ks = idx.keys
         return nil if ks.length == 0
         vn = ks[rand(ks.length)]
@@ -205,6 +213,7 @@ module Roma
           @rd.nodes << nid
           @rd.nodes.sort!
           write_log("join #{nid}")
+          set_event(nid, 'join')
         end
       end
 
@@ -227,10 +236,11 @@ module Roma
         @rd.nodes.delete(nid)
         @version_of_nodes.delete(nid)
         @min_version = find_min_version
-        
+
         @log.warn("#{nid} just failed.")
         write_log("leave #{nid}")
-        
+        set_event(nid, __method__)
+
         lost_vnodes=[]
         short_vnodes=[]
         @lock.synchronize {
@@ -260,6 +270,14 @@ module Roma
         end
         @fail_cnt.delete(nid)
       end
+
+      def set_event(nid, process)
+        t = Time.now
+        tstr = "#{t.strftime('%Y-%m-%dT%H:%M:%S')}.#{t.usec}"
+        @event.shift if @event.size >= @event_limit_line
+        @event << ("#{tstr} #{process} #{nid}")
+      end
+      private :set_event
 
       def set_route_and_inc_clk_inside_sync(vn, nodes)
         @rd.v_idx[vn] = nodes

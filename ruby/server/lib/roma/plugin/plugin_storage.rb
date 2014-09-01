@@ -544,8 +544,8 @@ module Roma
 
         bytes = s[4].to_i
         if bytes < 0
-          @log.error("set:wrong key size(#{s})")
-          return send_data("CLIENT_ERROR Wrong key size.\r\n")
+          @log.error("set:wrong value size(#{s})")
+          return send_data("CLIENT_ERROR Wrong value size.\r\n")
         end
 
         key,hname = s[1].split("\e")
