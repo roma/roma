@@ -1114,6 +1114,23 @@ module Roma
         send_data("PUSHED\r\n")
       end
 
+      # set_cleanup_regexp <regexp>
+      def ev_set_cleanup_regexp(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments #{s.length-1} to 1\r\n")
+        end
+
+        # failover check
+        unless @rttable.enabled_failover
+          return send_data("CLIENT_ERROR failover disable now!!\r\n")
+        end
+
+        @storages.each{|hname,st|
+          st.cleanup_regexp = s[1]
+          send_data("STORED\r\n")
+        }
+      end
+
       private 
 
       def dcnice(p)
