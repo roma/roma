@@ -1127,6 +1127,7 @@ module Roma
 
         @storages.each{|hname,st|
           st.cleanup_regexp = s[1]
+          st.stop_clean_up
           send_data("STORED\r\n")
         }
       end
