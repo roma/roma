@@ -22,6 +22,7 @@ module Roma
       attr_accessor :each_vn_dump_sleep
       attr_accessor :each_vn_dump_sleep_count
       attr_accessor :each_clean_up_sleep
+      attr_accessor :cleanup_regexp
       attr_accessor :logic_clock_expire
 
       attr_accessor :do_each_vn_dump
@@ -46,6 +47,7 @@ module Roma
         @each_vn_dump_sleep = 0.001
         @each_vn_dump_sleep_count = 100
         @each_clean_up_sleep = 0.01
+        @cleanup_regexp = nil
         @logic_clock_expire = 300
 
         @each_cache_lock = Mutex::new
@@ -62,6 +64,7 @@ module Roma
         ret['storage.each_vn_dump_sleep_count'] = @each_vn_dump_sleep_count
         ret['storage.each_vn_dump_files'] = @each_vn_dump_files.inspect
         ret['storage.each_clean_up_sleep'] = @each_clean_up_sleep
+        ret['storage.cleanup_regexp'] = @cleanup_regexp
         ret['storage.logic_clock_expire'] = @logic_clock_expire
         ret['storage.safecopy_stats'] = @dbs.inspect
         ret
@@ -417,6 +420,12 @@ module Roma
 
       def each_clean_up(t, vnhash)
         @do_clean_up = true
+
+        f = nil;
+        if @cleanup_regexp && File.exist?(@storage_path)
+          f = open(@storage_path + '/klist.txt','w')
+        end
+
         return unless @each_clean_up_lock.try_lock
         nt = Time.now.to_i
         @divnum.times do |i|
@@ -426,6 +435,10 @@ module Roma
             return unless @do_clean_up # 1st check
             vn, last, clk, expt = unpack_header(v)
             vn_stat = vnhash[vn]
+            if f && @cleanup_regexp && k =~ /#{@cleanup_regexp}/
+              # write klist
+              f.puts("#{k},#{last},#{clk}") if hdb.get(k) == v
+            end
             if vn_stat == :primary && ( (expt != 0 && nt > expt) || (expt == 0 && t > last) )
               if yield k, vn
                 hdb.out(k) if hdb.get(k) == v
@@ -440,7 +453,11 @@ module Roma
           end
         end
       ensure
-        @each_clean_up_lock.unlock if @each_clean_up_lock.locked?  
+        @each_clean_up_lock.unlock if @each_clean_up_lock.locked?
+        if f
+          @cleanup_regexp = nil
+          f.close
+        end
       end
 
       def stop_clean_up(&block)
