@@ -102,7 +102,7 @@ module Roma
       @out_message_count = 0
       @redundant_count = 0
       @size_of_zredundant = 0
-      @hilatency_warn_time = 5
+      @hilatency_warn_time = 5.0
       @wb_command_map = {}
       @latency_log = false
       @latency_check_cmd =["get", "set", "delete"]
