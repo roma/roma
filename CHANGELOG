@@ -1,3 +1,22 @@
+*1.0.0 (Sep 30 2014)*
+
+* Add new function to get vnodes information of each data [hiroaki-iwase] ad25c6e
+* Add new function to get key list without stopping ROMA [hiroaki-iwase] f36e907
+* Add new GUI control system(Gladiator) [hiroaki-iwase] 66dfd58
+* Add new function to get log data via ROMA console [hiroaki-iwase] b1995e4
+* change some snapshot and storage logic [hiroaki-iwase] 257b0df
+* Add new function to check routing consistecy [hiroaki-iwase] dcd1ace
+* Add new function of getting routing event [hiroaki-iwase] e297215
+* fix : no data copy in the join process when 2 hosts, 2 processes [junji torii] 10eae74
+* Merge branch 'master' of git@github.com:roma/roma into fix_join [junji torii] 41e0269
+* refacort:error case for the release command. [junji torii] 0144b63
+* change release logic [hiroaki-iwase] f950fa1
+* bugfix:end condition of recover process in no_action [junji torii] 9b41a3c
+* {func}__prev support for DSL [junji torii] d772c56
+* Add new function to get first instance information [hiroaki-iwase] e4b465f
+* {func}__prev support in write-behind [junji torii] 96af508
+* each_vn_dump supported in normal status [junji torii] 546ee7d
+
 *0.8.14 (Mar 26 2014)*
 
 * add timeout parameter for a vnode copy [junji torii] 0522750
