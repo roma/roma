@@ -71,6 +71,11 @@ module Roma
 
     attr_accessor :routing_trans_timeout
 
+    # for GUI tool
+    attr_accessor :gui_run_snapshot
+    attr_accessor :gui_run_gather_logs
+    attr_accessor :gui_last_snapshot
+
     def initialize
       @config_path = nil
       @run_recover = false
@@ -81,7 +86,10 @@ module Roma
       @run_release = false
       @run_join = false
       @run_balance = false
+      @gui_run_snapshot = false
+      @gui_run_gather_logs = false
       @last_clean_up = Time.now
+      @gui_last_snapshot = []
       @spushv_protection = false
       @stream_copy_wait_param = 0.0001
       @dcnice = 3
@@ -94,7 +102,7 @@ module Roma
       @out_message_count = 0
       @redundant_count = 0
       @size_of_zredundant = 0
-      @hilatency_warn_time = 5
+      @hilatency_warn_time = 5.0
       @wb_command_map = {}
       @latency_log = false
       @latency_check_cmd =["get", "set", "delete"]
@@ -128,7 +136,9 @@ module Roma
       ret['stats.run_release'] = @run_release
       ret['stats.run_join'] = @run_join
       ret['stats.run_balance'] = @run_balance
+      ret['stats.gui_run_snapshot'] = @gui_run_snapshot
       ret['stats.last_clean_up'] = @last_clean_up
+      ret['stats.gui_last_snapshot'] = @gui_last_snapshot
       ret['stats.spushv_protection'] = @spushv_protection
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
       ret['stats.dcnice'] = @dcnice

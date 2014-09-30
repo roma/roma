@@ -13,27 +13,53 @@ module Roma
         exclude_nodes
       end
       
-      alias :exclude_nodes_for_join :exclude_nodes
+      def exclude_nodes_for_join(ap_str, rep_host)
+        [ap_str]
+      end
+
+      #alias :exclude_nodes_for_join :exclude_nodes
       alias :exclude_nodes_for_recover :exclude_nodes
       alias :exclude_nodes_for_balance :exclude_nodes
+
+      def myhost_include?(nodes, myhost)
+        nodes.each do |nid|
+          return true if nid.split(/[:_]/)[0] == myhost
+        end
+        false
+      end
+      private :myhost_include?
 
       # vnode sampling exclude +exclude_nodes+
       def select_vn_for_join(exclude_nodes)
         short_idx = {}
+        myhost_idx = {}
         idx = {}
+        myhost = exclude_nodes[0].split(/[:_]/)[0]
         @rd.v_idx.each_pair do |vn, nids|
           unless list_include?(nids, exclude_nodes)
-            idx[vn] = nids
+            if myhost_include?(nids, myhost)
+              myhost_idx[vn] = nids
+            else
+              idx[vn] = nids # other nodes
+            end
             short_idx[vn] = nids if nids.length < @rd.rn
           end
         end
         idx = short_idx if short_idx.length > 0
       
         ks = idx.keys
-        return nil if ks.length == 0
-        vn = ks[rand(ks.length)]
-        nids = idx[vn]
-        [vn, nids, rand(@rd.rn) == 0]
+        if ks.length == 0
+          idx = myhost_idx
+          ks = idx.keys
+          return nil if ks.length == 0
+          vn = ks[rand(ks.length)]
+          nids = idx[vn]
+          [vn, nids, nids[0].split(/[:_]/)[0] == myhost]
+        else
+          vn = ks[rand(ks.length)]
+          nids = idx[vn]
+          [vn, nids, rand(@rd.rn) == 0]
+        end
       end
 
       # select a vnodes where short of redundancy.

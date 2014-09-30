@@ -22,6 +22,7 @@ module Roma
       attr_accessor :each_vn_dump_sleep
       attr_accessor :each_vn_dump_sleep_count
       attr_accessor :each_clean_up_sleep
+      attr_accessor :cleanup_regexp
       attr_accessor :logic_clock_expire
 
       attr_accessor :do_each_vn_dump
@@ -34,6 +35,8 @@ module Roma
         # status of a database
         @dbs = []
         @log_fd = nil
+        # file number list of a each_vn_dump while
+        @each_vn_dump_vnodes = []
 
         @hdiv = Hash.new(0)
 
@@ -44,6 +47,7 @@ module Roma
         @each_vn_dump_sleep = 0.001
         @each_vn_dump_sleep_count = 100
         @each_clean_up_sleep = 0.01
+        @cleanup_regexp = nil
         @logic_clock_expire = 300
 
         @each_cache_lock = Mutex::new
@@ -58,7 +62,9 @@ module Roma
         ret['storage.option'] = @option
         ret['storage.each_vn_dump_sleep'] = @each_vn_dump_sleep
         ret['storage.each_vn_dump_sleep_count'] = @each_vn_dump_sleep_count
+        ret['storage.each_vn_dump_files'] = @each_vn_dump_files.inspect
         ret['storage.each_clean_up_sleep'] = @each_clean_up_sleep
+        ret['storage.cleanup_regexp'] = @cleanup_regexp
         ret['storage.logic_clock_expire'] = @logic_clock_expire
         ret['storage.safecopy_stats'] = @dbs.inspect
         ret
@@ -414,6 +420,12 @@ module Roma
 
       def each_clean_up(t, vnhash)
         @do_clean_up = true
+
+        f = nil;
+        if @cleanup_regexp && File.exist?(@storage_path)
+          f = open(@storage_path + '/klist.txt','w')
+        end
+
         return unless @each_clean_up_lock.try_lock
         nt = Time.now.to_i
         @divnum.times do |i|
@@ -423,6 +435,10 @@ module Roma
             return unless @do_clean_up # 1st check
             vn, last, clk, expt = unpack_header(v)
             vn_stat = vnhash[vn]
+            if f && @cleanup_regexp && k =~ /#{@cleanup_regexp}/
+              # write klist
+              f.puts("#{k},#{last},#{clk}") if hdb.get(k) == v
+            end
             if vn_stat == :primary && ( (expt != 0 && nt > expt) || (expt == 0 && t > last) )
               if yield k, vn
                 hdb.out(k) if hdb.get(k) == v
@@ -437,7 +453,11 @@ module Roma
           end
         end
       ensure
-        @each_clean_up_lock.unlock if @each_clean_up_lock.locked?  
+        @each_clean_up_lock.unlock if @each_clean_up_lock.locked?
+        if f
+          @cleanup_regexp = nil
+          f.close
+        end
       end
 
       def stop_clean_up(&block)
@@ -524,42 +544,24 @@ module Roma
       end
 
       def each_vn_dump(target_vn)
-        @do_each_vn_dump = true
         n = @hdiv[target_vn]
-        if @dbs[n] == :normal
-          # in case of :normal status
+        @stat_lock.synchronize do
+          return false if @dbs[n] != :normal
+          return false if @each_vn_dump_vnodes.include?(target_vn)
+          @each_vn_dump_vnodes << target_vn
+        end
+
+        begin
+          @do_each_vn_dump = true
           each_unpacked_db(target_vn, @hdb) do |vn, last, clk, expt, k, val|
             return unless @do_each_vn_dump
             yield vn_dump_pack(vn, last, clk, expt, k, val)
           end
-        else
-          # in case of out of :normal status
-          @each_cache_lock.synchronize do
-            each_unpacked_db(target_vn, @hdbc) do |cvn, clast, cclk, cexpt, k, cval|
-              return unless @do_each_vn_dump
-              data = @hdb[n].get(k)
-              if data
-                vn, last, clk, expt, val = unpack_data(data)
-                #puts "#{k} #{clk} #{cclk} #{cmp_clk(clk, cclk)} #{val}"
-                if cmp_clk(clk, cclk) > 0
-                  yield vn_dump_pack(vn, last, clk, expt, k, val)
-                else
-                  yield vn_dump_pack(cvn, clast, cclk, cexpt, k, cval)
-                end
-              else
-                yield vn_dump_pack(cvn, clast, cclk, cexpt, k, cval)
-              end
-            end
-          end
-          each_unpacked_db(target_vn, @hdb) do |vn, last, clk, expt, k, val|
-            return unless @do_each_vn_dump
-            unless @hdbc[n].get(k)
-              yield vn_dump_pack(vn, last, clk, expt, k, val)
-            end
-          end
+        ensure
+          @each_vn_dump_vnodes.delete(target_vn)
         end
-      ensure
-        @do_each_vn_dump = false
+
+        true
       end
 
       def vn_dump_pack(vn, last, clk, expt, k, val)
@@ -674,6 +676,9 @@ module Roma
         @stat_lock.synchronize do
           case @dbs[dn]
           when :normal
+            @each_vn_dump_vnodes.each do |vn|
+              return false if dn == @hdiv[vn]
+            end
             if stat == :safecopy_flushing
               # open cache
               @hdbc[dn] = open_db(cache_file_name(dn))

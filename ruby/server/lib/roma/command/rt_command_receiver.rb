@@ -60,6 +60,19 @@ module Roma
         end
       end
 
+      def ev_enabled_repetition_in_routing?(s)
+        rt = @rttable
+        rd = @rttable.sub_nid_rd(@addr)
+        rt = Roma::Routing::RoutingTable.new(rd) if rd
+
+        if s.length == 1
+          repetition = rt.check_repetition_in_routing
+          send_data("#{repetition}\r\n")
+        else
+          send_data("CLIENT_ERROR\r\n")
+        end
+      end
+
       # setroute <vnode-id> <clock> <node-id> ...
       def ev_setroute(s)
         if s.length < 4
@@ -273,6 +286,21 @@ module Roma
         else
           send_data("DELETED\r\n")
         end
+      end
+
+      # get_key_info <key>
+      def ev_get_key_info(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments(0 for 1)\r\n")
+        end
+
+        d = Digest::SHA1.hexdigest(s[1]).hex % @rttable.hbits
+        vn = @rttable.get_vnode_id(d)
+        nodes = @rttable.search_nodes_for_write(vn)
+        send_data(sprintf("d = %s 0x%x\r\n",d,d))
+        send_data(sprintf("vn = %s 0x%x\r\n",vn,vn))
+        send_data("nodes = #{nodes.inspect}\r\n")
+        send_data("END\r\n")
       end
 
     end # module RoutingCommandReceiver
