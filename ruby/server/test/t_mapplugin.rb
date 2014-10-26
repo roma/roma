@@ -8,7 +8,7 @@ Roma::Client::RomaClient.class_eval{
   end
 }
 
-class MapPluginTest < Test::Unit::TestCase
+module MapPluginTests
   include RomaTestUtils
 
   def setup
@@ -110,9 +110,15 @@ class MapPluginTest < Test::Unit::TestCase
     assert_equal h, eval(@rc.map_to_s('key1'))
   end
 
-end # MapPluginTest
+end # MapPluginTests
 
-class MapPluginTestForceForward < MapPluginTest
+class MapPluginTest < Test::Unit::TestCase
+  include MapPluginTests
+end
+
+class MapPluginTestForceForward < Test::Unit::TestCase
+  include MapPluginTests
+
   def setup
     super
     @rc.rttable.instance_eval{

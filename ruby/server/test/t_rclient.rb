@@ -9,7 +9,7 @@ Roma::Client::RomaClient.class_eval{
   end
 }
 
-class RClientTest < Test::Unit::TestCase
+module RClientTests
   include RomaTestUtils
 
   def setup
@@ -180,7 +180,13 @@ class RClientTest < Test::Unit::TestCase
   end
 end
 
-class RClientTestForceForward < RClientTest
+class RClientTest < Test::Unit::TestCase
+  include RClientTests
+end
+
+class RClientTestForceForward < Test::Unit::TestCase
+  include RClientTests
+
   def setup
     super
     @rc.rttable.instance_eval{
