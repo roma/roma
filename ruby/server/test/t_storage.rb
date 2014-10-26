@@ -4,6 +4,7 @@ require 'roma/storage/tc_storage'
 require 'roma/storage/dbm_storage'
 require 'roma/storage/rh_storage'
 require 'roma/storage/sqlite3_storage'
+require 'roma/storage/groonga_storage'
 
 module StorageTests
   def ndat
@@ -835,5 +836,26 @@ class TCMemStorageTest < Test::Unit::TestCase
     @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
     @st.storage_path = 'storage_test'
     @st.opendb
+  end
+end
+
+class GroongaStorageTest < Test::Unit::TestCase
+  include StorageTests
+
+  def storage_path
+    'groonga_storage_test'
+  end
+
+  def setup
+    rmtestdir(storage_path)
+    @st = Roma::Storage::GroongaStorage.new
+    @st.vn_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    @st.storage_path = storage_path
+    @st.opendb
+  end
+
+  def teardown
+    @st.closedb
+    rmtestdir(storage_path)
   end
 end
