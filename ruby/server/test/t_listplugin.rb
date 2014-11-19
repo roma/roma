@@ -10,7 +10,7 @@ Roma::Client::RomaClient.class_eval{
   end
 }
 
-class ListPluginTest < Test::Unit::TestCase
+module ListPluginTests
   include RomaTestUtils
 
   def setup
@@ -607,9 +607,15 @@ class ListPluginTest < Test::Unit::TestCase
   end
   private :push_a_vnode_stream
 
-end # ListPluginTest
+end # ListPluginTests
 
-class ListPluginTestForceForward < ListPluginTest
+class ListPluginTest < Test::Unit::TestCase
+  include ListPluginTests
+end
+
+class ListPluginTestForceForward < Test::Unit::TestCase
+  include ListPluginTests
+
   def setup
     super
     @rc.rttable.instance_eval{

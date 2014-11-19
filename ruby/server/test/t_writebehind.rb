@@ -7,21 +7,7 @@ require 'roma/messaging/con_pool'
 require 'roma/client/plugin/alist'
 require 'roma/client/plugin/map'
 
-class FileWriterTest < Test::Unit::TestCase
-
-  def initialize(arg)
-    super(arg)
-  end
-
-  def setup
-    @stats = Roma::Stats.instance
-    @stats.address = 'roma0'
-    @stats.port = 11211
-  end
-
-  def teardown
-    system('rm -rf wb_test')
-  end
+module FileWriterTests
 
   # making and writing test
   def test_wb_write
@@ -197,8 +183,22 @@ class FileWriterTest < Test::Unit::TestCase
 
 end
 
+class FileWriterTest < Test::Unit::TestCase
+  include FileWriterTests
 
-class WriteBehindTest < FileWriterTest
+  def setup
+    @stats = Roma::Stats.instance
+    @stats.address = 'roma0'
+    @stats.port = 11211
+  end
+
+  def teardown
+    system('rm -rf wb_test')
+  end
+end
+
+class WriteBehindTest < Test::Unit::TestCase
+  include FileWriterTests
   include RomaTestUtils
 
   def setup
@@ -458,7 +458,7 @@ class WriteBehindTest < FileWriterTest
       rescue
       end
       #puts "#{cmd} #{key} #{val.inspect}"
-      assert_equal(res[cnt][0], cmd)
+       assert_equal(res[cnt][0], cmd)
       assert_equal(res[cnt][1], val)
       cnt += 1
     end

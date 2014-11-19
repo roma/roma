@@ -5,21 +5,9 @@ require 'roma/storage/dbm_storage'
 require 'roma/storage/rh_storage'
 require 'roma/storage/sqlite3_storage'
 
-class TCStorageTest < Test::Unit::TestCase
-  
-  def initialize(arg)
-    super(arg)
-    @ndat=1000
-  end
-
-  def setup
-    rmtestdir('storage_test')
-    @st=Roma::Storage::TCStorage.new
-    @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
-    @st.storage_path = 'storage_test'
-    @st.opendb
-  rescue =>e
-    p e
+module StorageTests
+  def ndat
+    1000
   end
 
   def rmtestdir(dirname)
@@ -27,11 +15,6 @@ class TCStorageTest < Test::Unit::TestCase
       File.delete(*Dir["#{dirname}/*"])
       Dir.rmdir(dirname)
     end
-  end
-
-  def teardown
-    @st.closedb
-    rmtestdir('storage_test')
   end
 
   def test_set_get
@@ -200,7 +183,7 @@ class TCStorageTest < Test::Unit::TestCase
     assert_equal(2, Marshal.load(@st.dump(0)).length )
     assert_nil( @st.dump(1) ) # another vnode is empty
 
-    n=@ndat
+    n=ndat
     n.times{|i|
       @st.set(2,i.to_s,0,0xffffffff,'abc_data')
     }
@@ -208,7 +191,7 @@ class TCStorageTest < Test::Unit::TestCase
   end
 
   def test_volume
-    n=@ndat
+    n=ndat
     n.times{|i|
       @st.set(0,i.to_s,0,0xffffffff,'abc_data')
     }
@@ -706,7 +689,9 @@ class TCStorageTest < Test::Unit::TestCase
   end
 end
 
-class DbmStorageTest < TCStorageTest
+class DbmStorageTest < Test::Unit::TestCase
+  include StorageTests
+
   def setup
     rmtestdir('storage_test')
     @st=Roma::Storage::DbmStorage.new
@@ -731,7 +716,28 @@ class DbmStorageTest < TCStorageTest
   end
 end
 
-class RubyHashStorageTest < TCStorageTest
+class TCStorageTest < Test::Unit::TestCase
+  include StorageTests
+
+  def setup
+    rmtestdir('storage_test')
+    @st=Roma::Storage::TCStorage.new
+    @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
+    @st.storage_path = 'storage_test'
+    @st.opendb
+  rescue =>e
+    p e
+  end
+
+  def teardown
+    @st.closedb
+    rmtestdir('storage_test')
+  end
+end
+
+class RubyHashStorageTest < Test::Unit::TestCase
+  include StorageTests
+
   def setup
     @st=Roma::Storage::RubyHashStorage.new
     @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
@@ -793,7 +799,9 @@ class RubyHashStorageTest < TCStorageTest
 
 end
 
-class SQLite3StorageTest < TCStorageTest
+class SQLite3StorageTest < Test::Unit::TestCase
+  include StorageTests
+
   def setup
     rmtestdir('storage_test')
     @st=Roma::Storage::SQLite3Storage.new
@@ -818,7 +826,9 @@ class SQLite3StorageTest < TCStorageTest
   end
 end
 
-class TCMemStorageTest < TCStorageTest
+class TCMemStorageTest < Test::Unit::TestCase
+  include StorageTests
+
   def setup
     rmtestdir('storage_test')
     @st=Roma::Storage::TCMemStorage.new

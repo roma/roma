@@ -15,3 +15,5 @@ require 'roma-test-utils'
 Dir["#{base_path}/server/test/t_*.rb"].each do |test_file|
   require File.basename(test_file, '*.rb')
 end
+
+exit(Test::Unit::AutoRunner.run)
