@@ -23,20 +23,19 @@ RDOC_OPTIONS = [
                ]
 
 # gem tasks
-base = 'ruby/server/'
 PKG_FILES = FileList[
   '[A-Z]*',
-  base + 'bin/**/*',
-  base + 'lib/**/*',
-  base + 'test/**/*.rb',
-  base + 'spec/**/*.rb',
-  base + 'doc/**/*',
-  base + 'examples/**/*',
+  'bin/**/*',
+  'lib/**/*',
+  'test/**/*.rb',
+  'spec/**/*.rb',
+  'doc/**/*',
+  'examples/**/*',
 ]
 
-EXEC_TABLE = Dir.entries(base + 'bin').reject{ |d| d =~ /^\.+$/ || d =~ /^sample_/ }
+EXEC_TABLE = Dir.entries('./bin').reject{ |d| d =~ /^\.+$/ || d =~ /^sample_/ }
 
-require File.expand_path(File.join('ruby', 'server', 'lib', 'roma', 'version'), File.dirname(__FILE__))
+require File.expand_path(File.join('lib', 'roma', 'version'), File.dirname(__FILE__))
 VER_NUM = Roma::VERSION
 
 if VER_NUM =~ /([0-9.p-]+)$/
@@ -57,10 +56,10 @@ SPEC = Gem::Specification.new do |s|
   s.files = PKG_FILES.to_a
 
   # Use these for libraries.
-  s.require_path = base + 'lib'
+  s.require_path = 'lib'
 
   # Use these for applications.
-  s.bindir = base + "bin"
+  s.bindir = "bin"
   s.executables = EXEC_TABLE
   s.default_executable = "romad"
 
