@@ -9,6 +9,7 @@ module Roma
 
     def initialize(addr, port)
       @con = TCPSocket.open(addr, port)
+      check_storage_type
       set_gui_run_snapshot_status('true')
       get_storage_info
     end
@@ -56,6 +57,15 @@ module Roma
       puts
     end
 
+    def check_storage_type
+      stats('st_class') do |line|
+        if line.match(/storages\[.+\]\.storage\.st_class\s(.+)/)[1].chomp != 'TCStorage'
+          puts "ERROR:cpdb support just TokyoCabinet system, your storage type is #{$1}"
+          exit
+        end
+      end
+    end
+
     def get_storage_info
       @storages = {}
       stats do |line|
@@ -93,8 +103,8 @@ module Roma
       @con.gets
     end
 
-    def stats
-      @con.puts "stat storage\r\n"
+    def stats(regexp = "storage")
+      @con.puts "stat #{regexp}\r\n"
       yield $_ while @con.gets != "END\r\n"
     end
 
