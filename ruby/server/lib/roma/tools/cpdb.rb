@@ -59,8 +59,9 @@ module Roma
 
     def check_storage_type
       stats('st_class') do |line|
-        if line.match(/storages\[.+\]\.storage\.st_class\s(.+)/)[1].chomp != 'TCStorage'
-          puts "ERROR:cpdb support just TokyoCabinet system, your storage type is #{$1}"
+        storage_type = line.match(/storages\[.+\]\.storage\.st_class\s(.+)/)[1].chomp
+        unless storage_type =~ /^(TCStorage|RubyHashStorage)$/
+          puts "ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is #{storage_type}"
           exit
         end
       end
