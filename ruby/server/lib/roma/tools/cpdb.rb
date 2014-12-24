@@ -9,7 +9,6 @@ module Roma
 
     def initialize(addr, port)
       @con = TCPSocket.open(addr, port)
-      check_storage_type
       set_gui_run_snapshot_status('true')
       get_storage_info
     end
@@ -17,6 +16,16 @@ module Roma
     def backup_all
       @storages.keys.each do |k|
         backup(k)
+      end
+    end
+
+    def check_storage_type
+      stats('st_class') do |line|
+        storage_type = line.match(/storages\[.+\]\.storage\.st_class\s(.+)/)[1].chomp
+        unless storage_type =~ /^(TCStorage|RubyHashStorage)$/
+          puts "ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is #{storage_type}"
+          exit
+        end
       end
     end
 
@@ -55,16 +64,6 @@ module Roma
         sleep 5
       end
       puts
-    end
-
-    def check_storage_type
-      stats('st_class') do |line|
-        storage_type = line.match(/storages\[.+\]\.storage\.st_class\s(.+)/)[1].chomp
-        unless storage_type =~ /^(TCStorage|RubyHashStorage)$/
-          puts "ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is #{storage_type}"
-          exit
-        end
-      end
     end
 
     def get_storage_info
@@ -125,6 +124,7 @@ end
 sc = Roma::SafeCopy.new("localhost", ARGV[0].to_i)
 
 begin
+  sc.check_storage_type
   sc.backup_all
   sc.set_gui_last_snapshot
 ensure
