@@ -349,6 +349,7 @@ module Roma
           st = st_class.new
           st.storage_path = "#{path}/#{hname}"
           st.vn_list = @rttable.vnodes
+          st.st_class = st_class
           st.divnum = st_divnum
           st.option = st_option
           @storages[hname] = st
@@ -359,6 +360,7 @@ module Roma
         st = st_class.new
         st.storage_path = "#{path}/#{hname}"
         st.vn_list = @rttable.vnodes
+        st.st_class = st_class
         st.divnum = st_divnum
         st.option = st_option
         @storages[hname] = st
