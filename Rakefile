@@ -50,6 +50,7 @@ SPEC = Gem::Specification.new do |s|
   s.homepage = 'http://code.google.com/p/roma-prj/'
   s.name = "roma"
   s.version = CURRENT_VERSION
+  s.licnese = 'GPL-3.0'
   s.summary = "ROMA server"
   s.description = <<-EOF
     ROMA server
