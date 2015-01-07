@@ -19,6 +19,16 @@ module Roma
       end
     end
 
+    def check_storage_type
+      stats('st_class') do |line|
+        storage_type = line.match(/storages\[.+\]\.storage\.st_class\s(.+)/)[1].chomp
+        unless storage_type =~ /^(TCStorage|RubyHashStorage)$/
+          puts "ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is #{storage_type}"
+          exit
+        end
+      end
+    end
+
     def backup(hname)
       stat = get_safecopy_stats(hname)
       if stat.uniq != [:normal]
@@ -93,8 +103,8 @@ module Roma
       @con.gets
     end
 
-    def stats
-      @con.puts "stat storage\r\n"
+    def stats(regexp = "storage")
+      @con.puts "stat #{regexp}\r\n"
       yield $_ while @con.gets != "END\r\n"
     end
 
@@ -114,6 +124,7 @@ end
 sc = Roma::SafeCopy.new("localhost", ARGV[0].to_i)
 
 begin
+  sc.check_storage_type
   sc.backup_all
   sc.set_gui_last_snapshot
 ensure

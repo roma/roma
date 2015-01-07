@@ -16,6 +16,10 @@ group :sqlite3 do
   gem 'sqlite3'
 end
 
+group :groonga do
+  gem 'rroonga'
+end
+
 group :test do
   gem 'test-unit'
 end
