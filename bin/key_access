@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+require 'pathname'
+
+base_path = Pathname(__FILE__).dirname.parent.expand_path
+$LOAD_PATH.unshift("#{base_path}/lib")
+
+require 'roma/tools/key_access'

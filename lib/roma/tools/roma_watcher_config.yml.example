@@ -1,0 +1,20 @@
+roma:
+  - "localhost:11211"
+  - "localhost:11212"
+  - "localhost:11213"
+
+log:
+  path: ./log.txt
+  rotate: "daily" # "daily", "weekly", or "monthly"
+
+timeout: 3
+
+retry:
+  count: 3
+  period: 0.3
+
+mail:
+  from: roma@roma.jp
+  to: roma@roma.jp
+  mailer: /usr/bin/sendmail
+  subject_prefix: "ROMA "
