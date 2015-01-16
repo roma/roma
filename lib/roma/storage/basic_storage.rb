@@ -18,6 +18,7 @@ module Roma
       attr_writer :storage_path
       attr_writer :option
 
+      attr_accessor :st_class
       attr_accessor :divnum
       attr_accessor :each_vn_dump_sleep
       attr_accessor :each_vn_dump_sleep_count
@@ -42,6 +43,7 @@ module Roma
 
         @ext_name = 'db'
 
+        @st_class = nil
         @divnum = 10
 
         @each_vn_dump_sleep = 0.001
@@ -58,6 +60,7 @@ module Roma
       def get_stat
         ret = {}
         ret['storage.storage_path'] = File.expand_path(@storage_path)
+        ret['storage.st_class'] = @st_class.to_s.match(/Roma::Storage::(.*)/)[1]
         ret['storage.divnum'] = @divnum
         ret['storage.option'] = @option
         ret['storage.each_vn_dump_sleep'] = @each_vn_dump_sleep
