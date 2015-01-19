@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-
-path =  File.dirname(File.expand_path($PROGRAM_NAME))
-$LOAD_PATH << path + "/../lib"
-
-require 'roma/tools/ssroute'
