@@ -939,6 +939,12 @@ module Roma
       raw_logs = []
       start_time = Time.now
       File.open(log_file){|f|
+# get f.size
+# move pointa
+# read half sector size
+# grep data
+# move pointa
+# read half sector size
         f.each_line{|line|
           # hilatency check
           ps = Time.now - start_time
@@ -960,6 +966,7 @@ module Roma
       end
 
       @rttable.logs = sliced_logs
+# set expiration date
       @log.info("#{__method__} has done.")
     rescue =>e
       @rttable.logs = []
