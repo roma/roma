@@ -14,8 +14,6 @@ RDOC_OPTIONS = [
                 "-c UTF-8",
                ]
 
-require File.expand_path(File.join('ruby', 'server', 'lib', 'roma', 'version'), File.dirname(__FILE__))
-
 Rake::RDocTask.new("doc") { |rdoc|
   rdoc.rdoc_dir = 'doc'
   rdoc.title = "ROMA documents"

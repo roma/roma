@@ -1,14 +1,15 @@
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib)
 
-require 'lib/roma/version'
+require 'rake'
+require 'roma/version'
 
 Gem::Specification.new do |s|
   s.authors = ["Junji Torii", "Hiroki Matsue"]
   s.homepage = 'http://code.google.com/p/roma-prj/'
   s.name = "roma"
   s.version = Roma::VERSION
-  s.licnese = 'GPL-3.0'
+  s.license = 'GPL-3.0'
   s.summary = "ROMA server"
   s.description = <<-EOF
     ROMA server
@@ -31,12 +32,17 @@ Gem::Specification.new do |s|
 
   # Use these for applications.
   s.bindir = "bin"
-  s.executables = Dir.entries(base + 'bin').reject{ |d| d =~ /^\.+$/ || d =~ /^sample_/ }
+  s.executables = Dir.entries('bin').reject{ |d| d =~ /^\.+$/ || d =~ /^sample_/ }
 
   s.default_executable = "romad"
 
   s.has_rdoc = true
-  s.rdoc_options.concat RDOC_OPTIONS
+  s.rdoc_options = [
+                '--line-numbers',
+                '--inline-source',
+                "--main", "README",
+                "-c UTF-8"
+               ]
   s.extra_rdoc_files = ["README", "CHANGELOG"]
 
   # TODO: for each gem, which version does rom depend on?
@@ -47,4 +53,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'sqlite3'
   s.add_development_dependency 'rroonga'
   s.add_development_dependency 'test-unit'
+  s.add_development_dependency 'rake'
 end
