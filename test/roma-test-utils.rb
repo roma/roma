@@ -44,7 +44,7 @@ module RomaTestUtils
     sh.system(ruby_path, mkroute_path,
               "localhost_11211","localhost_11212",
               "-d","3",
-              "--enabled_repeathost")
+              "--replication_in_host")
     sleep 0.2
     do_command_romad conf
     sleep 1
