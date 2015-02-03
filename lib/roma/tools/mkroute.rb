@@ -19,7 +19,6 @@ opts.on("-r","--redundant [num]","(default=2)"){|v| rn = v.to_i }
 opts.on(nil,"--enabled_repeathost"){|v| 
   repeathost=true
   puts "Warning: \"--enabled_repeathost\" is deplicated. Please use \"--replication_in_host\""
-  puts "Warning: Check https://github.com/roma/roma/issues/33"
 }
 opts.on(nil,"--replication_in_host"){|v| repeathost=true }
 opts.parse!(ARGV)
