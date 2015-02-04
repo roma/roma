@@ -283,8 +283,15 @@ module Roma
 
       opts.on("-n", "--name [name]") { |v| @stats.name = v }
 
+      ##
+      # "--enabled_repeathost" is deplicated. We will rename it to "--replication_in_host"
+      ##
       @stats.enabled_repetition_host_in_routing = false
       opts.on(nil,"--enabled_repeathost", "Allow redundancy to same host"){
+        @stats.enabled_repetition_host_in_routing = true
+        puts "Warning: \"--enabled_repeathost\" is deplicated. Please use \"--replication_in_host\""
+      }
+      opts.on(nil,"--replication_in_host", "Allow redundancy to same host"){
         @stats.enabled_repetition_host_in_routing = true
       }
 

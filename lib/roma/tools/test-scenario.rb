@@ -110,7 +110,7 @@ module Roma
       def init_roma
         @log.debug "begin init_roma"
         exec "rm -f localhost_1121?.*"
-        exec "bin/mkroute -d 7 #{RomaProc.to_str(@roma_procs)} --enabled_repeathost"
+        exec "bin/mkroute -d 7 #{RomaProc.to_str(@roma_procs)} --replication_in_host"
         @log.debug "end init_roma"
       end
 
@@ -124,7 +124,7 @@ module Roma
 
       def start_roma_proc i
         @log.debug "begin start_roma_proc"
-        str = "bin/romad #{@roma_procs[i].addr} -p #{@roma_procs[i].port.to_s} -d --enabled_repeathost"
+        str = "bin/romad #{@roma_procs[i].addr} -p #{@roma_procs[i].port.to_s} -d --replication_in_host"
         exec str
         @roma_procs[i].pid = get_pid(str)
         @log.debug "end start_roma_proc"
