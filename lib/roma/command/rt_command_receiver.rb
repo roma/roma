@@ -80,6 +80,12 @@ module Roma
         else
           nids=[]
           s[3..-1].each{ |nid| nids << nid }
+          nids.each{ |nid|
+            if nid.empty?
+              send_data("CLIENT_ERROR\r\n")
+              return
+            end
+          }
           res=@rttable.set_route(s[1].to_i, s[2].to_i, nids)
           if res.is_a?(Integer)
             send_data("STORED\r\n")
