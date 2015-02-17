@@ -1,3 +1,18 @@
+*1.1.0RC2 (Jan 19 2015)*
+
+* modify merge prob(delete ruby/server dir, mv groonga relating file) [hiroaki-iwase] 699e0b7
+
+*1.1.0RC1 (Jan 7 2015)*
+
+* allow cpdb in just case of RubyHashStorage & TCStorage [hiroaki-iwase] 42ef43b
+* add storage type checking to cpdb [hiroaki-iwase] 47c4e56
+* delete server directory [Takahiro Tokunaga] 75ee999
+* Abolish ruby server dir [satoryu] bfe2339
+* Declare the license of ROMA in gemspec file [satoryu] c644f93
+* Add Groonga based storage backend [Kouhei Sutou] fd993d3
+* Use auto test runner [Kouhei Sutou] 2e8367f
+* Use test-unit gem [Kouhei Sutou] 81677d1
+
 *1.0.0 (Sep 30 2014)*
 
 * Add new function to get vnodes information of each data [hiroaki-iwase] ad25c6e
