@@ -80,6 +80,13 @@ module Roma
         else
           nids=[]
           s[3..-1].each{ |nid| nids << nid }
+          # check irregular node name
+          nids.each{ |nid|
+            if !nid.ascii_only? || nid.empty?
+              send_data("CLIENT_ERROR : irregular node name was input.[\"#{nid}\"]\r\n")
+              return
+            end
+          }
           res=@rttable.set_route(s[1].to_i, s[2].to_i, nids)
           if res.is_a?(Integer)
             send_data("STORED\r\n")
