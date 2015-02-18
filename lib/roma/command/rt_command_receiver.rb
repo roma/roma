@@ -80,9 +80,10 @@ module Roma
         else
           nids=[]
           s[3..-1].each{ |nid| nids << nid }
+          # check irregular node name
           nids.each{ |nid|
-            if nid.empty?
-              send_data("CLIENT_ERROR\r\n")
+            if !nid.ascii_only? || nid.empty?
+              send_data("CLIENT_ERROR : irregular node name was inputed.[\"#{nid}\"]\r\n")
               return
             end
           }
