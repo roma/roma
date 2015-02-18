@@ -83,7 +83,7 @@ module Roma
           # check irregular node name
           nids.each{ |nid|
             if !nid.ascii_only? || nid.empty?
-              send_data("CLIENT_ERROR : irregular node name was inputed.[\"#{nid}\"]\r\n")
+              send_data("CLIENT_ERROR : irregular node name was input.[\"#{nid}\"]\r\n")
               return
             end
           }
