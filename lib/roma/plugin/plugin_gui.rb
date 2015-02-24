@@ -23,15 +23,16 @@ module Roma
 
       ### get_logs [line count]
       ### get_logs [start_date] [end_date]
-      # gather_logs [start_date(YYYY-MM-DDThh:mm:ss)]
+      # gather_logs [start_date(YYYY-MM-DDThh:mm:ss)] [start_date(YYYY-MM-DDThh:mm:ss)]
       def ev_gather_logs(s)
         #if s.length != 2
         #if s.length < 1 || s.length > 3
-        if s.length != 2
-          return send_data("CLIENT_ERROR number of arguments (#{s.length-1} for 1)\r\n")
+        if s.length != 3
+          return send_data("CLIENT_ERROR number of arguments (#{s.length-1} for 2)\r\n")
         end
 
         start_date = s[1]
+        end_date = s[2]
 
         ###[todo] end date
         #if s.length = 2
@@ -61,8 +62,7 @@ module Roma
           @stats.gui_run_gather_logs = true
           #Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [line_count]))
           #Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [start_date, end_date, log_level]))
-          #Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [start_date, end_date]))
-          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [start_date]))
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [start_date, end_date]))
 
           send_data("STARTED\r\n")
         rescue
@@ -78,7 +78,7 @@ module Roma
           send_data("Not finished gathering\r\n")
         else
           @rttable.logs.each{|log|
-            send_data(log)
+            send_data("#{log}\r\n")
           }
           send_data("END\r\n")
           @rttable.logs.clear

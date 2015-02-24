@@ -936,45 +936,15 @@ module Roma
       log_path =  Config::LOG_PATH
       log_file = "#{log_path}/#{@stats.ap_str}.log"
 
-      args[0] =~ /(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/
-      target_time = Time.new($1, $2, $3, $4, $5, $6)
       target_logs = []
       File.open(log_file){|f|
-        # move point to middle
-        half_point = f.size/2
-        point = half_point
-        f.seek(half_point)
-        # read half sector size 
-        sector_log = f.read(2048)
-        # grep data
-        date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
-        sector_time_first = Time.new(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5])
-        sector_time_last = Time.new(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5])
-        # initialize point
-        past_point = 0
-        current_point = half_point
-        # compare time
-        loop do 
-          if target_time.between?(sector_time_first, sector_time_last)
-            f.seek(-2048, IO::SEEK_CUR)
-            break
-          elsif sector_time_first > target_time
-            new_point = current_point - ((current_point - past_point).abs / 2)
-          elsif sector_time_first > target_time
-            new_point = current_point + ((current_point - past_point).abs / 2)
-          end
-          f.seek(new_point)
-          sector_log = f.read(2048)
-          date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
-          sector_time_first = Time.new(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5])
-          sector_time_last = Time.new(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5])
-          # change point
-          past_point = current_point
-          current_point = new_point
-        end
+        start_point = get_point(f, args[0], 'start')
+        end_point = get_point(f, args[1], 'end')
 
-        # read all below lines
-        target_logs = f.readlines
+        ## read target logs
+        f.seek(start_point, IO::SEEK_SET)
+        target_logs = f.read(end_point - start_point)
+        target_logs = target_logs.each_line.map(&:chomp)
         # cut untarget lines
         target_logs.each_with_index{ |log, index|
           if log =~ /[IDEW],\s\[#{args[0]}/
@@ -982,31 +952,17 @@ module Roma
             break
           end
         }
-        
-        #f.each_line{|line|
-        #  # hilatency check
-        #  ps = Time.now - start_time
-        #  if ps > 5
-        #    @log.warn("gather_logs process was failed.")
-        #    raise
-        #  end
-
-        #  raw_logs << line unless line.chomp == '.'
-        #}
+        target_logs.each_with_index.reverse_each{ |log, index|
+          if log =~ /[IDEW],\s\[#{args[1]}/
+            target_logs.slice!(-index..-1)
+            break
+          end
+        }
+        target_logs.delete('.')
       }
 
-      #sliced_logs = []
-      #if raw_logs.size > args[0]
-      #  sliced_logs = raw_logs.slice(-args[0]..-1)
-      #else
-      #  raw_logs.shift # remove first line(date of log file was created)
-      #  sliced_logs = raw_logs
-      #end
-
-      #@rttable.logs = sliced_logs
       @rttable.logs = target_logs
 # set expiration date
-
 
       @log.info("#{__method__} has done.")
     rescue =>e
@@ -1014,6 +970,58 @@ module Roma
       @log.error("#{e}\n#{$@}")
     ensure
       @stats.gui_run_gather_logs = false
+    end
+
+    def get_point(f, target_time, type)
+      #check file size
+      half_point = f.size/2
+      point = half_point
+      #decide start point
+      target_time =~ (/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
+      target_time = Time.new($1, $2, $3, $4, $5, $6)
+      f.seek(half_point, IO::SEEK_SET)
+      # read half sector size
+      sector_log = f.read(2048)
+      # grep date
+      date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
+      sector_time_first = Time.new(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5])
+      sector_time_last = Time.new(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5])
+      # initialize point
+      past_point = 0
+      current_point = half_point
+      
+      # compare time
+      start_time = Time.now
+      loop do
+        # hilatency check
+        ps = Time.now - start_time
+        if ps > 5
+          @log.warn("gather_logs process was failed.")
+          raise
+        end
+
+        if target_time.between?(sector_time_first, sector_time_last)
+          break
+        elsif sector_time_first > target_time
+          new_point = current_point - ((current_point - past_point).abs / 2)
+        elsif sector_time_first < target_time
+          new_point = ((current_point - past_point).abs / 2) + current_point
+        end
+        f.seek(new_point)
+        sector_log = f.read(2048)
+      
+        date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
+        sector_time_first = Time.new(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5])
+        sector_time_last = Time.new(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5])
+        past_point = current_point
+        current_point = new_point
+      end
+      
+      if type == 'start'
+        return f.pos - 2048
+      elsif type == 'end'
+        return f.pos
+      end
     end
 
   end # module AsyncProcess
