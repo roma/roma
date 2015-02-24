@@ -936,37 +936,78 @@ module Roma
       log_path =  Config::LOG_PATH
       log_file = "#{log_path}/#{@stats.ap_str}.log"
 
-      raw_logs = []
-      start_time = Time.now
+      args[0] =~ /(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/
+      target_time = Time.new($1, $2, $3, $4, $5, $6)
+      target_logs = []
       File.open(log_file){|f|
-# get f.size
-# move pointa
-# read half sector size
-# grep data
-# move pointa
-# read half sector size
-        f.each_line{|line|
-          # hilatency check
-          ps = Time.now - start_time
-          if ps > 5
-            @log.warn("gather_logs process was failed.")
-            raise
+        # move point to middle
+        half_point = f.size/2
+        point = half_point
+        f.seek(half_point)
+        # read half sector size 
+        sector_log = f.read(2048)
+        # grep data
+        date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
+        sector_time_first = Time.new(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5])
+        sector_time_last = Time.new(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5])
+        # initialize point
+        past_point = 0
+        current_point = half_point
+        # compare time
+        loop do 
+          if target_time.between?(sector_time_first, sector_time_last)
+            f.seek(-2048, IO::SEEK_CUR)
+            break
+          elsif sector_time_first > target_time
+            new_point = current_point - ((current_point - past_point).abs / 2)
+          elsif sector_time_first > target_time
+            new_point = current_point + ((current_point - past_point).abs / 2)
           end
+          f.seek(new_point)
+          sector_log = f.read(2048)
+          date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
+          sector_time_first = Time.new(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5])
+          sector_time_last = Time.new(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5])
+          # change point
+          past_point = current_point
+          current_point = new_point
+        end
 
-          raw_logs << line unless line.chomp == '.'
+        # read all below lines
+        target_logs = f.readlines
+        # cut untarget lines
+        target_logs.each_with_index{ |log, index|
+          if log =~ /[IDEW],\s\[#{args[0]}/
+            target_logs.slice!(0, index)
+            break
+          end
         }
+        
+        #f.each_line{|line|
+        #  # hilatency check
+        #  ps = Time.now - start_time
+        #  if ps > 5
+        #    @log.warn("gather_logs process was failed.")
+        #    raise
+        #  end
+
+        #  raw_logs << line unless line.chomp == '.'
+        #}
       }
 
-      sliced_logs = []
-      if raw_logs.size > args[0]
-        sliced_logs = raw_logs.slice(-args[0]..-1)
-      else
-        raw_logs.shift # remove first line(date of log file was created)
-        sliced_logs = raw_logs
-      end
+      #sliced_logs = []
+      #if raw_logs.size > args[0]
+      #  sliced_logs = raw_logs.slice(-args[0]..-1)
+      #else
+      #  raw_logs.shift # remove first line(date of log file was created)
+      #  sliced_logs = raw_logs
+      #end
 
-      @rttable.logs = sliced_logs
+      #@rttable.logs = sliced_logs
+      @rttable.logs = target_logs
 # set expiration date
+
+
       @log.info("#{__method__} has done.")
     rescue =>e
       @rttable.logs = []

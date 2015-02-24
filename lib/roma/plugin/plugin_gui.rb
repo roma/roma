@@ -21,24 +21,33 @@ module Roma
         send_data("END\r\n")
       end
 
-      # get_logs [line count]
-      # get_logs [start_date] [end_date] [log level]
+      ### get_logs [line count]
+      ### get_logs [start_date] [end_date]
+      # gather_logs [start_date(YYYY-MM-DDThh:mm:ss)]
       def ev_gather_logs(s)
         #if s.length != 2
-        if s.length < 3 || s.length > 4
-          return send_data("CLIENT_ERROR number of arguments (#{s.length-1} for 2-3)\r\n")
+        #if s.length < 1 || s.length > 3
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments (#{s.length-1} for 1)\r\n")
         end
-
-        # LOG Level check 
 
         start_date = s[1]
-        end_date   = s[2]
-        if s.length == 4
-           log_level = s[3]
-        else
-           log_level = nil
-        end
 
+        ###[todo] end date
+        #if s.length = 2
+        #  end_date = 'end'
+        #else
+        #  end_date = s[2]
+        #end
+
+        ###[todo] log level
+        #if s.length == 4
+        #   log_level = s[3]
+        #else
+        #   log_level = nil
+        #end
+
+        ### line count  
         #line_count = s[1].to_i
         #if line_count < 1 || line_count > 100
         #  return send_data("CLIENT_ERROR line counts is restricted to between 1-100 lines\r\n")
@@ -51,7 +60,9 @@ module Roma
         begin
           @stats.gui_run_gather_logs = true
           #Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [line_count]))
-          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [start_date, end_date, log_level]))
+          #Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [start_date, end_date, log_level]))
+          #Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [start_date, end_date]))
+          Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_logs', [start_date]))
 
           send_data("STARTED\r\n")
         rescue
