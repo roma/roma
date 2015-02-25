@@ -973,14 +973,33 @@ module Roma
     end
 
     def get_point(f, target_time, type)
+      #decide target point
+      target_time =~ (/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
+      target_time = Time.mktime($1, $2, $3, $4, $5, $6, 000000)
+
+      # check outrange or not
+      if type == 'start'
+        begining_log = f.read(256)
+        pos = begining_log.index(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+        begining_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+        if target_time < begining_time
+          return pos
+        end
+      elsif type == 'end'
+        f.seek(-256, IO::SEEK_END)
+        end_log = f.read(256)
+        pos = end_log.rindex(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+        end_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+        if target_time > end_time
+          return f.size
+        end
+      end
+
       #check file size
       half_point = f.size/2
       point = half_point
-      #decide start point
-      target_time =~ (/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
-      target_time = Time.mktime($1, $2, $3, $4, $5, $6, 000000)
-      f.seek(half_point, IO::SEEK_SET)
       # read half sector size
+      f.seek(half_point, IO::SEEK_SET)
       sector_log = f.read(2048)
       # grep date
       date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
