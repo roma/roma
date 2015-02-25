@@ -952,9 +952,9 @@ module Roma
             break
           end
         }
-        target_logs.each_with_index.reverse_each{ |log, index|
+        target_logs.each_with_index{ |log, index|
           if log =~ /[IDEW],\s\[#{args[1]}/
-            target_logs.slice!(-index..-1)
+            target_logs.slice!(index..-1)
             break
           end
         }
@@ -964,7 +964,7 @@ module Roma
       @rttable.logs = target_logs
 # set expiration date
 
-      @log.info("#{__method__} has done.")
+      @log.debug("#{__method__} has done.")
     rescue =>e
       @rttable.logs = []
       @log.error("#{e}\n#{$@}")
@@ -978,14 +978,14 @@ module Roma
       point = half_point
       #decide start point
       target_time =~ (/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
-      target_time = Time.new($1, $2, $3, $4, $5, $6)
+      target_time = Time.mktime($1, $2, $3, $4, $5, $6, 000000)
       f.seek(half_point, IO::SEEK_SET)
       # read half sector size
       sector_log = f.read(2048)
       # grep date
-      date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
-      sector_time_first = Time.new(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5])
-      sector_time_last = Time.new(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5])
+      date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+      sector_time_first = Time.mktime(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5], date_a[0][6])
+      sector_time_last = Time.mktime(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5], date_a[-1][6])
       # initialize point
       past_point = 0
       current_point = half_point
@@ -1010,9 +1010,10 @@ module Roma
         f.seek(new_point)
         sector_log = f.read(2048)
       
-        date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
-        sector_time_first = Time.new(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5])
-        sector_time_last = Time.new(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5])
+        date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+        sector_time_first = Time.mktime(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5], date_a[0][6])
+        sector_time_last = Time.mktime(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5], date_a[-1][6])
+
         past_point = current_point
         current_point = new_point
       end
