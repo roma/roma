@@ -972,76 +972,62 @@ module Roma
       @stats.gui_run_gather_logs = false
     end
 
-    def get_point(f, target_time, type)
+    def get_point(f, target_time, type, c_pos=0, n_pos=f.size/2)
       #decide target point
-      target_time =~ (/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
-      target_time = Time.mktime($1, $2, $3, $4, $5, $6, 000000)
-
-      # check outrange or not
-      if type == 'start'
-        begining_log = f.read(256)
-        pos = begining_log.index(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
-        begining_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
-        if target_time < begining_time
-          return pos
-        end
-      elsif type == 'end'
-        f.seek(-256, IO::SEEK_END)
-        end_log = f.read(256)
-        pos = end_log.rindex(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
-        end_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
-        if target_time > end_time
-          return f.size
+      unless target_time.class == Time
+        target_time =~ (/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
+        target_time = Time.mktime($1, $2, $3, $4, $5, $6, 000000)
+ 
+        # check outrange or not
+        if type == 'start'
+          begining_log = f.read(256)
+          pos = begining_log.index(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+          begining_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+          if target_time < begining_time
+            return pos
+          end
+        elsif type == 'end'
+          f.seek(-256, IO::SEEK_END)
+          end_log = f.read(256)
+          pos = end_log.rindex(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+          end_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+          if target_time > end_time
+            return f.size
+          end
         end
       end
 
-      #check file size
-      half_point = f.size/2
-      point = half_point
       # read half sector size
-      f.seek(half_point, IO::SEEK_SET)
+      f.seek(n_pos, IO::SEEK_SET)
       sector_log = f.read(2048)
       # grep date
       date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
       sector_time_first = Time.mktime(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5], date_a[0][6])
       sector_time_last = Time.mktime(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5], date_a[-1][6])
-      # initialize point
-      past_point = 0
-      current_point = half_point
       
       # compare time
-      start_time = Time.now
-      loop do
-        # hilatency check
-        ps = Time.now - start_time
-        if ps > 5
-          @log.warn("gather_logs process was failed.")
-          raise
-        end
+      #start_time = Time.now
+      #loop do
+      ## hilatency check
+      #ps = Time.now - start_time
+      #if ps > 5
+      #  @log.warn("gather_logs process was failed.")
+      #  raise
+      #end
 
-        if target_time.between?(sector_time_first, sector_time_last)
-          break
-        elsif sector_time_first > target_time
-          new_point = current_point - ((current_point - past_point).abs / 2)
-        elsif sector_time_first < target_time
-          new_point = ((current_point - past_point).abs / 2) + current_point
+      if target_time.between?(sector_time_first, sector_time_last)
+        if type == 'start'
+          return n_pos
+        elsif type == 'end'
+          return f.pos
         end
-        f.seek(new_point)
-        sector_log = f.read(2048)
-      
-        date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
-        sector_time_first = Time.mktime(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5], date_a[0][6])
-        sector_time_last = Time.mktime(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5], date_a[-1][6])
-
-        past_point = current_point
-        current_point = new_point
+      elsif sector_time_first > target_time
+        t_pos = n_pos - ((n_pos - c_pos).abs / 2)
+      elsif sector_time_first < target_time
+        t_pos = n_pos + ((n_pos - c_pos).abs / 2)
       end
       
-      if type == 'start'
-        return f.pos - 2048
-      elsif type == 'end'
-        return f.pos
-      end
+      get_point(f, target_time, type, n_pos, t_pos)
     end
 
   end # module AsyncProcess

@@ -23,7 +23,7 @@ module Roma
 
       ### get_logs [line count]
       ### get_logs [start_date] [end_date]
-      # gather_logs [start_date(YYYY-MM-DDThh:mm:ss)] [start_date(YYYY-MM-DDThh:mm:ss)]
+      # gather_logs [start_date(YYYY-MM-DDThh:mm:ss)] [end_date(YYYY-MM-DDThh:mm:ss)]
       def ev_gather_logs(s)
         #if s.length != 2
         #if s.length < 1 || s.length > 3
