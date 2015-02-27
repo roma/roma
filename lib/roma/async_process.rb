@@ -749,6 +749,15 @@ module Roma
       if count>0
         @log.info("#{__method__}:#{count} keys deleted.")
       end
+
+      # delete @rttable.logs
+      if @stats.gui_run_gather_logs || @rttable.logs.empty?
+        false
+      else
+        gathered_time = @rttable.logs[0]
+        # delete gathering log data after 5min
+        @rttable.logs.clear if gathered_time.to_i < Time.now.to_i - (60 * 5)
+      end
     ensure
       @log.info("#{__method__}:stop")
     end
@@ -962,7 +971,8 @@ module Roma
       }
 
       @rttable.logs = target_logs
-# set expiration date
+      # set gathered date for expiration
+      @rttable.logs.unshift(Time.now)
 
       @log.debug("#{__method__} has done.")
     rescue =>e
