@@ -156,6 +156,9 @@ module Roma
       if Config.const_defined?(:DATACOPY_STREAM_COPY_WAIT_PARAM)
         @stats.stream_copy_wait_param = Config::DATACOPY_STREAM_COPY_WAIT_PARAM
       end
+      if Config.const_defined?(:LOG_STREAM_SHOW_WAIT_PARAM)
+        @stats.stream_show_wait_param = Config::LOG_STREAM_SHOW_WAIT_PARAM
+      end
       if Config.const_defined?(:WB_COMMAND_MAP)
         @stats.wb_command_map = Config::WB_COMMAND_MAP
       end

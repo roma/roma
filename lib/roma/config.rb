@@ -75,6 +75,9 @@ module Roma
     # data copy setting
     DATACOPY_STREAM_COPY_WAIT_PARAM = 0.001
 
+    # show logs setting
+    LOG_STREAM_SHOW_WAIT_PARAM = 0.001
+
     # plugin setting
     PLUGIN_FILES = ['plugin_storage.rb']
 

@@ -77,8 +77,9 @@ module Roma
         if @stats.gui_run_gather_logs
           send_data("Not finished gathering\r\n")
         else
-          @rttable.logs.each{|log|
+          @rttable.logs.each_with_index{|log, index|
             send_data("#{log}\r\n")
+            sleep @stats.stream_show_wait_param if index % 10 == 0
           }
           send_data("END\r\n")
           @rttable.logs.clear
