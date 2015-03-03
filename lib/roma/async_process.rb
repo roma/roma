@@ -983,33 +983,49 @@ module Roma
     end
 
     def get_point(f, target_time, type, c_pos=0, n_pos=f.size/2)
-      #decide target point
+      # initialize read size
+      read_size = 2048
+
+      # first check
       unless target_time.class == Time
+        # in case of not set end_date
+        return f.size if target_time == 'current'
+
         target_time =~ (/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
         target_time = Time.mktime($1, $2, $3, $4, $5, $6, 000000)
  
         # check outrange or not
-        if type == 'start'
-          begining_log = f.read(256)
-          pos = begining_log.index(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
-          begining_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+        f.seek(0, IO::SEEK_SET)
+        begining_log = f.read(read_size)
+        pos = begining_log.index(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+        begining_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+
+        f.seek(-read_size, IO::SEEK_END)
+        end_log = f.read(read_size)
+        pos = end_log.rindex(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+        end_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+
+        case type
+        when 'start'
           if target_time < begining_time
-            return pos
+            return 0
+          elsif target_time > end_time
+            @log.error("irregular time was set.")
+            raise
           end
-        elsif type == 'end'
-          f.seek(-256, IO::SEEK_END)
-          end_log = f.read(256)
-          pos = end_log.rindex(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
-          end_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+        when 'end'
           if target_time > end_time
             return f.size
+          elsif target_time < begining_time
+            @log.error("irregular time was set.")
+            raise
           end
         end
       end
 
       # read half sector size
       f.seek(n_pos, IO::SEEK_SET)
-      sector_log = f.read(2048)
+      sector_log = f.read(read_size)
       # grep date
       date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
       sector_time_first = Time.mktime(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5], date_a[0][6])
