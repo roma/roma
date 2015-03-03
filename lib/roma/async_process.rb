@@ -982,7 +982,14 @@ module Roma
       @stats.gui_run_gather_logs = false
     end
 
-    def get_point(f, target_time, type, c_pos=0, n_pos=f.size/2)
+    def get_point(f, target_time, type, latency_time=Time.now, c_pos=0, n_pos=f.size/2)
+      # hilatency check
+      ps = Time.now - latency_time 
+      if ps > 5
+        @log.warn("gather_logs process was failed.")
+        raise
+      end
+
       # initialize read size
       read_size = 2048
 
@@ -1031,15 +1038,6 @@ module Roma
       sector_time_first = Time.mktime(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5], date_a[0][6])
       sector_time_last = Time.mktime(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5], date_a[-1][6])
       
-      # compare time
-      #start_time = Time.now
-      #loop do
-      ## hilatency check
-      #ps = Time.now - start_time
-      #if ps > 5
-      #  @log.warn("gather_logs process was failed.")
-      #  raise
-      #end
 
       if target_time.between?(sector_time_first, sector_time_last)
         if type == 'start'
@@ -1053,7 +1051,7 @@ module Roma
         t_pos = n_pos + ((n_pos - c_pos).abs / 2)
       end
       
-      get_point(f, target_time, type, n_pos, t_pos)
+      get_point(f, target_time, type, latency_time, n_pos, t_pos)
     end
 
   end # module AsyncProcess
