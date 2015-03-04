@@ -93,7 +93,7 @@ module Roma
       @gui_last_snapshot = []
       @spushv_protection = false
       @stream_copy_wait_param = 0.0001
-      @stream_show_wait_param = 0.0001
+      @stream_show_wait_param = 0.001
       @dcnice = 3
       @clean_up_interval = 300
       @enabled_vnodes_balance = nil
