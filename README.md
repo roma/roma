@@ -43,7 +43,7 @@ $ bin/mkroute localhost_10001 localhost_10002 --replication_in_host
 ```
 
 If succeeded, two new files which named localhost_10001.route and localhost_10002.route created in the current directory.  
-Refer to [Commands](file:///C:/Users/satoko.kurobe/git/website/dist/commands.html "Commands") for more detail information about Shell Commands.  
+Refer to [Commands](http://roma-kvs.org/commands.html "Commands") for more detail information about Shell Commands.  
 
 ### Start up ROMA
 Run two processes by using a romad.rb program as follows:  
@@ -53,7 +53,7 @@ $ bin/romad localhost -p 10001 -d --replication_in_host
 $ bin/romad localhost -p 10002 -d --replication_in_host
 ```
 
-Refer to [Commands](file:///C:/Users/satoko.kurobe/git/website/dist/commands.html "Commands") for more detail information about Shell Commands.  
+Refer to [Commands](http://roma-kvs.org/commands.html "Commands") for more detail information about Shell Commands.  
 
 ## Usage
 Like memcached, you can connect to ROMA with telnet. Connect to the ROMA process that you ran above.
@@ -74,7 +74,7 @@ bar
 END
 ```
 
-Refer to [Commands](file:///C:/Users/satoko.kurobe/git/website/dist/commands.html "Commands") for more detail information about ROMA Commands.
+Refer to [Commands](http://roma-kvs.org/commands.html "Commands") for more detail information about ROMA Commands.
 
 ## Promoters
 Roma is promoted by [Rakuten, Inc.](http://global.rakuten.com/corp/) and [Rakuten Institute of Technology](http://rit.rakuten.co.jp/).
