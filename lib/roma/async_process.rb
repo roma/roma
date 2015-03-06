@@ -954,19 +954,6 @@ module Roma
         f.seek(start_point, IO::SEEK_SET)
         target_logs = f.read(end_point - start_point)
         target_logs = target_logs.each_line.map(&:chomp)
-        # cut untarget lines
-        target_logs.each_with_index{ |log, index|
-          if log =~ /[IDEW],\s\[#{args[0]}/
-            target_logs.slice!(0, index)
-            break
-          end
-        }
-        target_logs.each_with_index{ |log, index|
-          if log =~ /[IDEW],\s\[#{args[1]}/
-            target_logs.slice!(index..-1)
-            break
-          end
-        }
         target_logs.delete('.')
       }
 
@@ -982,7 +969,7 @@ module Roma
       @stats.gui_run_gather_logs = false
     end
 
-    def get_point(f, target_time, type, latency_time=Time.now, c_pos=0, n_pos=f.size/2)
+    def get_point(f, target_time, type, latency_time=Time.now, current_pos=0, new_pos=f.size/2)
       # hilatency check
       ps = Time.now - latency_time 
       if ps > 5
@@ -1031,27 +1018,33 @@ module Roma
       end
 
       # read half sector size
-      f.seek(n_pos, IO::SEEK_SET)
+      f.seek(new_pos, IO::SEEK_SET)
       sector_log = f.read(read_size)
       # grep date
       date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
-      sector_time_first = Time.mktime(date_a[0][0], date_a[0][1], date_a[0][2], date_a[0][3], date_a[0][4], date_a[0][5], date_a[0][6])
-      sector_time_last = Time.mktime(date_a[-1][0], date_a[-1][1], date_a[-1][2], date_a[-1][3], date_a[-1][4], date_a[-1][5], date_a[-1][6])
-      
 
+      time_a = []
+      date_a.each{|time|
+        time_a.push(Time.mktime(time[0], time[1], time[2], time[3], time[4], time[5], time[6]))
+      }
+      sector_time_first = time_a[0]
+      sector_time_last = time_a[-1]
+ 
       if target_time.between?(sector_time_first, sector_time_last)
-        if type == 'start'
-          return n_pos
-        elsif type == 'end'
-          return f.pos
-        end
+        time_a.each{|time|
+          if target_time <= time
+            time_string = time.strftime("%Y-%m-%dT%H:%M:%S")
+            target_index = sector_log.index(/[IDEW],\s\[#{time_string}/)
+            return new_pos + target_index
+          end 
+        }
       elsif sector_time_first > target_time
-        t_pos = n_pos - ((n_pos - c_pos).abs / 2)
+        target_pos = new_pos - ((new_pos - current_pos).abs / 2)
       elsif sector_time_first < target_time
-        t_pos = n_pos + ((n_pos - c_pos).abs / 2)
+        target_pos = new_pos + ((new_pos - current_pos).abs / 2)
       end
-      
-      get_point(f, target_time, type, latency_time, n_pos, t_pos)
+
+      get_point(f, target_time, type, latency_time, new_pos, target_pos)
     end
 
   end # module AsyncProcess
