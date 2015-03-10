@@ -749,6 +749,15 @@ module Roma
       if count>0
         @log.info("#{__method__}:#{count} keys deleted.")
       end
+
+      # delete @rttable.logs
+      if @stats.gui_run_gather_logs || @rttable.logs.empty?
+        false
+      else
+        gathered_time = @rttable.logs[0]
+        # delete gathering log data after 5min
+        @rttable.logs.clear if gathered_time.to_i < Time.now.to_i - (60 * 5)
+      end
     ensure
       @log.info("#{__method__}:stop")
     end
@@ -936,36 +945,106 @@ module Roma
       log_path =  Config::LOG_PATH
       log_file = "#{log_path}/#{@stats.ap_str}.log"
 
-      raw_logs = []
-      start_time = Time.now
+      target_logs = []
       File.open(log_file){|f|
-        f.each_line{|line|
-          # hilatency check
-          ps = Time.now - start_time
-          if ps > 5
-            @log.warn("gather_logs process was failed.")
-            raise
-          end
+        start_point = get_point(f, args[0], 'start')
+        end_point = get_point(f, args[1], 'end')
 
-          raw_logs << line unless line.chomp == '.'
-        }
+        ## read target logs
+        f.seek(start_point, IO::SEEK_SET)
+        target_logs = f.read(end_point - start_point)
+        target_logs = target_logs.each_line.map(&:chomp)
+        target_logs.delete('.')
       }
 
-      sliced_logs = []
-      if raw_logs.size > args[0]
-        sliced_logs = raw_logs.slice(-args[0]..-1)
-      else
-        raw_logs.shift # remove first line(date of log file was created)
-        sliced_logs = raw_logs
-      end
+      @rttable.logs = target_logs
+      # set gathered date for expiration
+      @rttable.logs.unshift(Time.now)
 
-      @rttable.logs = sliced_logs
-      @log.info("#{__method__} has done.")
+      @log.debug("#{__method__} has done.")
     rescue =>e
       @rttable.logs = []
       @log.error("#{e}\n#{$@}")
     ensure
       @stats.gui_run_gather_logs = false
+    end
+
+    def get_point(f, target_time, type, latency_time=Time.now, current_pos=0, new_pos=f.size/2)
+      # hilatency check
+      ps = Time.now - latency_time 
+      if ps > 5
+        @log.warn("gather_logs process was failed.")
+        raise
+      end
+
+      # initialize read size
+      read_size = 2048
+
+      # first check
+      unless target_time.class == Time
+        # in case of not set end_date
+        return f.size if target_time == 'current'
+
+        target_time =~ (/(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)/)
+        target_time = Time.mktime($1, $2, $3, $4, $5, $6, 000000)
+ 
+        # check outrange or not
+        f.seek(0, IO::SEEK_SET)
+        begining_log = f.read(read_size)
+        pos = begining_log.index(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+        begining_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+
+        f.seek(-read_size, IO::SEEK_END)
+        end_log = f.read(read_size)
+        pos = end_log.rindex(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+        end_time = Time.mktime($1, $2, $3, $4, $5, $6, $7)
+
+        case type
+        when 'start'
+          if target_time < begining_time
+            return 0
+          elsif target_time > end_time
+            @log.error("irregular time was set.")
+            raise
+          end
+        when 'end'
+          if target_time > end_time
+            return f.size
+          elsif target_time < begining_time
+            @log.error("irregular time was set.")
+            raise
+          end
+        end
+      end
+
+      # read half sector size
+      f.seek(new_pos, IO::SEEK_SET)
+      sector_log = f.read(read_size)
+      # grep date
+      date_a = sector_log.scan(/[IDEW],\s\[(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)/)
+
+      time_a = []
+      date_a.each{|time|
+        time_a.push(Time.mktime(time[0], time[1], time[2], time[3], time[4], time[5], time[6]))
+      }
+      sector_time_first = time_a[0]
+      sector_time_last = time_a[-1]
+ 
+      if target_time.between?(sector_time_first, sector_time_last)
+        time_a.each{|time|
+          if target_time <= time
+            time_string = time.strftime("%Y-%m-%dT%H:%M:%S")
+            target_index = sector_log.index(/[IDEW],\s\[#{time_string}/)
+            return new_pos + target_index
+          end 
+        }
+      elsif sector_time_first > target_time
+        target_pos = new_pos - ((new_pos - current_pos).abs / 2)
+      elsif sector_time_first < target_time
+        target_pos = new_pos + ((new_pos - current_pos).abs / 2)
+      end
+
+      get_point(f, target_time, type, latency_time, new_pos, target_pos)
     end
 
   end # module AsyncProcess

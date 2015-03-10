@@ -37,6 +37,7 @@ module Roma
 
     # proc param
     attr_accessor :stream_copy_wait_param
+    attr_accessor :stream_show_wait_param
     attr_accessor :dcnice
     attr_accessor :clean_up_interval
 
@@ -92,6 +93,7 @@ module Roma
       @gui_last_snapshot = []
       @spushv_protection = false
       @stream_copy_wait_param = 0.0001
+      @stream_show_wait_param = 0.001
       @dcnice = 3
       @clean_up_interval = 300
       @enabled_vnodes_balance = nil
@@ -141,6 +143,7 @@ module Roma
       ret['stats.gui_last_snapshot'] = @gui_last_snapshot
       ret['stats.spushv_protection'] = @spushv_protection
       ret['stats.stream_copy_wait_param'] = @stream_copy_wait_param
+      ret['stats.stream_show_wait_param'] = @stream_show_wait_param
       ret['stats.dcnice'] = @dcnice
       ret['stats.clean_up_interval'] = @clean_up_interval
       ret['stats.size_of_zredundant'] = @size_of_zredundant
