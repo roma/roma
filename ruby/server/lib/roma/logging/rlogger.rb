@@ -24,13 +24,64 @@ module Roma
       module ExtLogDev
         def extendLogDev()
           if @logdev 
+            @logdev.extend(ExtCheckShift)
             @logdev.extend(ExtShiftAge)
+            @logdev.extend(AddSetShiftAge)
+            @logdev.extend(AddSetShiftSize)
           end
         end
+        
+        def set_shift_age(age)
+          if @logdev
+            @logdev.set_shift_age(age)
+          end
+        end
+        
+        def set_shift_size(size)
+          if @logdev
+            @logdev.set_shift_size(size)
+          end
+        end
+      end
+
+      module AddSetShiftAge
+        def set_shift_age(age)
+          if @shift_age
+            @shift_age = age
+          end
+        end
+      end
+
+      module AddSetShiftSize
+        def set_shift_size(size)
+          if @shift_size
+            @shift_size = size
+          end
+        end
+      end
+
+      module ExtCheckShift
+        private
+
+        def check_shift_log
+          if @shift_age.is_a?(Integer)
+            # Note: always returns false if '0'.
+            if @filename && (@shift_age > 0) && (@dev.stat.size > @shift_size)
+              lock_shift_log { shift_log_age }
+            end
+          else
+            now = Time.now
+            period_end = previous_period_end(now)
+            if @dev.stat.mtime.to_i <= period_end.to_i
+              lock_shift_log { shift_log_period(period_end) }
+            end
+          end
+        end        
       end
   
       module ExtShiftAge
         private 
+
         def shift_log_period(now) 
           postfix = previous_period_end(now).strftime("%Y%m%d%H%M")
           age_file = "#{@filename}.#{postfix}"
@@ -95,7 +146,7 @@ module Roma
         @wrap_logger.extend(ExtLogDev)
         @wrap_logger.extendLogDev()
       end
-      
+
       def level=(severity)
         @wrap_logger.level = severity
       end
@@ -141,7 +192,15 @@ module Roma
       end
   
       def close; @wrap_logger.close; end
-  
+
+      def set_log_shift_size(size)
+        @wrap_logger.set_shift_size(size)
+      end
+
+      def set_log_shift_age(age)
+        @wrap_logger.set_shift_age(age)
+      end
+
     end # class RLogger
 
 
