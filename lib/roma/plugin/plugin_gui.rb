@@ -11,7 +11,7 @@ module Roma
         routing_path  = get_config_stat["config.RTTABLE_PATH"]
         contents = ""
         Dir.glob("#{routing_path}/*").each{|fname|
-          contents << File.read(fname) if !FileTest::directory? fname
+          contents << File.read(fname) if !FileTest::directory?(fname) && fname =~ /#{@stats.ap_str}\.route*/
         }
         routing_list = contents.scan(/[-\.a-zA-Z\d]+_[\d]+/).uniq.sort
         routing_list.each{|routing|
