@@ -15,7 +15,7 @@ begin
   if Roma::Routing::RoutingData::snapshot("#{ap}.route")
     puts "succeed"
   else
-    puts "Routing-log file dose not found."
+    puts "Routing-log file does not found."
   end
 rescue =>e
   puts "error:#{e}"

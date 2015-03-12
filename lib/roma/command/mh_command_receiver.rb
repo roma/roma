@@ -16,7 +16,7 @@ module Roma
         else
           unless @storages.key?(s[1])
             raise(Roma::Command::Definition::ClientErrorException,
-                  "#{s[1]} dose not find.")
+                  "#{s[1]} does not find.")
           end
           @defhash = s[1]
           "STORED"
@@ -36,7 +36,7 @@ module Roma
         # check a directory existence
         unless File.directory? "#{Config::STORAGE_PATH}/#{@stats.ap_str}/#{s[1]}"
           raise(Roma::Command::Definition::ServerErrorException,
-                "#{s[1]} dose not find.")
+                "#{s[1]} does not find.")
         end
         createhash(s[1], 'MOUNTED')
       end
@@ -49,7 +49,7 @@ module Roma
         end
         unless @storages.key?(s[1])
           raise(Roma::Command::Definition::ServerErrorException,
-                "#{s[1]} dose not find.")
+                "#{s[1]} does not find.")
         end
         umounthash(s[1])
       end
@@ -112,7 +112,7 @@ module Roma
           return "SERVER_ERROR default hash can't unmount."
         end
         unless @storages.key?(hname)
-          return "SERVER_ERROR #{hname} dose not exists."
+          return "SERVER_ERROR #{hname} does not exists."
         end
         st = @storages[hname]
         @storages.delete(hname)

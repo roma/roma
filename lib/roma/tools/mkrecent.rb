@@ -103,7 +103,7 @@ module Roma
 
     def ropen(path)
       unless File::directory?(path)
-        STDERR.puts "#{path} dose not found."
+        STDERR.puts "#{path} does not found."
         return nil
       end
 

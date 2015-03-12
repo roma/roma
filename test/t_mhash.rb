@@ -55,13 +55,13 @@ class MHashTest < Test::Unit::TestCase
 
     @rc.default_hash_name='not_exist_hash'
     [:get, :delete, :incr, :decr].each do |m|
-      assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash dose not exists.') do
+      assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash does not exists.') do
         @rc.send m, "key"
       end
     end
 
     [:set, :add, :replace, :append, :prepend].each do |m|
-      assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash dose not exists.') do
+      assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash does not exists.') do
         @rc.send m, "key","value"
       end
     end
@@ -127,8 +127,8 @@ class MHashTest < Test::Unit::TestCase
     con.write("deletehash test\r\n")
     ret = eval con.gets.chomp
     assert_equal 2, ret.length
-    assert_equal 'SERVER_ERROR test dose not exists.', ret['localhost_11211']
-    assert_equal 'SERVER_ERROR test dose not exists.', ret['localhost_11212']
+    assert_equal 'SERVER_ERROR test does not exists.', ret['localhost_11211']
+    assert_equal 'SERVER_ERROR test does not exists.', ret['localhost_11212']
     
     # delete hash to default
     con.write("deletehash roma\r\n")
@@ -148,7 +148,7 @@ class MHashTest < Test::Unit::TestCase
     
     con.write("rdefhash not_exist_hash\r\n")
     ret = con.gets.chomp
-    assert_equal("CLIENT_ERROR not_exist_hash dose not find.", ret)
+    assert_equal("CLIENT_ERROR not_exist_hash does not find.", ret)
 
     con.write("createhash test\r\n")
     con.gets
@@ -168,7 +168,7 @@ class MHashTest < Test::Unit::TestCase
     # umount
     con.write("umounthash test\r\n")
     ret = con.gets.chomp
-    assert_equal("SERVER_ERROR test dose not find.", ret)
+    assert_equal("SERVER_ERROR test does not find.", ret)
 
     # add 'test' hash
     con.write("createhash test\r\n")
@@ -189,7 +189,7 @@ class MHashTest < Test::Unit::TestCase
     assert_equal 'UNMOUNTED', ret['localhost_11212']
 
     @rc.default_hash_name='test'
-    assert_raise(RuntimeError,'SERVER_ERROR test dose not exists.') do
+    assert_raise(RuntimeError,'SERVER_ERROR test does not exists.') do
       @rc.set "key", "value"
     end
 

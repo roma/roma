@@ -57,7 +57,7 @@ module Roma
 
         def def_read_command_with_key(cmd, forward = :one_line, &block)
           define_method "ev_#{cmd}" do |s|
-            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            return send_data("CLIENT_ERROR does not find key\r\n") if s.length < 2
             begin
               params = CommandParams.new
               params.key, params.hash_name = s[1].split("\e")
@@ -74,7 +74,7 @@ module Roma
               end
               stored = StoredData.new
               unless @storages[params.hash_name]
-                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+                return send_data("SERVER_ERROR #{params.hash_name} does not exists.\r\n")
               end
 
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
@@ -96,7 +96,7 @@ module Roma
 
         def def_write_command_with_key(cmd, forward = :one_line, &block)
           define_method "ev_#{cmd}" do |s|
-            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            return send_data("CLIENT_ERROR does not find key\r\n") if s.length < 2
             begin
               params = CommandParams.new
               params.key, params.hash_name = s[1].split("\e")
@@ -113,7 +113,7 @@ module Roma
               end
               stored = StoredData.new
               unless @storages[params.hash_name]
-                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+                return send_data("SERVER_ERROR #{params.hash_name} does not exists.\r\n")
               end
 
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
@@ -167,7 +167,7 @@ module Roma
 
         def def_command_with_key(cmd, forward = :one_line, &block)
           define_method "ev_#{cmd}" do |s|
-            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            return send_data("CLIENT_ERROR does not find key\r\n") if s.length < 2
             begin
               params = CommandParams.new
               params.key, params.hash_name = s[1].split("\e")
@@ -184,7 +184,7 @@ module Roma
               end
               stored = StoredData.new
               unless @storages[params.hash_name]
-                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+                return send_data("SERVER_ERROR #{params.hash_name} does not exists.\r\n")
               end
 
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
@@ -205,7 +205,7 @@ module Roma
 
         def def_write_command_with_key_value(cmd, idx_of_val_len, forward = :one_line, &block)
           define_method "ev_#{cmd}" do |s|
-            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            return send_data("CLIENT_ERROR does not find key\r\n") if s.length < 2
             begin
               params = CommandParams.new
               params.key, params.hash_name = s[1].split("\e")
@@ -224,7 +224,7 @@ module Roma
               end
               stored = StoredData.new
               unless @storages[params.hash_name]
-                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+                return send_data("SERVER_ERROR #{params.hash_name} does not exists.\r\n")
               end
 
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
@@ -280,7 +280,7 @@ module Roma
 
         def def_read_command_with_key_value(cmd, idx_of_val_len, forward = :one_line, &block)
           define_method "ev_#{cmd}" do |s|
-            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            return send_data("CLIENT_ERROR does not find key\r\n") if s.length < 2
             begin
               params = CommandParams.new
               params.key, params.hash_name = s[1].split("\e")
@@ -299,7 +299,7 @@ module Roma
               end
               stored = StoredData.new
               unless @storages[params.hash_name]
-                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+                return send_data("SERVER_ERROR #{params.hash_name} does not exists.\r\n")
               end
 
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =
@@ -322,7 +322,7 @@ module Roma
 
         def def_command_with_key_value(cmd, idx_of_val_len, forward = :one_line, &block)
           define_method "ev_#{cmd}" do |s|
-            return send_data("CLIENT_ERROR dose not find key\r\n") if s.length < 2
+            return send_data("CLIENT_ERROR does not find key\r\n") if s.length < 2
             begin
               params = CommandParams.new
               params.key, params.hash_name = s[1].split("\e")
@@ -341,7 +341,7 @@ module Roma
               end
               stored = StoredData.new
               unless @storages[params.hash_name]
-                return send_data("SERVER_ERROR #{params.hash_name} dose not exists.\r\n")
+                return send_data("SERVER_ERROR #{params.hash_name} does not exists.\r\n")
               end
 
               stored.vn, stored.last, stored.clk, stored.expt, stored.value =

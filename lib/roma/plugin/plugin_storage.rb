@@ -41,7 +41,7 @@ module Roma
         end
 
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
         data = @storages[hname].get(vn, key, 0)
@@ -64,7 +64,7 @@ module Roma
         end
 
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
         data = @storages[hname].get(vn, key, 0)
@@ -138,7 +138,7 @@ module Roma
           return send_data("#{res}\r\n")
         end
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
 
@@ -180,7 +180,7 @@ module Roma
           return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
 
@@ -218,7 +218,7 @@ module Roma
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
         vn = @rttable.get_vnode_id(d)
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
         if @storages[hname].rdelete(vn, key, d, s[2].to_i)
@@ -319,7 +319,7 @@ module Roma
         end
         
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
 
@@ -358,7 +358,7 @@ module Roma
         end
         
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
 
@@ -413,7 +413,7 @@ module Roma
           @log.error("forward get failed:nid=#{nid} key=#{k}")
           return nil
         elsif res == "END\r\n"
-          # value dose not found
+          # value does not found
         elsif res.start_with?("ERROR")
           @rttable.proc_succeed(nid)
           con.close_connection
@@ -454,7 +454,7 @@ module Roma
       def store(fnc, hname, vn, k, d, expt, v, nodes)
         expt = chg_time_expt(expt)
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
 
@@ -481,7 +481,7 @@ module Roma
       def store_cas(hname, vn, k, d, clk, expt, v, nodes)
         expt = chg_time_expt(expt)
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
 
@@ -587,7 +587,7 @@ module Roma
 
       def store_incr_decr(fnc, hname, vn, k, d,  v, nodes)
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
 

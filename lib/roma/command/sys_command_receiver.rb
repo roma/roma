@@ -277,7 +277,7 @@ module Roma
         read_bytes(2)
         vn = @rttable.get_vnode_id(d)
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
         if @storages[hname].rset(vn, key, d, s[3].to_i, s[4].to_i, data)
@@ -300,7 +300,7 @@ module Roma
         read_bytes(2)
         vn = @rttable.get_vnode_id(d)
         unless @storages.key?(hname)
-          send_data("SERVER_ERROR #{hname} dose not exists.\r\n")
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
         end
 
@@ -1041,7 +1041,7 @@ module Roma
         end
         st = @storages[hname]
         unless st
-          return send_data("CLIENT_ERROR hash_name = #{hanme} dose not found\r\n")
+          return send_data("CLIENT_ERROR hash_name = #{hanme} does not found\r\n")
         end
         dn = s[1].to_i
         if st.divnum <= dn

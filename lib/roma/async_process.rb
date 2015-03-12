@@ -197,7 +197,7 @@ module Roma
       nid,hname,k,d,clk,expt,v = args
       @log.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
-        @log.warn("async redundant failed:#{nid} dose not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}")
+        @log.warn("async redundant failed:#{nid} does not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}")
         return true # no retry
       end
       res = async_send_cmd(nid,"rset #{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}\r\n#{v}\r\n",10)
@@ -212,7 +212,7 @@ module Roma
       nid,hname,k,d,clk,expt,zv = args
       @log.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
-        @log.warn("async zredundant failed:#{nid} dose not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}")
+        @log.warn("async zredundant failed:#{nid} does not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}")
         return true # no retry
       end
       res = async_send_cmd(nid,"rzset #{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}\r\n#{zv}\r\n",10)
@@ -227,7 +227,7 @@ module Roma
       nid,hname,k,clk = args
       @log.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
-        @log.warn("async rdelete failed:#{nid} dose not found in routing table.#{k}\e#{hname} #{clk}")
+        @log.warn("async rdelete failed:#{nid} does not found in routing table.#{k}\e#{hname} #{clk}")
         return true # no retry
       end
       res = async_send_cmd(nid,"rdelete #{k}\e#{hname} #{clk}\r\n",10)
@@ -400,7 +400,7 @@ module Roma
 
         vn, nodes, is_primary = @rttable.select_vn_for_join(exclude_nodes)
         unless vn
-          @log.warn("#{__method__}:vnode dose not found")
+          @log.warn("#{__method__}:vnode does not found")
           return false
         end
         ret = req_push_a_vnode(vn, nodes[0], is_primary)
@@ -430,7 +430,7 @@ module Roma
 
         vn, nodes, is_primary = @rttable.select_vn_for_balance(exclude_nodes)
         unless vn
-          @log.warn("#{__method__}:vnode dose not found")
+          @log.warn("#{__method__}:vnode does not found")
           return false
         end
         ret = req_push_a_vnode(vn, nodes[0], is_primary)

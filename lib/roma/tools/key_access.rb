@@ -68,7 +68,7 @@ module Roma
 
     def open_storage(path)
       unless File::directory?(path)
-        STDERR.puts "#{path} dose not found."
+        STDERR.puts "#{path} does not found."
         return nil
       end
 

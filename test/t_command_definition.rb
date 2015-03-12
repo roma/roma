@@ -228,9 +228,9 @@ class DefineCommandTest < Test::Unit::TestCase
 
     # case of argument error
     res = @obj.ev_get ['get']
-    assert_equal "CLIENT_ERROR dose not find key\r\n", res
+    assert_equal "CLIENT_ERROR does not find key\r\n", res
     res = @obj.ev_get []
-    assert_equal "CLIENT_ERROR dose not find key\r\n", res
+    assert_equal "CLIENT_ERROR does not find key\r\n", res
 
     # case of exception occur
     assert_raise RuntimeError do
@@ -264,9 +264,9 @@ class DefineCommandTest < Test::Unit::TestCase
 
     # case of argument error
     res = @obj.ev_set ['set']
-    assert_equal "CLIENT_ERROR dose not find key\r\n", res
+    assert_equal "CLIENT_ERROR does not find key\r\n", res
     res = @obj.ev_set []
-    assert_equal "CLIENT_ERROR dose not find key\r\n", res
+    assert_equal "CLIENT_ERROR does not find key\r\n", res
 
     # case of exception occur
     assert_raise RuntimeError do
@@ -296,31 +296,31 @@ class DefineCommandNoHashTest < Test::Unit::TestCase
 
   def test_rcwk
     ret = @obj.ev_rget ['get',"arg1\eno_hash_name"]
-    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+    assert_equal "SERVER_ERROR no_hash_name does not exists.\r\n", ret
   end
 
   def test_wcwk
     ret = @obj.ev_wget ['get',"arg1\eno_hash_name"]
-    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+    assert_equal "SERVER_ERROR no_hash_name does not exists.\r\n", ret
   end
 
   def test_cwk
     ret = @obj.ev_get ['get',"arg1\eno_hash_name"]
-    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+    assert_equal "SERVER_ERROR no_hash_name does not exists.\r\n", ret
   end
 
   def test_rcwkv
     ret = @obj.ev_rset ['set',"arg1\eno_hash_name", '0', '0', '5']
-    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+    assert_equal "SERVER_ERROR no_hash_name does not exists.\r\n", ret
   end
 
   def test_wcwkv
     ret = @obj.ev_wset ['set',"arg1\eno_hash_name", '0', '0', '5']
-    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+    assert_equal "SERVER_ERROR no_hash_name does not exists.\r\n", ret
   end
 
   def test_cwkv
     ret = @obj.ev_set ['set',"arg1\eno_hash_name", '0', '0', '5']
-    assert_equal "SERVER_ERROR no_hash_name dose not exists.\r\n", ret
+    assert_equal "SERVER_ERROR no_hash_name does not exists.\r\n", ret
   end
 end
