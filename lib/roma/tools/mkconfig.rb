@@ -359,7 +359,7 @@ module Roma
 
         skip.call if @next_hash == "menu" || @next_hash == "server" || @next_hash == "fd_server" || @next_hash == "check_plugin"
         break if end?(@base[@next_hash])
-        puts "if you dosen't input anything, default value is set."
+        puts "if you doesn't input anything, default value is set."
         Box.print_with_box(@defaults)
         print_status(@results)
         @base.print_question(@next_hash)

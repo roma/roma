@@ -88,7 +88,7 @@ module Roma
     # redundant setting
     # REDUNDANT_ZREDUNDANT_SIZE is a option for a redundancy of compressed data.
     # when the data size is more then REDUNDANT_ZREDUNDANT_SIZE, data compression is done.
-    # however, it dose't in case of REDUNDANT_ZREDUNDANT_SIZE is zero.
+    # however, it does't in case of REDUNDANT_ZREDUNDANT_SIZE is zero.
     REDUNDANT_ZREDUNDANT_SIZE = 0
 
   end

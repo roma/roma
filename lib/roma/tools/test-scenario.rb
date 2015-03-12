@@ -313,7 +313,7 @@ cnf = Roma::Test::Config.new(ARGV)
 # check for a working path
 unless File::exist?("#{cnf.working_path}/bin/romad")
   # in invalid path
-  $stderr.puts "#{cnf.working_path}/bin/romad dose't found"
+  $stderr.puts "#{cnf.working_path}/bin/romad does't found"
   $stderr.puts "You should set to a working path option(-p)."
   exit 1
 end

@@ -618,7 +618,7 @@ module Roma
 
       idx=nodes.index(@stats.ap_str)
       unless idx
-        @log.error("My node-id(=#{@stats.ap_str}) dose not found in the routingtable.")
+        @log.error("My node-id(=#{@stats.ap_str}) does not found in the routingtable.")
         EventMachine::stop_event_loop
         return
       end
