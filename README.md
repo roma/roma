@@ -18,7 +18,6 @@ More information is [here](http://roma-kvs.org/ "ROMA").
 
 * Refer to [ROMA documentations](http://roma-kvs.org/ "ROMA")
 
-## Support
 ## Requirements
 * Ruby >= 2.1.0
 
@@ -38,8 +37,7 @@ ROMA is required to make the routing files before starting up.
 The routing file is stored the routing information of each processes.
 
 ```
-$ cd ./ruby/server
-$ bin/mkroute localhost_10001 localhost_10002 --replication_in_host
+$ mkroute localhost_10001 localhost_10002 --replication_in_host
 ```
 
 If succeeded, two new files which named localhost_10001.route and localhost_10002.route created in the current directory.  
@@ -49,8 +47,8 @@ Refer to [Commands](http://roma-kvs.org/commands.html "Commands") for more detai
 Run two processes by using a romad.rb program as follows:  
 
 ```
-$ bin/romad localhost -p 10001 -d --replication_in_host
-$ bin/romad localhost -p 10002 -d --replication_in_host
+$ romad localhost -p 10001 -d --replication_in_host
+$ romad localhost -p 10002 -d --replication_in_host
 ```
 
 Refer to [Commands](http://roma-kvs.org/commands.html "Commands") for more detail information about Shell Commands.  
