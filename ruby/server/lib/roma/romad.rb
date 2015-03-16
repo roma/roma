@@ -162,6 +162,12 @@ module Roma
       if Config.const_defined?(:STORAGE_CLEAN_UP_INTERVAL)
         @stats.clean_up_interval = Config::STORAGE_CLEAN_UP_INTERVAL
       end
+      if Config.const_defined?(:LOG_SHIFT_SIZE)
+        @stats.log_shift_size = Config::LOG_SHIFT_SIZE
+      end
+      if Config.const_defined?(:LOG_SHIFT_AGE)
+        @stats.log_shift_age = Config::LOG_SHIFT_AGE
+      end
     end
 
     def initialize_connection
