@@ -586,7 +586,9 @@ module Roma
     end
 
     def node_check(nid)
-      return false unless Roma::Messaging::ConPool.instance.check_connection(nid) 
+      if @startup && @rttable.enabled_failover == false
+       return false unless Roma::Messaging::ConPool.instance.check_connection(nid) 
+      end
       name = async_send_cmd(nid,"whoami\r\n",2)
       return false unless name
       if name != @stats.name
