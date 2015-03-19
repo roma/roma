@@ -1132,6 +1132,71 @@ module Roma
         }
       end
 
+      # set_log_shift_size <size>
+      def ev_set_log_shift_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+
+        res = broadcast_cmd("rset_log_shift_size #{s[1]}\r\n")
+        @log.set_log_shift_size(s[1].to_i)
+        @stats.log_shift_size = s[1].to_i
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_log_shift_size(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1
+          return send_data("CLIENT_ERROR length must be greater than zero\r\n")
+        end
+        
+        @log.set_log_shift_size(s[1].to_i)
+        @stats.log_shift_size = s[1].to_i
+        send_data("STORED\r\n")
+      end
+
+      # set_log_shift_age <age>
+      def ev_set_log_shift_age(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1 && !['0', 'min', 'hour', 'daily', 'weekly', 'monthly'].include?(s[1])
+          return send_data("CLIENT_ERROR invalid arguments\r\n")
+        end
+
+        res = broadcast_cmd("rset_log_shift_age #{s[1]}\r\n")
+
+        if s[1].to_i > 0 || s[1] == '0'
+          @log.set_log_shift_age(s[1].to_i)
+          @stats.log_shift_age = s[1].to_i
+        else
+          @log.set_log_shift_age(s[1])
+          @stats.log_shift_age = s[1]
+        end
+        res[@stats.ap_str] = "STORED"
+        send_data("#{res}\r\n")
+      end
+
+      def ev_rset_log_shift_age(s)
+        if s.length != 2
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        elsif s[1].to_i < 1 && !['0', 'min', 'hour', 'daily', 'weekly', 'monthly'].include?(s[1])
+          return send_data("CLIENT_ERROR invalid arguments\r\n")
+        end
+
+        if s[1].to_i > 0 || s[1] == '0'
+          @log.set_log_shift_age(s[1].to_i)
+          @stats.log_shift_age = s[1].to_i
+        else
+          @log.set_log_shift_age(s[1])
+          @stats.log_shift_age = s[1]
+        end
+        send_data("STORED\r\n")
+      end
+
       private 
 
       def dcnice(p)
