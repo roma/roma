@@ -39,8 +39,7 @@ module Roma
         TCPSocket.open(addr, port)
         true
       rescue => e
-        Logging::RLogger.instance.warn("You can't connect the #{ap} instance.")
-        nil
+        false
       end
 
       def return_connection(ap, con)
