@@ -33,6 +33,15 @@ module Roma
         nil
       end
 
+      def check_connection(ap)
+        host, port = ap.split(/[:_]/)
+        addr = DNSCache.instance.resolve_name(host)
+        TCPSocket.open(addr, port)
+        true
+      rescue => e
+        false
+      end
+
       def return_connection(ap, con)
         if select([con],nil,nil,0.0001)
           con.gets
