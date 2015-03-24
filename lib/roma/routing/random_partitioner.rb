@@ -12,12 +12,11 @@ module Roma
         end
         exclude_nodes
       end
-      
+
       def exclude_nodes_for_join(ap_str, rep_host)
         [ap_str]
       end
 
-      #alias :exclude_nodes_for_join :exclude_nodes
       alias :exclude_nodes_for_recover :exclude_nodes
       alias :exclude_nodes_for_balance :exclude_nodes
 
@@ -35,31 +34,34 @@ module Roma
         myhost_idx = {}
         idx = {}
         myhost = exclude_nodes[0].split(/[:_]/)[0]
+
         @rd.v_idx.each_pair do |vn, nids|
           unless list_include?(nids, exclude_nodes)
             if myhost_include?(nids, myhost)
               myhost_idx[vn] = nids
             else
-              idx[vn] = nids # other nodes
+              idx[vn] = nids # other hosts
             end
             short_idx[vn] = nids if nids.length < @rd.rn
           end
         end
-        idx = short_idx if short_idx.length > 0
-      
-        ks = idx.keys
-        if ks.length == 0
+
+        # vnodes sampling priority:
+        # 1. Short vnodes
+        # 2. Other hosts vnodes
+        # 3. My host vnodes
+        if short_idx.length > 0
+          idx = short_idx
+        elsif idx.length == 0
           idx = myhost_idx
-          ks = idx.keys
-          return nil if ks.length == 0
-          vn = ks[rand(ks.length)]
-          nids = idx[vn]
-          [vn, nids, nids[0].split(/[:_]/)[0] == myhost]
-        else
-          vn = ks[rand(ks.length)]
-          nids = idx[vn]
-          [vn, nids, rand(@rd.rn) == 0]
         end
+
+        return nil if idx.length == 0
+
+        ks = idx.keys
+        vn = ks[rand(ks.length)]
+        nids = idx[vn]
+        [vn, nids, rand(@rd.rn) == 0]
       end
 
       # select a vnodes where short of redundancy.
@@ -91,7 +93,7 @@ module Roma
         else
           nids.each{|nid| buf.delete(nid) }
         end
-        
+
         buf.delete_if{|instance| instance == ap_str}
         to_nid = buf.sample
         new_nids = nids.map{|n| n == ap_str ? to_nid : n }
@@ -109,7 +111,7 @@ module Roma
           end
         end
         idx = short_idx if short_idx.length > 0
-      
+
         ks = idx.keys
         return nil if ks.length == 0
         vn = ks[rand(ks.length)]
