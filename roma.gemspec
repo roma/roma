@@ -24,7 +24,8 @@ Gem::Specification.new do |s|
     'examples/**/*',
   ]
 
-  s.required_ruby_version = '>= 1.9.1'
+  # Specify Ruby version of roma-1.1.0
+  s.required_ruby_version = '>= 2.1.0'
 
   # Use these for libraries.
   s.require_path = 'lib'
@@ -44,7 +45,6 @@ Gem::Specification.new do |s|
                ]
   s.extra_rdoc_files = ["README.md", "CHANGELOG"]
 
-  # TODO: for each gem, which version does roma depend on?
   s.add_dependency 'eventmachine', '~> 1.0.0'
 
   s.add_development_dependency 'tokyocabinet', '~> 1.29.1'
