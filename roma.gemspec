@@ -5,8 +5,8 @@ require 'rake'
 require 'roma/version'
 
 Gem::Specification.new do |s|
-  s.authors = ["Junji Torii", "Hiroki Matsue"]
-  s.homepage = 'http://code.google.com/p/roma-prj/'
+  s.authors = ["Junji Torii", "Hiroki Matsue", "Hiroaki Iwase"]
+  s.homepage = 'http://roma-kvs.org/'
   s.name = "roma"
   s.version = Roma::VERSION
   s.license = 'GPL-3.0'
@@ -24,8 +24,8 @@ Gem::Specification.new do |s|
     'examples/**/*',
   ]
 
-  # TODO: Specify Ruby version roma-1.1.0 must support
-  # s.required_ruby_version = '>= 2.0.0'
+  # Specify Ruby version roma-1.1.0 must support
+  s.required_ruby_version = '>= 2.1.0'
 
   # Use these for libraries.
   s.require_path = 'lib'
