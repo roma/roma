@@ -596,7 +596,7 @@ module Roma
         unless Roma::Messaging::ConPool.instance.check_connection(nid) 
           @log.info("I'm wating for booting the #{nid} instance.")
           return false
-	end
+        end
       end
       name = async_send_cmd(nid,"whoami\r\n",2)
       return false unless name

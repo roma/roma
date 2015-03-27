@@ -34,12 +34,17 @@ module Roma
       end
 
       def check_connection(ap)
-        host, port = ap.split(/[:_]/)
-        addr = DNSCache.instance.resolve_name(host)
-        TCPSocket.open(addr, port)
+        unless @pool.key?(ap)
+          host, port = ap.split(/[:_]/)
+          addr = DNSCache.instance.resolve_name(host)
+          sock = TCPSocket.open(addr, port)
+          sock.close
+        end
         true
-      rescue => e
+      rescue Errno::ECONNREFUSED => e
         false
+      rescue => e
+        Logging::RLogger.instance.error("#{__FILE__}:#{__LINE__}:#{e}")
       end
 
       def return_connection(ap, con)
