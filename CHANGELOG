@@ -1,3 +1,28 @@
+*1.1.0 (Mar 30 2015)*
+
+* I improved connection performance during booting [Takahiro Tokunaga] ee411f0
+* change support ruby version [hiroaki-iwase] 69c9cab
+* Update gemspec. [Hiroki Matsue] b2301de
+* remove booting error in the log [Takahiro Tokunaga] c0cfd68
+* Modify routing files checking condition. [Hiroki Matsue] c7bd4ab
+* Remove 'Support' area and modify some commands. [Satoko Kurobe] 0146afe
+* add new commands (set_log_shift_size, set_log_shift_age) [Masami Tazuke] 5d03bee
+* Fix redirect loop of GUI. [Hiroki Matsue] 53a2841
+* Improve Log Gathering logic [Hiroaki Iwase] dfcaa8e
+  * add hilatecy check [hiroaki-iwase] 78b0d24
+  * add LOG_STREAM_SHOW_WAIT_PARAM when show_logs cmd display logs [hiroaki-iwase] c8f237b
+  * change to recursive algorithm [hiroaki-iwase] 6009e53
+  * add gathered date for expiration in clean_up process [hiroaki-iwase] d26bb58
+  * support outrange direction [hiroaki-iwase] 420c1f8
+  * enable to point out start-date and end-date of gathering target [hiroaki-iwase] e1c60dd
+* Correct some URLs. [Satoko Kurobe] d941dc9
+* Remove README and add README.md [Satoko Kurobe] a9a9afc
+* allow node name to only ascii without empty string. [hiroaki-iwase] f05600d
+* add check argument in setroute [hiroaki-iwase] 6b60675
+* remove github issue url [Takahiro Tokunaga] 94feeed
+* add replication_in_host option [Takahiro Tokunaga] 2284a53
+* Define rome.gemspec [Tatsuya Sato] e4c4a89
+
 *1.1.0RC2 (Jan 19 2015)*
 
 * modify merge prob(delete ruby/server dir, mv groonga relating file) [hiroaki-iwase] 699e0b7
