@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+require 'pathname'
+
+base_path = Pathname(__FILE__).dirname.parent.expand_path
+$LOAD_PATH.unshift("#{base_path}/lib")
+
+require 'roma/romad'
+
+def daemonize
+  p = Process.fork {
+    pid=Process.setsid
+    Signal.trap(:INT){
+      exit! 0
+    }
+    Signal.trap(:TERM){
+      exit! 0       
+    }
+    Signal.trap(:HUP){
+      exit! 0
+    }
+    File.open("/dev/null","r+"){|f|
+      STDIN.reopen f
+      STDOUT.reopen f
+      STDERR.reopen f
+    }
+    yield
+  }
+  $stderr.puts p
+  exit! 0
+end
+
+$roma = Roma::Romad.new(ARGV)
+if $roma.daemon?
+  daemonize{ $roma.start }
+else
+  $roma.start
+end

@@ -1,3 +1,43 @@
+*1.1.0 (Mar 30 2015)*
+
+* I improved connection performance during booting [Takahiro Tokunaga] ee411f0
+* change support ruby version [hiroaki-iwase] 69c9cab
+* Update gemspec. [Hiroki Matsue] b2301de
+* remove booting error in the log [Takahiro Tokunaga] c0cfd68
+* Modify routing files checking condition. [Hiroki Matsue] c7bd4ab
+* Remove 'Support' area and modify some commands. [Satoko Kurobe] 0146afe
+* add new commands (set_log_shift_size, set_log_shift_age) [Masami Tazuke] 5d03bee
+* Fix redirect loop of GUI. [Hiroki Matsue] 53a2841
+* Improve Log Gathering logic [Hiroaki Iwase] dfcaa8e
+  * add hilatecy check [hiroaki-iwase] 78b0d24
+  * add LOG_STREAM_SHOW_WAIT_PARAM when show_logs cmd display logs [hiroaki-iwase] c8f237b
+  * change to recursive algorithm [hiroaki-iwase] 6009e53
+  * add gathered date for expiration in clean_up process [hiroaki-iwase] d26bb58
+  * support outrange direction [hiroaki-iwase] 420c1f8
+  * enable to point out start-date and end-date of gathering target [hiroaki-iwase] e1c60dd
+* Correct some URLs. [Satoko Kurobe] d941dc9
+* Remove README and add README.md [Satoko Kurobe] a9a9afc
+* allow node name to only ascii without empty string. [hiroaki-iwase] f05600d
+* add check argument in setroute [hiroaki-iwase] 6b60675
+* remove github issue url [Takahiro Tokunaga] 94feeed
+* add replication_in_host option [Takahiro Tokunaga] 2284a53
+* Define rome.gemspec [Tatsuya Sato] e4c4a89
+
+*1.1.0RC2 (Jan 19 2015)*
+
+* modify merge prob(delete ruby/server dir, mv groonga relating file) [hiroaki-iwase] 699e0b7
+
+*1.1.0RC1 (Jan 7 2015)*
+
+* allow cpdb in just case of RubyHashStorage & TCStorage [hiroaki-iwase] 42ef43b
+* add storage type checking to cpdb [hiroaki-iwase] 47c4e56
+* delete server directory [Takahiro Tokunaga] 75ee999
+* Abolish ruby server dir [satoryu] bfe2339
+* Declare the license of ROMA in gemspec file [satoryu] c644f93
+* Add Groonga based storage backend [Kouhei Sutou] fd993d3
+* Use auto test runner [Kouhei Sutou] 2e8367f
+* Use test-unit gem [Kouhei Sutou] 81677d1
+
 *1.0.0 (Sep 30 2014)*
 
 * Add new function to get vnodes information of each data [hiroaki-iwase] ad25c6e
@@ -177,7 +217,7 @@
 * add mail subject prefix feature [byplayer] afcaf48
 * add mailer path option to roma watch configuration file . [byplayer] ee997e1
 * add the program for watching a ROMA [Muga Nishizawa] ee916a8
-* bugfix:after the first node dose join, lost vnodes cannot be detected. [junji torii] 2a5b3b2
+* bugfix:after the first node does join, lost vnodes cannot be detected. [junji torii] 2a5b3b2
 * refactor:exclusive operation for iteration in the storage. [junji torii] 7f7d27c
 * bugfix:stop by irregular data in storage_clean_up_process [junji torii] 40ba9bb
 * add sample_watcher3, which is a checker for split brain [muga] 749f444
@@ -196,7 +236,7 @@
 * fixed bug for a recover command option. [junji torii] b847b4d
 * the forward operation was corrected in the get command. [junji torii] e18019a
 * improved a vnode balance parameter. [junji torii] 40c762c
-* Bug was fixed that auto-termination logic when my node dosen't exist in the routing-table. [junji torii] 4300767
+* Bug was fixed that auto-termination logic when my node doesn't exist in the routing-table. [junji torii] 4300767
 
 *0.8.2 (Jan 6 2010)*
 

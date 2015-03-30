@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+require 'pathname'
+
+base_path = Pathname(__FILE__).dirname.parent.expand_path
+$LOAD_PATH.unshift("#{base_path}/lib")
+
+client_base_path = Pathname(__FILE__).dirname.parent.parent.expand_path
+$LOAD_PATH.unshift("#{client_base_path}/roma-ruby-client/lib")
+
+require 'roma/tools/recoverlost_alist'
