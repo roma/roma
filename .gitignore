@@ -6,3 +6,5 @@ ruby/server/wb_test/
 *.log*
 *.route*
 storage_test
+wb
+wb_test
