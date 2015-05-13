@@ -2,7 +2,6 @@ require 'shell'
 require 'pathname'
 require 'fileutils'
 require 'rbconfig'
-require 'open3'
 require 'roma/config'
 require 'roma/messaging/con_pool'
 require 'roma/logging/rlogger'
@@ -21,6 +20,7 @@ module RomaTestUtils
   DEFAULT_PORTS = %w(11211 11212)
   DEFAULT_NODES = DEFAULT_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }
   DEFAULT_TIMEOUT_SEC = 60
+  SHELL_LOG = 'roma_test_outputs.log'
 
   Roma::Logging::RLogger.create_singleton_instance("#{Roma::Config::LOG_PATH}/roma_test.log",
                                                    Roma::Config::LOG_SHIFT_AGE,
@@ -33,7 +33,7 @@ module RomaTestUtils
     FileUtils.rm_rf(Dir.glob("#{Roma::Config::STORAGE_PATH}/#{DEFAULT_IP}_#{DEFAULT_PORTS[0][0..-2]}?*"))
     sleep 0.1
 
-    Open3.capture3("#{ruby_path} #{mkroute_path} #{DEFAULT_NODES.join(' ')} -d #{div_bits} --replication_in_host")
+    system("#{ruby_path} #{mkroute_path} #{DEFAULT_NODES.join(' ')} -d #{div_bits} --replication_in_host >> #{SHELL_LOG} 2>&1")
     sleep 0.2
 
     DEFAULT_NODES.each do |node|
@@ -56,8 +56,9 @@ module RomaTestUtils
     ]
     romad_command << '--replication_in_host' if replication_in_host
     romad_command << "-j #{DEFAULT_NODES[0]}" if is_join
+    romad_command << ">> #{SHELL_LOG} 2>&1"
 
-    Open3.capture3(romad_command.join(' '))
+    system(romad_command.join(' '))
   end
 
   def get_client
@@ -79,7 +80,7 @@ module RomaTestUtils
       fail "#{__method__} timeout" if wait_count > DEFAULT_TIMEOUT_SEC
     end
 
-    while client.stats(node: node)['stats']['run_join'] == 'true'
+    while client.stats(node: node)['stats.run_join'] == 'true'
       sleep 1
       wait_count += 1
       fail "#{__method__} timeout" if wait_count > DEFAULT_TIMEOUT_SEC
@@ -92,7 +93,7 @@ module RomaTestUtils
     wait_count = 0
     sleep 1
 
-    while client.stats(node: stats_node)['routing']['nodes'] =~ /#{down_node}/
+    while client.stats(node: stats_node)['routing.nodes'] =~ /#{down_node}/
       sleep 1
       wait_count += 1
       fail "#{__method__} timeout" if wait_count > DEFAULT_TIMEOUT_SEC
@@ -104,7 +105,7 @@ module RomaTestUtils
     wait_count = 0
     sleep 1
 
-    while client.stats(node: node)['stats']['run_release'] == 'true'
+    while client.stats(node: node)['stats.run_release'] == 'true'
       sleep 1
       wait_count += 1
       fail "#{__method__} timeout" if wait_count > DEFAULT_TIMEOUT_SEC
