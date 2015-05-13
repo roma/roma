@@ -15,6 +15,7 @@ class CpdbBaseTest < Test::Unit::TestCase
 
 end
 
+# Groonga Storage Test
 class GroongaTest < CpdbBaseTest
   def setup
     start_roma 'cpdbtest/config4cpdb_groonga.rb'
@@ -27,6 +28,7 @@ class GroongaTest < CpdbBaseTest
   end
 end
 
+# RubyHash Storage Test
 class RubyHashTest < CpdbBaseTest
   def setup
     start_roma 'cpdbtest/config4cpdb_rh.rb'
@@ -38,7 +40,7 @@ class RubyHashTest < CpdbBaseTest
   end
 end
 
-## take 100 secs
+#  TcTest Storage Test
 class TcTest < CpdbBaseTest
   def setup
     start_roma 'cpdbtest/config4cpdb_tc.rb'
@@ -50,6 +52,7 @@ class TcTest < CpdbBaseTest
   end
 end
 
+# TcMem Storage Test
 class TcMemTest < CpdbBaseTest
   def setup
     start_roma 'cpdbtest/config4cpdb_tcmem.rb'
@@ -61,6 +64,7 @@ class TcMemTest < CpdbBaseTest
   end
 end
 
+# Dbm Storage Test
 class DbmTest < CpdbBaseTest
   def setup
     start_roma 'cpdbtest/config4cpdb_dbm.rb'
@@ -72,6 +76,7 @@ class DbmTest < CpdbBaseTest
   end
 end
 
+# Sqlite3 Storage Test
 class Sqlite3Test < CpdbBaseTest
   def setup
     start_roma 'cpdbtest/config4cpdb_sqlite3.rb'
