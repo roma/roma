@@ -3,31 +3,31 @@ require 'roma/client/rclient'
 require 'roma/messaging/con_pool'
 require 'roma/config'
 
-Roma::Client::RomaClient.class_eval{
+Roma::Client::RomaClient.class_eval do
   def init_sync_routing_proc
   end
-}
+end
 
 class MHashTest < Test::Unit::TestCase
   include RomaTestUtils
 
   def setup
     start_roma 'config4mhash.rb'
-    @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
+    @rc = Roma::Client::RomaClient.new(%w(localhost_11211 localhost_11212))
   end
 
   def teardown
     stop_roma
-    Roma::Messaging::ConPool::instance.close_all
+    Roma::Messaging::ConPool.instance.close_all
    rescue => e
-    puts "#{e} #{$@}"
+     puts "#{e} #{$ERROR_POSITION}"
   end
 
   def test_createhash
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
     con.write("hashlist\r\n")
     ret = con.gets
-    assert_equal("roma", ret.chomp )
+    assert_equal('roma', ret.chomp)
 
     con.write("createhash test\r\n")
     ret = eval con.gets.chomp
@@ -41,28 +41,28 @@ class MHashTest < Test::Unit::TestCase
 
     con.write("hashlist\r\n")
     ret = con.gets
-    assert_equal("roma test", ret.chomp )
+    assert_equal('roma test', ret.chomp)
 
-    assert_equal("STORED", @rc.set("roma","hname=roma"))
-    assert_equal("hname=roma", @rc.get("roma"))
-    @rc.default_hash_name='test'
-    assert_nil( @rc.get("roma") )
-    assert_equal("STORED", @rc.set("roma","hname=test"))
-    assert_equal("hname=test", @rc.get("roma"))
-    @rc.default_hash_name='roma'
-    assert_equal("hname=roma", @rc.get("roma"))
-    assert_equal("DELETED", @rc.delete("roma"))
+    assert_equal('STORED', @rc.set('roma', 'hname=roma'))
+    assert_equal('hname=roma', @rc.get('roma'))
+    @rc.default_hash_name = 'test'
+    assert_nil(@rc.get('roma'))
+    assert_equal('STORED', @rc.set('roma', 'hname=test'))
+    assert_equal('hname=test', @rc.get('roma'))
+    @rc.default_hash_name = 'roma'
+    assert_equal('hname=roma', @rc.get('roma'))
+    assert_equal('DELETED', @rc.delete('roma'))
 
-    @rc.default_hash_name='not_exist_hash'
+    @rc.default_hash_name = 'not_exist_hash'
     [:get, :delete, :incr, :decr].each do |m|
-      assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash does not exists.') do
-        @rc.send m, "key"
+      assert_raise(RuntimeError, 'SERVER_ERROR not_exist_hash does not exists.') do
+        @rc.send m, 'key'
       end
     end
 
     [:set, :add, :replace, :append, :prepend].each do |m|
-      assert_raise(RuntimeError,'SERVER_ERROR not_exist_hash does not exists.') do
-        @rc.send m, "key","value"
+      assert_raise(RuntimeError, 'SERVER_ERROR not_exist_hash does not exists.') do
+        @rc.send m, 'key', 'value'
       end
     end
 
@@ -76,16 +76,16 @@ class MHashTest < Test::Unit::TestCase
     con.close
 
     # file check
-    assert( File.directory?('./localhost_11211/test') == false)
-    assert( File.directory?('./localhost_11212/test') == false)
+    assert(File.directory?('./localhost_11211/test') == false)
+    assert(File.directory?('./localhost_11212/test') == false)
   end
 
   def test_createhash2
     # add 'test' hash
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
     con.write("hashlist\r\n")
     ret = con.gets
-    assert_equal("roma", ret.chomp)
+    assert_equal('roma', ret.chomp)
 
     con.write("createhash test\r\n")
     ret = eval con.gets.chomp
@@ -93,35 +93,37 @@ class MHashTest < Test::Unit::TestCase
     assert_equal 'CREATED', ret['localhost_11211']
     assert_equal 'CREATED', ret['localhost_11212']
 
-    assert_equal("STORED", @rc.set("roma","hname=roma"))
-    assert_equal("hname=roma", @rc.get("roma"))
-    @rc.default_hash_name='test'
-    assert_equal("STORED", @rc.set("roma","hname=test"))
-    assert_equal("hname=test", @rc.get("roma"))
+    assert_equal('STORED', @rc.set('roma', 'hname=roma'))
+    assert_equal('hname=roma', @rc.get('roma'))
+    @rc.default_hash_name = 'test'
+    assert_equal('STORED', @rc.set('roma', 'hname=test'))
+    assert_equal('hname=test', @rc.get('roma'))
 
     # stop roam
     stop_roma
 
     # restart roma
     sleep 1
-    do_command_romad 'config4mhash.rb'
+    DEFAULT_NODES.each do |node|
+      do_command_romad(node, 'config4mhash.rb')
+    end
     sleep 1
 
     Roma::Messaging::ConPool.instance.close_all
     Roma::Client::ConPool.instance.close_all
 
-    @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
-        
-    @rc.default_hash_name='test'
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    @rc = Roma::Client::RomaClient.new(%w(localhost_11211 localhost_11212))
+
+    @rc.default_hash_name = 'test'
+    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
     con.write("hashlist\r\n")
     ret = con.gets
 
-    assert_equal("hname=test", @rc.get("roma"))
+    assert_equal('hname=test', @rc.get('roma'))
   end
-  
+
   def test_createhash3
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
 
     # delete hash to a nothing hash
     con.write("deletehash test\r\n")
@@ -129,7 +131,7 @@ class MHashTest < Test::Unit::TestCase
     assert_equal 2, ret.length
     assert_equal 'SERVER_ERROR test does not exists.', ret['localhost_11211']
     assert_equal 'SERVER_ERROR test does not exists.', ret['localhost_11212']
-    
+
     # delete hash to default
     con.write("deletehash roma\r\n")
     ret = eval con.gets.chomp
@@ -139,36 +141,36 @@ class MHashTest < Test::Unit::TestCase
   end
 
   def test_defhash
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
     con.write("defhash\r\n")
     ret = eval con.gets.chomp
     assert_equal 2, ret.length
     assert_equal 'roma', ret['localhost_11212']
     assert_equal 'roma', ret['localhost_11211']
-    
+
     con.write("rdefhash not_exist_hash\r\n")
     ret = con.gets.chomp
-    assert_equal("CLIENT_ERROR not_exist_hash does not find.", ret)
+    assert_equal('CLIENT_ERROR not_exist_hash does not find.', ret)
 
     con.write("createhash test\r\n")
     con.gets
 
     con.write("rdefhash test\r\n")
     ret = con.gets.chomp
-    assert_equal("STORED", ret)
+    assert_equal('STORED', ret)
   end
 
   def test_mounthash
-    con = Roma::Messaging::ConPool.instance.get_connection("localhost_11211")
+    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
 
     # file check
-    assert( File.directory?('./localhost_11211/test') == false)
-    assert( File.directory?('./localhost_11212/test') == false)
+    assert(File.directory?('./localhost_11211/test') == false)
+    assert(File.directory?('./localhost_11212/test') == false)
 
     # umount
     con.write("umounthash test\r\n")
     ret = con.gets.chomp
-    assert_equal("SERVER_ERROR test does not find.", ret)
+    assert_equal('SERVER_ERROR test does not find.', ret)
 
     # add 'test' hash
     con.write("createhash test\r\n")
@@ -188,9 +190,9 @@ class MHashTest < Test::Unit::TestCase
     assert_equal 'UNMOUNTED', ret['localhost_11211']
     assert_equal 'UNMOUNTED', ret['localhost_11212']
 
-    @rc.default_hash_name='test'
-    assert_raise(RuntimeError,'SERVER_ERROR test does not exists.') do
-      @rc.set "key", "value"
+    @rc.default_hash_name = 'test'
+    assert_raise(RuntimeError, 'SERVER_ERROR test does not exists.') do
+      @rc.set 'key', 'value'
     end
 
     # mount
@@ -200,6 +202,6 @@ class MHashTest < Test::Unit::TestCase
     assert_equal 'MOUNTED', ret['localhost_11211']
     assert_equal 'MOUNTED', ret['localhost_11212']
 
-    assert_equal("STORED", @rc.set("key", "value"))
+    assert_equal('STORED', @rc.set('key', 'value'))
   end
 end
