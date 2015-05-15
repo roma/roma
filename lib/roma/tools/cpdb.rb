@@ -127,6 +127,7 @@ begin
   sc.check_storage_type
   sc.backup_all
   sc.set_gui_last_snapshot
+  puts "finished"
 ensure
   sc.close
 end
