@@ -22,7 +22,7 @@ class GroongaTest < CpdbBaseTest
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
   end
 
-  def test_error_cpdb
+  def test_cpdb
     value = `#{bin_dir}/cpdb 11211`.chomp
     assert_equal("ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is GroongaStorage", value)
   end
@@ -34,9 +34,9 @@ class RubyHashTest < CpdbBaseTest
     start_roma 'cpdbtest/config4cpdb_rh.rb'
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
   end
-  def test_error_cpdb
+  def test_cpdb
     value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("", value)
+    assert_match(/finished/, value)
   end
 end
 
@@ -47,8 +47,13 @@ class TcTest < CpdbBaseTest
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
   end
   def test_cpdb
+    # Log Assertion
     value = `#{bin_dir}/cpdb 11211`.chomp
     assert_match(/safecopy_flushed/, value)
+    assert_match(/finished/, value)
+    # File exist Assertion
+    valueFileList = `ls ./localhost_11211/roma/`.chomp
+    assert_match(/9.tc.([\d]+)/, valueFileList)
   end
 end
 
