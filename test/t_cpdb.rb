@@ -24,7 +24,7 @@ class GroongaTest < CpdbBaseTest
 
   def test_cpdb
     value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is GroongaStorage", value)
+    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is GroongaStorage", value)
   end
 end
 
@@ -36,7 +36,7 @@ class RubyHashTest < CpdbBaseTest
   end
   def test_cpdb
     value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_match(/finished/, value)
+    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is RubyHashStorage", value)
   end
 end
 
@@ -65,7 +65,7 @@ class TcMemTest < CpdbBaseTest
   end
   def test_cpdb
     value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is TCMemStorage" , value)
+    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is TCMemStorage" , value)
   end
 end
 
@@ -77,7 +77,7 @@ class DbmTest < CpdbBaseTest
   end
   def test_cpdb
     value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is DbmStorage", value)
+    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is DbmStorage", value)
   end
 end
 
@@ -89,7 +89,7 @@ class Sqlite3Test < CpdbBaseTest
   end
   def test_cpdb
     value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage or RubyHashStorage system, your storage type is SQLite3Storage", value)
+    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is SQLite3Storage", value)
   end
 end
 
