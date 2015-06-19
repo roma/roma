@@ -166,6 +166,11 @@ module Roma
           elsif s[0]=='!!'
             send(@@ev_list[@lastcmd[0].downcase],@lastcmd)
             next if @@system_commands.key?(@lastcmd[0].downcase)
+
+          elsif check_levenshtein_distance(s[0]) < 1.0
+            similar_command = "debug"
+            send_data("roma: '#{s[0]}' is not roma command.\r\n\r\nDid you mean this?\r\n#{similar_command}\r\n")
+            next
           else
             @log.warn("command error:#{s}")
             send_data("ERROR\r\n")
@@ -268,6 +273,10 @@ module Roma
         ret["connection.EMpool_maxlength"] = Event::EMConPool::instance.maxlength
         ret["connection.EMpool_expire_time"] = Event::EMConPool.instance.expire_time
         ret
+      end
+
+      def check_levenshtein_distance(cmd)
+        return 0.9
       end
 
     end # class Handler < EventMachine::Connection
