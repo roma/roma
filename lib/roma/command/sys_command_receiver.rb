@@ -78,7 +78,10 @@ module Roma
         if s.length != 1
           send_data("ERROR: shutdown_instance has irregular argument.\r\n")
         else
-          send_data("Are you sure to shutdown this instance?(yes/no)\r\n")
+          send_data("\r\n=================================================================\r\n")
+          send_data("CAUTION!!: \r\n\tThis command kill the instance!\r\n\tThere is some possibility of occuring redundancy down!\r\n")
+          send_data("=================================================================\r\n")
+          send_data("\r\nAre you sure to shutdown this instance?(yes/no)\r\n")
           if gets != "yes\r\n"
             close_connection_after_writing
             return
