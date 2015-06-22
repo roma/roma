@@ -169,7 +169,7 @@ module Roma
             next if @@system_commands.key?(@lastcmd[0].downcase)
           else
             distance, similar_cmd = check_distance(s[0])
-            if distance > 0.9
+            if distance > 0.8
               send_data("\r\nroma: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
               next
             else
