@@ -168,9 +168,9 @@ module Roma
             send(@@ev_list[@lastcmd[0].downcase],@lastcmd)
             next if @@system_commands.key?(@lastcmd[0].downcase)
           else
-            distance, similar_cmd = check_levenshtein_distance(s[0])
+            distance, similar_cmd = check_distance(s[0])
             if distance < 0.3
-              send_data("\r\nroma: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
+              send_data("\r\nERROR: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
               next
             else
               @log.warn("command error:#{s}")
@@ -277,7 +277,7 @@ module Roma
         ret
       end
 
-      def check_levenshtein_distance(cmd)
+      def check_distance(cmd)
         levenshtein_distance = 1.0 # initialize
         similar_cmd = ''
         @@ev_list.each_key{|ev|
