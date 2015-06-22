@@ -63,18 +63,3 @@ module Roma
   end #Adm
 end # Roma
 
-#if ARGV.length < 1
-#  puts File.basename(__FILE__) + " <adm-command> [node]"
-#  exit
-#end
-#
-##sc = Roma::SafeCopy.new("localhost", ARGV[0].to_i)
-#adm = Roma::Adm.new(ARGV[0])
-#
-#begin
-#  adm.check_type
-#  ##adm.make_command
-#  #adm.send_command
-#rescue
-#  puts "Unexpected Error"
-#end
