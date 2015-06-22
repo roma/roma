@@ -170,7 +170,7 @@ module Roma
           else
             distance, similar_cmd = check_distance(s[0])
             if distance > 0.8
-              send_data("\r\nroma: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
+              send_data("\r\nERROR: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
               next
             else
               @log.warn("command error:#{s}")
