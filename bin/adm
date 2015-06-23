@@ -25,11 +25,11 @@ elsif ARGV[1] !~ /^\d+$/
   exit
 end
 
-
 begin
   adm = Roma::Adm.new(ARGV[0], ARGV[1])
   adm.check_type
-  adm.send_command
+  res = adm.send_command
+  puts "\r\n#{res}"
 rescue => e
   puts e.message
 end

@@ -15,6 +15,12 @@ module Roma
         make_command("booting")
         @alias = true
       else
+        t = Thread.new do
+          loop{
+            print "."
+            sleep 1
+          }
+        end
       end
     end
 
@@ -23,7 +29,7 @@ module Roma
         base_path = Pathname(__FILE__).dirname.parent.parent.parent.expand_path
         `#{base_path}/#{@cmd}`
       else
-        puts `echo -e "#{@cmd}" | nc -i1 #{host} #{@port}`
+        return `echo -e "#{@cmd}" | nc -i1 #{host} #{@port}`
       end
     end
 
