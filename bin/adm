@@ -1,16 +1,35 @@
 #!/usr/bin/env ruby
 require 'pathname'
+require 'optparse'
 
 base_path = Pathname(__FILE__).dirname.parent.expand_path
 $LOAD_PATH.unshift("#{base_path}/lib")
 
 require 'roma/tools/adm'
 
+# opt parse
+opts = OptionParser.new
+opts.banner="usage:#{File.basename($0)} [command] [port No.]"
+opts.on("-h", "--help", "Show this message") {
+  puts opts; exit
+}
+opts.parse!(ARGV)
+
+# argument check
+if ARGV.size != 2
+  puts "Argument Error: adm [adm-command] [port No.]"
+  exit
+elsif ARGV[1] !~ /^\d+$/
+  puts "Argument Error: adm [adm-command] [port No.]"
+  puts "[port No.] should be Interger"
+  exit
+end
+
+
 begin
-  adm = Roma::Adm.new(ARGV[0])
+  adm = Roma::Adm.new(ARGV[0], ARGV[1])
   adm.check_type
   adm.send_command
 rescue => e
   puts e.message
 end
-
