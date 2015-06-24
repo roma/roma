@@ -5,7 +5,7 @@ require 'optparse'
 base_path = Pathname(__FILE__).dirname.parent.expand_path
 $LOAD_PATH.unshift("#{base_path}/lib")
 
-require 'roma/tools/adm'
+require 'roma/tools/roma-adm'
 
 # opt parse
 opts = OptionParser.new
@@ -17,10 +17,10 @@ opts.parse!(ARGV)
 
 # argument check
 if ARGV.size != 2
-  puts "Argument Error: adm [adm-command] [port No.]"
+  puts "Argument Error: roma-adm [adm-command] [port No.]"
   exit
 elsif ARGV[1] !~ /^\d+$/
-  puts "Argument Error: adm [adm-command] [port No.]"
+  puts "Argument Error: roma-adm [adm-command] [port No.]"
   puts "[port No.] should be Interger"
   exit
 end
