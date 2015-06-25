@@ -3,11 +3,11 @@
 #
 require 'eventmachine'
 require 'roma/event/con_pool'
+require 'roma/event/jaro_winkler'
 require 'roma/logging/rlogger'
 require 'roma/stats'
 require 'roma/storage/basic_storage'
 require 'socket'
-require 'jaro_winkler'
 
 module Roma
   module Event
@@ -168,14 +168,13 @@ module Roma
             send(@@ev_list[@lastcmd[0].downcase],@lastcmd)
             next if @@system_commands.key?(@lastcmd[0].downcase)
           else
-            distance, similar_cmd = check_distance(s[0])
-            if distance > 0.8
+            distance, similar_cmd = Roma::Event::Distance.check_distance(s[0], @@ev_list)
+            if distance > 0.8 # jaro-winkler
               send_data("\r\nERROR: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
               next
             else
               @log.warn("command error:#{s}")
-              send_data("ERROR\r\n")
-              close_connection_after_writing
+              send_data("ERROR: '#{s[0]}' is not roma command. Please check command.\r\n")
               next
             end
           end
@@ -276,20 +275,6 @@ module Roma
         ret["connection.EMpool_expire_time"] = Event::EMConPool.instance.expire_time
         ret
       end
-
-      def check_distance(cmd)
-        jaro_winkler_distance = 0.0000 # initialize
-        similar_cmd = ''
-        @@ev_list.each_key{|ev|
-          distance = JaroWinkler.distance(cmd, ev)
-          if distance > jaro_winkler_distance
-            jaro_winkler_distance = distance 
-            similar_cmd = ev
-          end
-        }
-        return jaro_winkler_distance, similar_cmd
-      end
-
     end # class Handler < EventMachine::Connection
 
   end # module Event
