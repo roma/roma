@@ -50,9 +50,11 @@ module Roma
           choice:
             - Ruby Hash
             - Tokyo Cabinet
+            - Groonga
           default: 1
           next:
             - menu
+            - memory
             - memory
         memory:
           name: memory_size_GB
@@ -504,14 +506,19 @@ module Roma
     #make config.rb based on input data
     def save_data(res)
       if res.key?("storage")
-        if res["storage"].value == "Ruby Hash"
+        case res["storage"].value
+        when "Ruby Hash"
           req = "rh_storage"
           storage = "RubyHashStorage"
-        end
-
-        if res["storage"].value == "Tokyo Cabinet"
+        when "Tokyo Cabinet"
           req = "tc_storage"
           storage = "TCStorage"
+          bnum = Calculate.get_bnum(res)
+          bnum = 5000000 if bnum < 5000000
+          xmsiz = Calculate.get_xmsize_max(res)
+        when "Groonga"
+          req = "groonga_storage"
+          storage = "GroongaStorage"
           bnum = Calculate.get_bnum(res)
           bnum = 5000000 if bnum < 5000000
           xmsiz = Calculate.get_xmsize_max(res)
@@ -532,11 +539,10 @@ module Roma
         body = ch_assign(body, "require", " ", "roma\/storage\/#{req}")
         body = ch_assign(body, "STORAGE_CLASS", "Roma::Storage::#{storage}")
 
-        if req == "rh_storage"
+        case req
+        when "rh_storage"
           body = ch_assign(body, "STORAGE_OPTION","")
-        end
-
-        if req == "tc_storage"
+        when /^(tc_storage|groonga_storage)$/
           body = ch_assign(body, "STORAGE_OPTION", "bnum=#{bnum}\#xmsiz=#{xmsiz}\#opts=d#dfunit=10")
         end
       end
