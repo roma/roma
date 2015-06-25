@@ -7,6 +7,7 @@ require 'roma/logging/rlogger'
 require 'roma/stats'
 require 'roma/storage/basic_storage'
 require 'socket'
+require 'levenshtein'
 
 module Roma
   module Event
@@ -167,10 +168,16 @@ module Roma
             send(@@ev_list[@lastcmd[0].downcase],@lastcmd)
             next if @@system_commands.key?(@lastcmd[0].downcase)
           else
-            @log.warn("command error:#{s}")
-            send_data("ERROR\r\n")
-            close_connection_after_writing
-            next
+            distance, similar_cmd = check_distance(s[0])
+            if distance < 0.3
+              send_data("\r\nERROR: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
+              next
+            else
+              @log.warn("command error:#{s}")
+              send_data("ERROR\r\n")
+              close_connection_after_writing
+              next
+            end
           end
 
           # hilatency check
@@ -268,6 +275,19 @@ module Roma
         ret["connection.EMpool_maxlength"] = Event::EMConPool::instance.maxlength
         ret["connection.EMpool_expire_time"] = Event::EMConPool.instance.expire_time
         ret
+      end
+
+      def check_distance(cmd)
+        levenshtein_distance = 1.0 # initialize
+        similar_cmd = ''
+        @@ev_list.each_key{|ev|
+          distance = Levenshtein::normalized_distance(cmd, ev)
+          if distance < levenshtein_distance
+            levenshtein_distance = distance 
+            similar_cmd = ev
+          end
+        }
+        return levenshtein_distance, similar_cmd
       end
 
     end # class Handler < EventMachine::Connection
