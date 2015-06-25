@@ -4,6 +4,7 @@
 require 'eventmachine'
 require 'roma/event/con_pool'
 require 'roma/event/jaro_winkler'
+#require 'roma/event/levenshtein'
 require 'roma/logging/rlogger'
 require 'roma/stats'
 require 'roma/storage/basic_storage'
@@ -170,6 +171,7 @@ module Roma
           else
             distance, similar_cmd = Roma::Event::Distance.check_distance(s[0], @@ev_list)
             if distance > 0.8 # jaro-winkler
+            #if distance < 0.3 # levenshtein
               send_data("\r\nERROR: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
               next
             else
@@ -275,6 +277,7 @@ module Roma
         ret["connection.EMpool_expire_time"] = Event::EMConPool.instance.expire_time
         ret
       end
+
     end # class Handler < EventMachine::Connection
 
   end # module Event
