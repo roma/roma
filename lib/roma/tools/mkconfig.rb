@@ -85,9 +85,14 @@ module Roma
         plugin:
           name: selected_plugin
           path_name: plugin
-          message: Please select which plugin will you use.(plugin_storage.rb was already set)
+          message: Please select which plugin will you use.(plugin_storage.rb is essential unless you make alternative plugin.)
           choice:
-            #{load_path(PLUGIN_DIR) << "Select all plugins"}
+            #{
+              list = load_path(PLUGIN_DIR) << "Select all plugins"
+              list.delete("plugin_storage.rb")
+              list.unshift("plugin_storage.rb")
+              list
+            }
           default: 1
           next:
             #{
@@ -163,7 +168,6 @@ module Roma
         ret = Array.new
         files = Dir::entries(path)
         files.delete("plugin_stub.rb") if files.include?("plugin_stub.rb")
-        files.delete("plugin_storage.rb") if files.include?("plugin_storage.rb")
 
         files.each do |file|
           ret << file if File::ftype(File.join(path, file)) == "file"
@@ -355,7 +359,7 @@ module Roma
         clear_screen
 
         if @next_hash == "add_plugin"
-          @results["plugin"].value.unshift("plugin_storage.rb")
+          @results["plugin"].value.unshift("plugin_storage.rb") unless @results["plugin"].value.include?("plugin_storage.rb")
           @next_hash = "menu"
         end
 
@@ -548,7 +552,6 @@ module Roma
       end
 
       if res.key?("plugin")
-        res["plugin"].value.unshift("plugin_storage.rb")
         body = ch_assign(body, "PLUGIN_FILES", res["plugin"].value)
       end
 
