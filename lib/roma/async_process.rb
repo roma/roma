@@ -713,8 +713,10 @@ module Roma
         if nids.include?(me)
           if nids[0] == me
             vnhash[vn] = :primary
-          else
+          elsif nids[1] == me
             vnhash[vn] = :secondary
+          else
+            vnhash[vn] = :tertiary
           end
         end
       end

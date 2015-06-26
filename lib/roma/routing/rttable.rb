@@ -36,7 +36,7 @@ module Roma
       end
 
       def num_of_vn(ap)
-        pn = sn = short = lost = 0
+        pn = sn = tn = short = lost = 0
         @rd.v_idx.each_pair do |vn, nids|
           if nids == nil || nids.length == 0
             lost += 1
@@ -44,15 +44,19 @@ module Roma
           elsif nids[0] == ap
             pn += 1
           elsif nids.include?(ap)
-            sn += 1
+            if nids[1] == ap
+              sn += 1
+            else 
+              tn += 1
+            end
           end
           short += 1 if nids.length < @rd.rn
         end
-        [pn, sn, short, lost]
+        [pn, sn, tn, short, lost]
       end
 
       def get_stat(ap)
-        pn, sn, short, lost = num_of_vn(ap)
+        pn, sn, tn, short, lost = num_of_vn(ap)
         ret = {}
         ret['routing.redundant'] = @rn
         ret['routing.nodes.length'] = nodes.length
@@ -62,6 +66,7 @@ module Roma
         ret['routing.vnodes.length'] = vnodes.length
         ret['routing.primary'] = pn
         ret['routing.secondary'] = sn
+        ret['routing.tertiary'] = tn
         ret['routing.short_vnodes'] = short
         ret['routing.lost_vnodes'] = lost
         ret['routing.fail_cnt_threshold'] = @fail_cnt_threshold
