@@ -171,6 +171,9 @@ module Roma
       if Config.const_defined?(:LOG_SHIFT_AGE)
         @stats.log_shift_age = Config::LOG_SHIFT_AGE
       end
+      if Config.const_defined?(:LOG_LEVEL)
+        @stats.log_level = Config::LOG_LEVEL
+      end
     end
 
     def initialize_connection

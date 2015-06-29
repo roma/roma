@@ -282,6 +282,9 @@ module Roma
         else
           return send_data("CLIENT_ERROR no match log-level string\r\n")
         end
+
+        @stats.log_level = s[1].downcase
+
         send_data("STORED\r\n")
       end
 
