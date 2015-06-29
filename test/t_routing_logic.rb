@@ -11,7 +11,7 @@ class RoutingLogicTest < Test::Unit::TestCase
     puts "#{e} #{$ERROR_POSITION}"
   end
 
-  data(
+  data = {
   'single_host' => [
     true,
     NEW_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }],
@@ -21,7 +21,8 @@ class RoutingLogicTest < Test::Unit::TestCase
   'multiple_hosts_include_some_hosts' => [
     false,
     ["#{DEFAULT_IP}_#{NEW_PORTS[0]}", "#{DEFAULT_HOST}_#{NEW_PORTS[1]}"]]
-  )
+  }
+
   def test_join(data)
     replication_in_host, new_nodes = data
     start_roma(div_bits: 6, replication_in_host: replication_in_host)
