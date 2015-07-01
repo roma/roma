@@ -77,9 +77,10 @@ module Roma
     attr_accessor :gui_run_gather_logs
     attr_accessor :gui_last_snapshot
 
-    # for log rotate
+    # for log
     attr_accessor :log_shift_size
     attr_accessor :log_shift_age
+    attr_accessor :log_level
 
     def initialize
       @config_path = nil
@@ -121,6 +122,7 @@ module Roma
       @routing_trans_timeout = 3600 * 3 # 3hr
       @log_shift_size = 1048576
       @log_shift_age = 0
+      @log_level = :debug
     end
 
     def ap_str
@@ -171,6 +173,7 @@ module Roma
       ret['stats.routing_trans_timeout'] = @routing_trans_timeout
       ret['stats.log_shift_size'] = @log_shift_size
       ret['stats.log_shift_age'] = @log_shift_age
+      ret['stats.log_level'] = @log_level
       ret
     end
 
