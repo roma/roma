@@ -170,13 +170,12 @@ module Roma
             next if @@system_commands.key?(@lastcmd[0].downcase)
           else
             distance, similar_cmd = Roma::Event::Distance.check_distance(s[0], @@ev_list)
-            if distance > 0.8 # jaro-winkler
-            #if distance < 0.3 # levenshtein
+            if distance < 0.2
               send_data("\r\nERROR: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
               next
             else
               @log.warn("command error:#{s}")
-              send_data("ERROR: '#{s[0]}' is not roma command. Please check command.\r\n")
+              send_data("ERROR: '#{s[0]}' is not roma command. Please check command.\r\n(closing telnet connection command is 'quit')\r\n")
               next
             end
           end

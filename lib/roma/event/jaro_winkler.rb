@@ -16,7 +16,7 @@ module Roma
             similar_cmd = ev
           end
         }
-        return jaro_winkler_distance, similar_cmd
+        return (1-jaro_winkler_distance), similar_cmd
       end
     end # module Distance
   end # module Event
