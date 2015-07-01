@@ -3,6 +3,8 @@
 #
 require 'eventmachine'
 require 'roma/event/con_pool'
+require 'roma/event/jaro_winkler'
+#require 'roma/event/levenshtein'
 require 'roma/logging/rlogger'
 require 'roma/stats'
 require 'roma/storage/basic_storage'
@@ -167,10 +169,15 @@ module Roma
             send(@@ev_list[@lastcmd[0].downcase],@lastcmd)
             next if @@system_commands.key?(@lastcmd[0].downcase)
           else
-            @log.warn("command error:#{s}")
-            send_data("ERROR\r\n")
-            close_connection_after_writing
-            next
+            distance, similar_cmd = Roma::Event::Distance.check_distance(s[0], @@ev_list)
+            if distance < 0.2
+              send_data("\r\nERROR: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
+              next
+            else
+              @log.warn("command error:#{s}")
+              send_data("ERROR: '#{s[0]}' is not roma command. Please check command.\r\n(closing telnet connection command is 'quit')\r\n")
+              next
+            end
           end
 
           # hilatency check
