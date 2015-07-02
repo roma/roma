@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+require 'socket'
+require 'timeout'
+
 module Roma
   class Adm
     def initialize(cmd, port)
@@ -8,13 +11,17 @@ module Roma
     end
 
     def check_type
+      # waiting value input command
+      require_value_cmd = Regexp.new(/^(set|add|replace|append|prepend|cas|alist_delete|alist_include\?|alist_insert|alist_sized_insert|alist_swap_and_insert|alist_swap_and_sized_insert|alist_join_with_time|alist_join|alist_push|alist_sized_push|alist_swap_and_push|alist_update_at)/)
+
       case @cmd
       when "balse", "shutdown" # yes/no check
-        make_command("boolean")
+        make_command("halt_cmd")
+        @halt_cmd = true
       when "start" # alias cmd
         make_command("booting")
         @alias = true
-      when /^(set|add|replace|append|prepend|cas|alist_delete|alist_include\?|alist_insert|alist_sized_insert|alist_swap_and_insert|alist_swap_and_sized_insert|alist_join_with_time|alist_join|alist_push|alist_sized_push|alist_swap_and_push|alist_update_at)/ # waiting value input command
+      when require_value_cmd
         make_command("value")
       else
         t = Thread.new do
@@ -29,9 +36,20 @@ module Roma
     def send_command(host="localhost")
       if @alias
         base_path = Pathname(__FILE__).dirname.parent.parent.parent.expand_path
-        `#{base_path}/#{@cmd}`
+        `#{base_path}/#{@cmd}` # bash
+      elsif @halt_cmd
+        return `echo -e "#{@cmd}" | nc -i1 #{host} #{@port}` # bash
       else
-        return `echo -e "#{@cmd}" | nc -i1 #{host} #{@port}`
+        timeout(5) {
+          res = []
+          TCPSocket.open(host, @port) do |sock|
+            sock.puts @cmd
+            while select [sock], nil, nil, 0.5
+              res << sock.gets.chomp!
+            end
+          end
+          return res
+        }
       end
     end
 
@@ -39,7 +57,7 @@ module Roma
 
     def make_command(type)
       case type
-      when "boolean"
+      when "halt_cmd"
         puts("Are you sure?(yes/no)\r\n")
         if STDIN.gets.chomp != "yes"
           raise "confirmation was rejected"
