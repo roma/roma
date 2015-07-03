@@ -36,7 +36,9 @@ module Roma
       end
 
       def num_of_vn(ap)
-        pn = sn = tn = short = lost = 0
+        pn = short = lost = 0
+        sn = [] # secondary instance array
+        @rd.rn.times{|i| instance_variable_set("@sn#{i+1}", 0)}
         @rd.v_idx.each_pair do |vn, nids|
           if nids == nil || nids.length == 0
             lost += 1
@@ -44,19 +46,16 @@ module Roma
           elsif nids[0] == ap
             pn += 1
           elsif nids.include?(ap)
-            if nids[1] == ap
-              sn += 1
-            else 
-              tn += 1
-            end
+            eval("@sn#{nids.index(ap)} += 1")
           end
           short += 1 if nids.length < @rd.rn
         end
-        [pn, sn, tn, short, lost]
+        @rd.rn.times{|i| eval("sn << @sn#{i+1}")}
+        [pn, sn, short, lost]
       end
 
       def get_stat(ap)
-        pn, sn, tn, short, lost = num_of_vn(ap)
+        pn, sn, short, lost = num_of_vn(ap)
         ret = {}
         ret['routing.redundant'] = @rn
         ret['routing.nodes.length'] = nodes.length
@@ -65,8 +64,7 @@ module Roma
         ret['routing.div_bits'] = @div_bits
         ret['routing.vnodes.length'] = vnodes.length
         ret['routing.primary'] = pn
-        ret['routing.secondary'] = sn
-        ret['routing.tertiary'] = tn
+        (@rn-1).times{|i| eval("ret['routing.secondary#{i+1}'] = sn[#{i}]")}
         ret['routing.short_vnodes'] = short
         ret['routing.lost_vnodes'] = lost
         ret['routing.fail_cnt_threshold'] = @fail_cnt_threshold
