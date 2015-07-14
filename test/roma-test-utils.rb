@@ -61,14 +61,14 @@ module RomaTestUtils
     system(romad_command.join(' '))
   end
 
-  def get_client
+  def get_client(node=DEFAULT_NODES)
     client_pool = Roma::Client::ClientPool.instance
-    client_pool.servers = DEFAULT_NODES
+    client_pool.servers = node
     client_pool.client
   end
 
   def wait_join(node)
-    client = get_client
+    client = get_client([node])
     wait_count = 0
     retry_count = 0
     sleep 5
@@ -80,7 +80,7 @@ module RomaTestUtils
       fail "#{__method__} timeout" if wait_count > DEFAULT_TIMEOUT_SEC
     end
 
-    while client.stats(node: node)['stats.run_join'] == 'true'
+    while client.stats['stats.run_join'] == 'true'
       sleep 1
       wait_count += 1
       fail "#{__method__} timeout" if wait_count > DEFAULT_TIMEOUT_SEC
