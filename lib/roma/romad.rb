@@ -527,7 +527,6 @@ module Roma
         end
       end
       t[:name] = 'timer_1sec'
-
       t = Thread.new do
         loop do
           sleep 10
@@ -535,16 +534,6 @@ module Roma
         end
       end
       t[:name] = 'timer_10sec'
-
-      if (Config.const_defined? :TOKYOCABINET_PATH) && (Config::STORAGE_CLASS == Roma::Storage::TCStorage)
-        t = Thread.new do
-          loop do
-            sleep 3600
-            timer_event_3600sec
-          end
-        end
-        t[:name] = 'timer_3600sec'
-      end
     end
 
     def timer_event_1sec
@@ -594,24 +583,6 @@ module Roma
       end
 
       @stats.clear_counters
-    rescue Exception =>e
-      @log.error("#{e}\n#{$@}")
-    end
-
-    def timer_event_3600sec
-      if Config.const_defined? :STORAGE_PATH
-        path = "#{Roma::Config::STORAGE_PATH}/#{@stats.ap_str}"
-      end
-
-      hname ||= 'roma'
-      storage_path = "#{path}/#{hname}"
-      Dir.glob("#{storage_path}/[0-9].tc").each{|f|
-        res = `#{Roma::Config::TOKYOCABINET_PATH}/bin/tchmgr inform #{f}`
-        res =~ /additional flags:(.*)\n/
-        unless $1.strip == "open"
-          @log.error("TokyoCabinet file is broken : #{f} =>#{$1}")
-        end
-      }
     rescue Exception =>e
       @log.error("#{e}\n#{$@}")
     end

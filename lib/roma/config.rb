@@ -61,7 +61,6 @@ module Roma
     STORAGE_CLASS = Roma::Storage::RubyHashStorage
     STORAGE_DIVNUM = 10
     STORAGE_PATH = '.'
-    TOKYOCABINET_PATH = '.'
     STORAGE_DUMP_PATH = '/tmp'
     STORAGE_OPTION = ''
     # :no_action | :shutdown
