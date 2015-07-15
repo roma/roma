@@ -41,6 +41,26 @@ module Roma
     end
 
     def start
+      # config version check
+      if !Config.const_defined?(:VERSION)
+        @log.error("ROMA FAIL TO BOOT! : config.rb's version is too old.")
+        exit
+      elsif Config::VERSION != Roma::VERSION
+        if /(\d+)\.(\d+)\.(\d+)/ =~ Config::VERSION
+          version_config = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
+        end
+        if /(\d+)\.(\d+)\.(\d+)/ =~ Roma::VERSION
+          version_roma = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
+        end
+
+        if version_config == version_roma
+          @log.info("This version is development version.")
+        else 
+          @log.error("ROMA FAIL TO BOOT! : config.rb's version is differ from current ROMA version.")
+          exit
+        end
+      end
+
       if node_check(@stats.ap_str)
         @log.error("#{@stats.ap_str} is already running.")
         return
