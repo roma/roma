@@ -11,19 +11,19 @@ class RoutingLogicTest < Test::Unit::TestCase
     puts "#{e} #{$ERROR_POSITION}"
   end
 
-  data(
-  'single_host' => [
-    true,
-    NEW_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }],
-  'multiple_hosts' => [
-    false,
-    NEW_PORTS.map { |port| "#{DEFAULT_IP}_#{port}" }],
-  'multiple_hosts_include_some_hosts' => [
-    false,
-    ["#{DEFAULT_IP}_#{NEW_PORTS[0]}", "#{DEFAULT_HOST}_#{NEW_PORTS[1]}"]]
-  )
-  def test_join(data)
-    replication_in_host, new_nodes = data
+  def test_join_single_host
+    join_test(true, NEW_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" })
+  end
+
+  def test_join_multiple_hosts
+    join_test(false, NEW_PORTS.map { |port| "#{DEFAULT_IP}_#{port}" })
+  end
+
+  def multiple_hosts_include_some_hosts
+    join_test(false, ["#{DEFAULT_IP}_#{NEW_PORTS[0]}", "#{DEFAULT_HOST}_#{NEW_PORTS[1]}"])
+  end
+
+  def join_test(replication_in_host, new_nodes)
     start_roma(div_bits: 6, replication_in_host: replication_in_host)
     sleep 12 # Wait cluster starting, otherwise join will never finish
     client = get_client
@@ -70,8 +70,9 @@ class RoutingLogicTest < Test::Unit::TestCase
     assert_match(/#{new_node}/, stats['routing.nodes'])
     assert_not_equal(0, stats['routing.secondary'].to_i)
   end
+  private :join_test
 
-  def test_join_when_num_of_hosts_changing
+  def test_routing_logic_join_when_num_of_hosts_changing
     replication_in_host = false
     same_host_node = "#{DEFAULT_HOST}_#{NEW_PORTS[0]}"
     other_host_node = "#{DEFAULT_IP}_#{NEW_PORTS[1]}"

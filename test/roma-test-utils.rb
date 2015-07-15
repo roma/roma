@@ -19,7 +19,7 @@ module RomaTestUtils
   DEFAULT_IP = '127.0.0.1'
   DEFAULT_PORTS = %w(11211 11212)
   DEFAULT_NODES = DEFAULT_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }
-  DEFAULT_TIMEOUT_SEC = 60
+  DEFAULT_TIMEOUT_SEC = 90
   SHELL_LOG = 'roma_test_outputs.log'
 
   Roma::Logging::RLogger.create_singleton_instance("#{Roma::Config::LOG_PATH}/roma_test.log",
