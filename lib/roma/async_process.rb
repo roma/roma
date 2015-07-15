@@ -714,7 +714,7 @@ module Roma
           if nids[0] == me
             vnhash[vn] = :primary
           else
-            vnhash[vn] = :secondary
+            vnhash[vn] = "secondary#{nids.index(me)}".to_sym
           end
         end
       end
