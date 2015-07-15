@@ -19,7 +19,7 @@ module RomaTestUtils
   DEFAULT_IP = '127.0.0.1'
   DEFAULT_PORTS = %w(11211 11212)
   DEFAULT_NODES = DEFAULT_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }
-  DEFAULT_TIMEOUT_SEC = 60
+  DEFAULT_TIMEOUT_SEC = 90
   SHELL_LOG = 'roma_test_outputs.log'
 
   Roma::Logging::RLogger.create_singleton_instance("#{Roma::Config::LOG_PATH}/roma_test.log",
@@ -61,14 +61,14 @@ module RomaTestUtils
     system(romad_command.join(' '))
   end
 
-  def get_client(node=DEFAULT_NODES)
+  def get_client
     client_pool = Roma::Client::ClientPool.instance
-    client_pool.servers = node
+    client_pool.servers = DEFAULT_NODES
     client_pool.client
   end
 
   def wait_join(node)
-    client = get_client([node])
+    client = get_client
     wait_count = 0
     retry_count = 0
     sleep 5
@@ -80,7 +80,7 @@ module RomaTestUtils
       fail "#{__method__} timeout" if wait_count > DEFAULT_TIMEOUT_SEC
     end
 
-    while client.stats['stats.run_join'] == 'true'
+    while client.stats(node: node)['stats.run_join'] == 'true'
       sleep 1
       wait_count += 1
       fail "#{__method__} timeout" if wait_count > DEFAULT_TIMEOUT_SEC
