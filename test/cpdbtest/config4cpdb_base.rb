@@ -1,6 +1,4 @@
-require 'roma/storage/rh_storage'
-
-module Roma
+module CpdbBase
   
   module Config
     VERSION = "1.2.0"
@@ -27,7 +25,7 @@ module Roma
     CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
 
     # storage setting
-    STORAGE_CLASS = Roma::Storage::RubyHashStorage
+    #STORAGE_CLASS = Roma::Storage::GroongaStorage
     STORAGE_DIVNUM = 10
     STORAGE_PATH = '.'
     STORAGE_DUMP_PATH = '/tmp'

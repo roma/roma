@@ -36,7 +36,8 @@ module Roma
       end
 
       def num_of_vn(ap)
-        pn = sn = short = lost = 0
+        pn = short = lost = 0
+        sn = Array.new(@rd.rn - 1, 0)
         @rd.v_idx.each_pair do |vn, nids|
           if nids == nil || nids.length == 0
             lost += 1
@@ -44,7 +45,8 @@ module Roma
           elsif nids[0] == ap
             pn += 1
           elsif nids.include?(ap)
-            sn += 1
+            i = nids.index(ap) - 1
+            sn[i] += 1
           end
           short += 1 if nids.length < @rd.rn
         end
@@ -61,7 +63,7 @@ module Roma
         ret['routing.div_bits'] = @div_bits
         ret['routing.vnodes.length'] = vnodes.length
         ret['routing.primary'] = pn
-        ret['routing.secondary'] = sn
+        (@rn-1).times{|i| ret["routing.secondary#{i+1}"] = sn[i]}
         ret['routing.short_vnodes'] = short
         ret['routing.lost_vnodes'] = lost
         ret['routing.fail_cnt_threshold'] = @fail_cnt_threshold

@@ -4,6 +4,8 @@ require 'roma/storage/tc_storage'
 module Roma
   
   module Config
+    VERSION = "1.2.0"
+
     DEFAULT_PORT = 12000
     DEFAULT_NAME = 'ROMA'
 
