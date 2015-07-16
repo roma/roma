@@ -35,7 +35,7 @@ class RoutingLogicTest < Test::Unit::TestCase
       wait_join(new_node)
       stats = client.stats(node: new_node)
       assert_match(/#{new_node}/, stats['routing.nodes'])
-      assert_not_equal(0, stats['routing.secondary'].to_i)
+      assert_not_equal(0, stats['routing.secondary1'].to_i)
     end
 
     new_node = new_nodes.last
@@ -54,7 +54,7 @@ class RoutingLogicTest < Test::Unit::TestCase
     wait_join(new_node)
     stats = client.stats(node: new_node)
     assert_match(/#{new_node}/, stats['routing.nodes'])
-    assert_not_equal(0, stats['routing.secondary'].to_i)
+    assert_not_equal(0, stats['routing.secondary1'].to_i)
 
     # Stop a node and generate short vnodes
     stop_roma_node(new_node)
@@ -68,7 +68,7 @@ class RoutingLogicTest < Test::Unit::TestCase
     wait_join(new_node)
     stats = client.stats(node: new_node)
     assert_match(/#{new_node}/, stats['routing.nodes'])
-    assert_not_equal(0, stats['routing.secondary'].to_i)
+    assert_not_equal(0, stats['routing.secondary1'].to_i)
   end
   private :join_test
 
@@ -86,7 +86,7 @@ class RoutingLogicTest < Test::Unit::TestCase
     wait_join(other_host_node)
     stats = client.stats(node: other_host_node)
     assert_match(/#{other_host_node}/, stats['routing.nodes'])
-    assert_not_equal(0, stats['routing.secondary'].to_i)
+    assert_not_equal(0, stats['routing.secondary1'].to_i)
 
     # Stop other_host_node and generate short vnodes
     stop_roma_node(other_host_node)
@@ -100,7 +100,7 @@ class RoutingLogicTest < Test::Unit::TestCase
     wait_join(other_host_node)
     stats = client.stats(node: other_host_node)
     assert_match(/#{other_host_node}/, stats['routing.nodes'])
-    assert_not_equal(0, stats['routing.secondary'].to_i)
+    assert_not_equal(0, stats['routing.secondary1'].to_i)
 
     # Stop other_host_node and generate short vnodes
     stop_roma_node(other_host_node)
@@ -114,7 +114,7 @@ class RoutingLogicTest < Test::Unit::TestCase
     wait_join(same_host_node)
     stats = client.stats(node: same_host_node)
     assert_match(/#{same_host_node}/, stats['routing.nodes'])
-    assert_equal(0, stats['routing.secondary'].to_i)
+    assert_equal(0, stats['routing.secondary1'].to_i)
   end
 
   # TODO: recover, balance command tests
