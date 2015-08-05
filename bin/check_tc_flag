@@ -8,25 +8,25 @@ $LOAD_PATH.unshift("#{base_path}/lib")
 require 'roma/tools/check_tc_flag'
 
 begin
+  # argument check
+  if ARGV.size <= 0 || ARGV.size > 4
+    puts "Argument Error: check_tc_flag --storage [TC storage path] --library [TC library path]"
+    exit
+  end
+
   # opt parse
   options = {}
   opts = OptionParser.new
   opts.banner="usage:#{File.basename($0)} --path [directory path]"
   opts.on("-h", "--help", "Show this message") { puts opts; exit }
 
-  opts.on("--storage <dir_path>", "Specify the TC Storage directory") {|v| options[:storage] = v}
-  opts.on("--library <dir_path>", "Specify the TC library directory") {|v| options[:library] = v}
+  opts.on("--storage <dir_path>", "Specify the TC Storage directory", "Ex.)/roma/ds/localhost_10001/roma") {|v| options[:storage] = v}
+  opts.on("--library <dir_path>", "Specify the TC library directory", "Ex.)/roma/libexec") {|v| options[:library] = v}
   opts.parse!(ARGV)
 
   # add default path(current directory)
   options[:storage] = '.' unless options.has_key?(:storage)
   options[:library] = '.' unless options.has_key?(:library)
-
-  # argument check
-  if ARGV.size > 0 || options.size != 2
-    puts "Argument Error: check_tc_flag --storage_path [TC storage path] --library_path [TC library path]"
-    exit
-  end
 
   tc = Roma::CheckTc.new(options[:storage], options[:library])
   res = tc.check_flag
