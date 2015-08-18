@@ -1,4 +1,4 @@
 
 module Roma
-  VERSION = "1.2.0-dev"
+  VERSION = "1.2.0"
 end

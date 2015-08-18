@@ -1,3 +1,24 @@
+*1.1.0 (Aug 19 2015)*
+
+* Change gemspec [Hiroaki Iwase] db2bb42
+* Modify unit-test [Hiroaki Iwase] 7479034
+* Adjust secondary node to redundancy over3 [Hiroaki Iwase] a6fafd8
+* Add new func to check tokyo cabinet additional flag [Hiroaki Iwase] e17b3af
+* Make new tool(roma-adm) [Hiroaki Iwase] 8cf2a03
+* Add new func to check config.rb version when booting [Hiroaki Iwase] 1befb8f
+* Add new func to check command miss spell by jaro-winkler [Hiroaki Iwase] 607c96e
+* Enable to check failover status on stats[Hiroaki Iwase] d5a6a9f
+* Enable to check log level on stats [Hiroaki Iwase] 14b1455
+* Modify duplicate problem(plugin_storage.rb) of mkconfig script [Hiroaki Iwase] c057191
+* Adjust groonga [Hiroaki Iwase] 0ee097c
+* Add new command(shutdown_self) [Hiroaki Iwase] 8bb0aa5
+* add new testcase about cpdb as Groonga msg [ooeyoshinori] 6744580
+* Fix random routing logic for join [Hiroki Matsue] ea29af3
+* Support new stats interface of client and refactor codes. [Hiroki Matsue] fd65292
+* Add tests for routing logic and refactor tests [Hiroki Matsue] 1d52cbe
+* Add Dynamic Log Shift size and age Test  Script [Paras Patel] 081ebd2
+* Remove unnecessary path in ssroute booting file [Hiroaki Iwase] 4f678cd
+
 *1.1.0 (Mar 30 2015)*
 
 * I improved connection performance during booting [Takahiro Tokunaga] ee411f0
