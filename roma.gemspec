@@ -46,8 +46,10 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.md", "CHANGELOG"]
 
   s.add_dependency 'eventmachine', '~> 1.0.0'
+  s.add_dependency 'jaro_winkler', '~> 1.3.5'
+  #s.add_dependency 'levenshtein', '~> 0.2.2'
 
-  s.add_development_dependency 'tokyocabinet', '~> 1.29.1'
+  #s.add_development_dependency 'tokyocabinet', '~> 1.29.1' # we prepared customized gem(1.31a) for ruby2.1. Please use this.
   s.add_development_dependency 'ffi'
   s.add_development_dependency 'gdbm'
   s.add_development_dependency 'sqlite3'

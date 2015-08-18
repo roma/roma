@@ -39,19 +39,58 @@ module Roma
         @stop_event_loop = true
       end
 
-      # shutdown_instance [node-id]
-      def ev_shutdown_instance(s)
-        if s.length != 2
-          send_data("usage:shutdown_instance [node-id]\r\n")
+      # shutdown [reason]
+      def ev_shutdown(s)
+        send_data("*** ARE YOU REALLY SURE TO SHUTDOWN? *** (yes/no)\r\n")
+        if gets != "yes\r\n"
+          close_connection_after_writing
+          return
+        end
+
+        if s.length == 2
+          @log.info("Receive a shutdown #{s[1]}")
         else
-          if s[1] == @stats.ap_str
-            @rttable.enabled_failover = false
-            send_data("BYE\r\n")
-            @stop_event_loop = true
+          @log.info("Receive a shutdown command.")
+        end
+        @rttable.enabled_failover = false
+        res = broadcast_cmd("rshutdown\r\n")
+        res[@stats.ap_str] = "BYE"
+        send_data("#{res.inspect}\r\n")
+        close_connection_after_writing
+        @stop_event_loop = true
+      end
+
+      # rshutdown [reason]
+      def ev_rshutdown(s)
+        if s.length == 2
+          @log.info("Receive a rshutdown #{s[1]}")
+        else
+          @log.info("Receive a rshutdown command.")
+        end
+        @rttable.enabled_failover = false
+        send_data("BYE\r\n")
+        close_connection_after_writing
+        @stop_event_loop = true
+      end
+
+      # shutdown_self
+      def ev_shutdown_self(s)
+        if s.length != 1
+          send_data("ERROR: shutdown_instance has irregular argument.\r\n")
+        else
+          send_data("\r\n=================================================================\r\n")
+          send_data("CAUTION!!: \r\n\tThis command kill the instance!\r\n\tThere is some possibility of occuring redundancy down!\r\n")
+          send_data("=================================================================\r\n")
+          send_data("\r\nAre you sure to shutdown this instance?(yes/no)\r\n")
+          if gets != "yes\r\n"
             close_connection_after_writing
-          else
-            send_data("invalid [node-id]\r\n")
+            return
           end
+          @log.info("Receive a shutdown_self command.")
+          @rttable.enabled_failover = false
+          send_data("BYE\r\n")
+          @stop_event_loop = true
+          close_connection_after_writing
         end
       end
 
@@ -243,6 +282,9 @@ module Roma
         else
           return send_data("CLIENT_ERROR no match log-level string\r\n")
         end
+
+        @stats.log_level = s[1].downcase
+
         send_data("STORED\r\n")
       end
 

@@ -22,6 +22,7 @@ module Roma
       attr_accessor :event
       attr_accessor :event_limit_line
       attr_accessor :logs
+      attr_accessor :enabled_failover
       attr_reader :version_of_nodes
       attr_reader :min_version
 
@@ -57,6 +58,7 @@ module Roma
         ret['routing.event_limit_line'] = @event_limit_line
         ret['routing.version_of_nodes'] = @version_of_nodes.inspect
         ret['routing.min_version'] = @min_version
+        ret['routing.enabled_failover'] = @enabled_failover
         ret
       end
 

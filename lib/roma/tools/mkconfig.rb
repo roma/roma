@@ -50,9 +50,11 @@ module Roma
           choice:
             - Ruby Hash
             - Tokyo Cabinet
+            - Groonga
           default: 1
           next:
             - menu
+            - memory
             - memory
         memory:
           name: memory_size_GB
@@ -83,9 +85,14 @@ module Roma
         plugin:
           name: selected_plugin
           path_name: plugin
-          message: Please select which plugin will you use.(plugin_storage.rb was already set)
+          message: Please select which plugin will you use.(plugin_storage.rb is essential unless you make alternative plugin.)
           choice:
-            #{load_path(PLUGIN_DIR) << "Select all plugins"}
+            #{
+              list = load_path(PLUGIN_DIR) << "Select all plugins"
+              list.delete("plugin_storage.rb")
+              list.unshift("plugin_storage.rb")
+              list
+            }
           default: 1
           next:
             #{
@@ -161,7 +168,6 @@ module Roma
         ret = Array.new
         files = Dir::entries(path)
         files.delete("plugin_stub.rb") if files.include?("plugin_stub.rb")
-        files.delete("plugin_storage.rb") if files.include?("plugin_storage.rb")
 
         files.each do |file|
           ret << file if File::ftype(File.join(path, file)) == "file"
@@ -353,7 +359,7 @@ module Roma
         clear_screen
 
         if @next_hash == "add_plugin"
-          @results["plugin"].value.unshift("plugin_storage.rb")
+          @results["plugin"].value.unshift("plugin_storage.rb") unless @results["plugin"].value.include?("plugin_storage.rb")
           @next_hash = "menu"
         end
 
@@ -504,14 +510,19 @@ module Roma
     #make config.rb based on input data
     def save_data(res)
       if res.key?("storage")
-        if res["storage"].value == "Ruby Hash"
+        case res["storage"].value
+        when "Ruby Hash"
           req = "rh_storage"
           storage = "RubyHashStorage"
-        end
-
-        if res["storage"].value == "Tokyo Cabinet"
+        when "Tokyo Cabinet"
           req = "tc_storage"
           storage = "TCStorage"
+          bnum = Calculate.get_bnum(res)
+          bnum = 5000000 if bnum < 5000000
+          xmsiz = Calculate.get_xmsize_max(res)
+        when "Groonga"
+          req = "groonga_storage"
+          storage = "GroongaStorage"
           bnum = Calculate.get_bnum(res)
           bnum = 5000000 if bnum < 5000000
           xmsiz = Calculate.get_xmsize_max(res)
@@ -532,17 +543,15 @@ module Roma
         body = ch_assign(body, "require", " ", "roma\/storage\/#{req}")
         body = ch_assign(body, "STORAGE_CLASS", "Roma::Storage::#{storage}")
 
-        if req == "rh_storage"
+        case req
+        when "rh_storage"
           body = ch_assign(body, "STORAGE_OPTION","")
-        end
-
-        if req == "tc_storage"
+        when /^(tc_storage|groonga_storage)$/
           body = ch_assign(body, "STORAGE_OPTION", "bnum=#{bnum}\#xmsiz=#{xmsiz}\#opts=d#dfunit=10")
         end
       end
 
       if res.key?("plugin")
-        res["plugin"].value.unshift("plugin_storage.rb")
         body = ch_assign(body, "PLUGIN_FILES", res["plugin"].value)
       end
 
