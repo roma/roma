@@ -1,7 +1,7 @@
 module CpdbBase
   
   module Config
-    VERSION = "1.2.0"
+    VERSION = "1.3.0"
 
     DEFAULT_PORT = 12000
     DEFAULT_NAME = 'ROMA'
