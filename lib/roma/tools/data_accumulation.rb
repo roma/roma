@@ -35,6 +35,8 @@ def set_sequence(ini_nodes, n, v_size)
     @tmax=t if t > @tmax
     @tmin=t if t < @tmin
     @cnt+=1
+
+    puts"=====#{(i*100)/n}%(#{i}keys) has finished.=====" if i%100000 == 0
   end
 end
 
