@@ -150,12 +150,34 @@ module Roma
         ret
       end
 
+      def change_mklhash?
+        addr, port = @replica_nodelist[0].split(/[:_]/)
+        con = TCPSocket.open(addr, port)
+        con.write("mklhash 0\r\n")
+        current_mklhash = con.gets.chomp
+        con.close
+        if current_mklhash == @replica_mklhash
+          return false
+        else
+          return true
+        end
+      rescue
+        @replica_nodelist.shift
+        if @replica_nodelist.length == 0
+          @run_replication = false
+          @log.error("Replicate Cluster was down.")
+        else
+          retry
+        end
+      end
+
       def update_mklhash(nid)
         addr, port = nid.split(/[:_]/)
         con = TCPSocket.open(addr, port)
         con.write("mklhash 0\r\n")
         @replica_mklhash = con.gets.chomp
         con.close
+        @log.debug("replica_mklhash has updated: [#{@replica_mklhash}]")
       end
 
       def update_nodelist(nid)
@@ -164,6 +186,7 @@ module Roma
         con.write("nodelist\r\n")
         @replica_nodelist = con.gets.chomp.split("\s")
         con.close
+        @log.debug("replica_nodelist has updated: #{@replica_nodelist}")
       end
 
       def update_rttable(nid)

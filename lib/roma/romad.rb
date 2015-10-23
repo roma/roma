@@ -605,6 +605,15 @@ module Roma
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_clean_up_process'))
       end
 
+      if @cr_writer.run_replication
+        if @cr_writer.change_mklhash?
+          nid = @cr_writer.replica_nodelist.sample
+          @cr_writer.update_mklhash(nid)
+          @cr_writer.update_nodelist(nid)
+          @cr_writer.update_rttable(nid)
+        end
+      end
+
       @stats.clear_counters
     rescue Exception =>e
       @log.error("#{e}\n#{$@}")
