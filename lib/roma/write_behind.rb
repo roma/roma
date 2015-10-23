@@ -1,7 +1,7 @@
 require 'thread'
 require 'roma/stats'
-
 require 'socket'
+require 'roma/messaging/con_pool'
 
 module Roma
 
@@ -151,11 +151,11 @@ module Roma
       end
 
       def change_mklhash?
-        addr, port = @replica_nodelist[0].split(/[:_]/)
-        con = TCPSocket.open(addr, port)
+        con = Roma::Messaging::ConPool.instance.get_connection(@replica_nodelist[0])
         con.write("mklhash 0\r\n")
         current_mklhash = con.gets.chomp
-        con.close
+        Roma::Messaging::ConPool.instance.return_connection(@replica_nodelist[0], con)
+
         if current_mklhash == @replica_mklhash
           return false
         else
@@ -172,20 +172,18 @@ module Roma
       end
 
       def update_mklhash(nid)
-        addr, port = nid.split(/[:_]/)
-        con = TCPSocket.open(addr, port)
+        con = Roma::Messaging::ConPool.instance.get_connection(nid)
         con.write("mklhash 0\r\n")
         @replica_mklhash = con.gets.chomp
-        con.close
+        Roma::Messaging::ConPool.instance.return_connection(nid, con)
         @log.debug("replica_mklhash has updated: [#{@replica_mklhash}]")
       end
 
       def update_nodelist(nid)
-        addr, port = nid.split(/[:_]/)
-        con = TCPSocket.open(addr, port)
+        con = Roma::Messaging::ConPool.instance.get_connection(nid)
         con.write("nodelist\r\n")
         @replica_nodelist = con.gets.chomp.split("\s")
-        con.close
+        Roma::Messaging::ConPool.instance.return_connection(nid, con)
         @log.debug("replica_nodelist has updated: #{@replica_nodelist}")
       end
 
