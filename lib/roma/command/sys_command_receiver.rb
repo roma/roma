@@ -224,6 +224,69 @@ module Roma
         end
       end
 
+      # switch_replication command is change status of cluster replication
+      # if you want to activate, assign 1 nid(addr_port) of replication cluster as argument.
+      # switch_replication <true|false> [nid]
+      def ev_switch_replication(s)
+        unless s.length.between?(2, 3)
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        unless s[1] =~ /^(true|false)$/
+          return send_data("CLIENT_ERROR value must be true or false\n\r")
+        end
+
+        res = broadcast_cmd("rswitch_replication #{s[1]} #{s[2]}\r\n")
+
+        timeout(1){
+          case s[1]
+          when 'true'
+            $roma.cr_writer.update_mklhash(s[2])
+            $roma.cr_writer.update_nodelist(s[2])
+            $roma.cr_writer.update_rttable(s[2])
+            $roma.cr_writer.run_replication = true
+            res[@stats.ap_str] = "ACTIVATED"
+          when 'false'
+            $roma.cr_writer.replica_mklhash = nil
+            $roma.cr_writer.replica_nodelist = []
+            $roma.cr_writer.replica_rttable = nil
+            $roma.cr_writer.run_replication = false
+            res[@stats.ap_str] = "DEACTIVATED"
+          end
+        }
+        send_data("#{res}\r\n")
+      rescue => e
+        send_data("#{e.class}: #{e}\r\n")
+      end
+
+      # rswitch_replication <true|false> [nid]
+      def ev_rswitch_replication(s)
+        unless s.length.between?(2, 3)
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        unless s[1] =~ /^(true|false)$/
+          return send_data("CLIENT_ERROR value must be true or false\n\r")
+        end
+
+        timeout(1){
+          case s[1]
+          when 'true'
+            $roma.cr_writer.update_mklhash(s[2])
+            $roma.cr_writer.update_nodelist(s[2])
+            $roma.cr_writer.update_rttable(s[2])
+            $roma.cr_writer.run_replication = true
+            send_data("ACTIVATED\r\n")
+          when 'false'
+            $roma.cr_writer.replica_mklhash = nil
+            $roma.cr_writer.replica_nodelist = []
+            $roma.cr_writer.replica_rttable = nil
+            $roma.cr_writer.run_replication = false
+            send_data("DEACTIVATED\r\n")
+          end
+        }
+      rescue => e
+        send_data("#{e.class}: #{e}\r\n")
+      end
+
       # dcnice command is setting priority for a data-copy thread.
       # a niceness of 1 is the highest priority and 5 is the lowest priority.
       # dcnice <priority:1 to 5>

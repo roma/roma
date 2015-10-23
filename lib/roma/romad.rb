@@ -22,6 +22,7 @@ module Roma
     attr :rttable
     attr :stats
     attr :wb_writer
+    attr :cr_writer
 
     attr_accessor :eventloop
     attr_accessor :startup
@@ -229,6 +230,8 @@ module Roma
                                                      Roma::Config::WRITEBEHIND_PATH,
                                                      Roma::Config::WRITEBEHIND_SHIFT_SIZE,
                                                      @log)
+
+      @cr_writer = Roma::WriteBehind::StreamWriter.new(@log)
     end
 
     def initialize_plugin

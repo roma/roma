@@ -1,6 +1,8 @@
 require 'thread'
 require 'roma/stats'
 
+require 'socket'
+
 module Roma
 
   module WriteBehind
@@ -122,6 +124,52 @@ module Roma
       end
 
     end # class FileWriter
+
+    class StreamWriter
+
+      attr_accessor :run_replication
+      attr_accessor :replica_mklhash
+      attr_accessor :replica_nodelist
+      attr_accessor :replica_rttable
+
+      def initialize(log)
+        @log = log
+        @run_replication = false
+        @replica_mklhash = nil
+        @replica_nodelist = []
+        @replica_rttable = nil
+        #@stats = Roma::Stats.instance
+      end
+
+      def get_stat
+        ret = {}
+        ret['write-behind.run_replication'] = @run_replication
+        ret['write-behind.replica_mklhash'] = @replica_mklhash
+        ret['write-behind.replica_nodelist'] = @replica_nodelist
+        ret['write-behind.replica_rttable'] = @replica_rttable
+        ret
+      end
+
+      def update_mklhash(nid)
+        addr, port = nid.split(/[:_]/)
+        con = TCPSocket.open(addr, port)
+        con.write("mklhash 0\r\n")
+        @replica_mklhash = con.gets.chomp
+        con.close
+      end
+
+      def update_nodelist(nid)
+        addr, port = nid.split(/[:_]/)
+        con = TCPSocket.open(addr, port)
+        con.write("nodelist\r\n")
+        @replica_nodelist = con.gets.chomp.split("\s")
+        con.close
+      end
+
+      def update_rttable(nid)
+        'toDO'
+      end
+    end # class StreamWriter
     
   end # module WriteBehind
 
@@ -163,7 +211,7 @@ module Roma
     end
 
     def wb_get_stat
-      @wb_writer.get_stat
+      @wb_writer.get_stat.merge(@cr_writer.get_stat)
     end
 
     def wb_process_loop
