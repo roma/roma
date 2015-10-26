@@ -471,8 +471,10 @@ module Roma
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, ret[4])
           end
           if $roma.cr_writer.run_replication
+            ##Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, ret[4])
+            #Roma::ClusterReplicationProcess::push("#{fnc} #{k} 0 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
+            k = k+hname  if hname != @defhash
             Roma::ClusterReplicationProcess::push("#{fnc} #{k} 0 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
-            #Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, ret[4])
           end
           redundant(nodes, hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
