@@ -348,6 +348,11 @@ module Roma
 @log.debug(":set_export")
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], key, expt.to_s)
           end
+          if $roma.cr_writer.run_replication
+            k = k+hname  if hname != @defhash
+            fnc = 'set_expt'
+            Roma::ClusterReplicationProcess::push("#{fnc} #{key} #{expt}\r\n", key, expt)
+          end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           send_data("STORED\r\n")
         else
@@ -384,6 +389,11 @@ module Roma
         if ret
           if @stats.wb_command_map.key?(:set_expt)
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], key, expt.to_s)
+          end
+          if $roma.cr_writer.run_replication
+            k = k+hname  if hname != @defhash
+            fnc = 'set_expt'
+            Roma::ClusterReplicationProcess::push("#{fnc} #{key} #{expt}\r\n", key, expt)
           end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           send_data("STORED\r\n")
