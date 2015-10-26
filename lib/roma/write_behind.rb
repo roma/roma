@@ -172,24 +172,77 @@ module Roma
       end
 
       def update_mklhash(nid)
-        con = Roma::Messaging::ConPool.instance.get_connection(nid)
-        con.write("mklhash 0\r\n")
-        @replica_mklhash = con.gets.chomp
-        Roma::Messaging::ConPool.instance.return_connection(nid, con)
-        @log.debug("replica_mklhash has updated: [#{@replica_mklhash}]")
+        timeout(1) do
+          con = Roma::Messaging::ConPool.instance.get_connection(nid)
+          con.write("mklhash 0\r\n")
+          @replica_mklhash = con.gets.chomp
+          Roma::Messaging::ConPool.instance.return_connection(nid, con)
+          @log.debug("replica_mklhash has updated: [#{@replica_mklhash}]")
+        end
+      rescue => e
+        @log.error("#{e}\n#{$@}")
       end
 
       def update_nodelist(nid)
-        con = Roma::Messaging::ConPool.instance.get_connection(nid)
-        con.write("nodelist\r\n")
-        @replica_nodelist = con.gets.chomp.split("\s")
-        Roma::Messaging::ConPool.instance.return_connection(nid, con)
-        @log.debug("replica_nodelist has updated: #{@replica_nodelist}")
+        timeout(1) do
+          con = Roma::Messaging::ConPool.instance.get_connection(nid)
+          con.write("nodelist\r\n")
+          @replica_nodelist = con.gets.chomp.split("\s")
+          Roma::Messaging::ConPool.instance.return_connection(nid, con)
+          @log.debug("replica_nodelist has updated: #{@replica_nodelist}")
+        end
+      rescue => e
+        @log.error("#{e}\n#{$@}")
       end
 
       def update_rttable(nid)
-        'toDO'
+        timeout(1) do
+          con = Roma::Messaging::ConPool.instance.get_connection(nid)
+          con.write "routingdump\r\n"
+          routes_length = con.gets.to_i
+          if (routes_length <= 0)
+            con.close
+            @log.error("#{__method__} process was failed.\r\n") if routes_length < 0
+            return nil
+          end
+
+          routes = ''
+          while (routes.length != routes_length)
+            routes = routes + con.read(routes_length - routes.length)
+          end
+          con.read(2) # "\r\n"
+          con.gets
+          rd = Marshal.load(routes)
+          Roma::Messaging::ConPool.instance.return_connection(nid, con)
+          @replica_rttable = rd
+          @log.debug("replica_rttable has updated: [#{@replica_rttable}]")
+        end
+      rescue => e
+        @log.error("#{e}\n#{$@}")
+        nil
       end
+
+      def search_replica_vnode(key)
+        d = Digest::SHA1.hexdigest(key).hex % (2**@replica_rttable.dgst_bits)
+        nodes = @replica_rttable.v_idx[d & @replica_rttable.search_mask]
+        nodes.each_index { |i|
+          return nodes[i]
+          #return [nodes[i], d] if @fail_cnt[nodes[i]] == 0
+        }
+        # for expecting an auto assign process
+        #svn = vn = d & @search_mask
+        #while( (vn = @rd.next_vnode(vn)) != svn )
+        #  nodes = @rd.v_idx[vn]
+        #  nodes.each_index { |i|
+        #    return [nodes[i], d] if @fail_cnt[nodes[i]] == 0
+        #  }
+        #end
+        #nil
+      rescue => e
+        @log.error("#{e}\n#{$@}")
+        nil
+      end
+
     end # class StreamWriter
     
   end # module WriteBehind
