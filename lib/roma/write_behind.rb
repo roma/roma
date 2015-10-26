@@ -146,7 +146,6 @@ module Roma
         ret['write-behind.run_replication'] = @run_replication
         ret['write-behind.replica_mklhash'] = @replica_mklhash
         ret['write-behind.replica_nodelist'] = @replica_nodelist
-        ret['write-behind.replica_rttable'] = @replica_rttable
         ret
       end
 
