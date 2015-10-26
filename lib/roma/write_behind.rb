@@ -138,7 +138,7 @@ module Roma
         @replica_mklhash = nil
         @replica_nodelist = []
         @replica_rttable = nil
-        #@stats = Roma::Stats.instance
+        @do_transmit = false
       end
 
       def get_stat
@@ -243,6 +243,28 @@ module Roma
         nil
       end
 
+      def transmit(cmd, key, value)
+        timeout(5) do
+          @do_transmit = true
+          nid = search_replica_vnode(key)
+          con = Roma::Messaging::ConPool.instance.get_connection(nid)
+          con.write(cmd)
+          #@log.debug("ClusterReplication: key=[#{key}] value='#{value}'")
+          Roma::Messaging::ConPool.instance.return_connection(nid, con)
+        end
+      rescue => e
+        @log.error("#{e}\n#{$@}")
+        @log.error("replication error: key=#{key} value=#{value}\r\n")
+      ensure
+        @do_transmit = false
+      end
+
+      def close_all
+        @replica_nodelist.each{|nid|
+          Roma::Messaging::ConPool.instance.close_at(nid)
+        }
+      end
+
     end # class StreamWriter
     
   end # module WriteBehind
@@ -301,5 +323,44 @@ module Roma
     private :wb_process_loop
 
   end # module WriteBehindProcess
+
+  module ClusterReplicationProcess
+
+    @@cr_queue = Queue.new
+
+    def self.push(cmd, key, value)
+      @@cr_queue.push([cmd, key, value])
+    end
+
+    def start_cr_process
+      @cr_thread = Thread.new{
+        cr_process_loop
+      }
+      @cr_thread[:name] = 'cluster_replication'
+    rescue =>e
+      @log.error("#{e}\n#{$@}")
+    end
+
+    def stop_cr_process
+      until @@cr_queue.empty?
+        sleep 0.01
+      end
+      @cr_thread.exit
+      @cr_writer.close_all
+    end
+
+    def cr_process_loop
+      loop {
+        while dat = @@cr_queue.pop
+          @cr_writer.transmit(dat[0], dat[1], dat[2]) # cmd, key, value
+        end
+      }
+    rescue =>e
+      @log.error("#{e}\n#{$@}")
+      retry
+    end
+    private :cr_process_loop
+
+  end # module ClusterReplicationProcess
 
 end # module Roma

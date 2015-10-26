@@ -17,6 +17,7 @@ module Roma
   class Romad
     include AsyncProcess
     include WriteBehindProcess
+    include ClusterReplicationProcess
 
     attr :storages
     attr :rttable
@@ -73,6 +74,7 @@ module Roma
 
       start_async_process
       start_wb_process
+      start_cr_process
       timer
 
       if @stats.join_ap
@@ -154,6 +156,7 @@ module Roma
       end
       stop_async_process
       stop_wb_process
+      stop_cr_process
       stop
     end
 
