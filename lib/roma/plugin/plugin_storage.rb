@@ -601,7 +601,7 @@ module Roma
         store(fnc, hname, vn, key, d, s[3].to_i, v, nodes)
       end
 
-      def store_incr_decr(fnc, hname, vn, k, d,  v, nodes)
+      def store_incr_decr(fnc, hname, vn, k, d, v, nodes)
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
@@ -618,6 +618,10 @@ module Roma
         if res
           if @stats.wb_command_map.key?(fnc)
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, res[4])
+          end
+          if $roma.cr_writer.run_replication
+            k = k+hname  if hname != @defhash
+            Roma::ClusterReplicationProcess::push("#{fnc} #{k} #{v}\r\n", k, v)
           end
           redundant(nodes, hname, k, d, res[2], res[3], res[4])
           send_data("#{res[4]}\r\n")
