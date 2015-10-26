@@ -328,7 +328,7 @@ module Roma
 
     @@cr_queue = Queue.new
 
-    def self.push(cmd, key, value)
+    def self.push(cmd, key, value=nil) # nil for delete command
       @@cr_queue.push([cmd, key, value])
     end
 

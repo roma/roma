@@ -156,6 +156,11 @@ module Roma
         if @stats.wb_command_map.key?(:delete)
           Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:delete], key, res[4])
         end
+        if $roma.cr_writer.run_replication
+          k = k+hname  if hname != @defhash
+          fnc = 'delete'
+          Roma::ClusterReplicationProcess::push("#{fnc} #{key}\r\n", key)
+        end
 
         nodes[1..-1].each{ |nid|
           res2 = send_cmd(nid,"rdelete #{key}\e#{hname} #{res[2]}\r\n")
@@ -197,6 +202,11 @@ module Roma
 
         if @stats.wb_command_map.key?(:delete)
           Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:delete], key, res[4])
+        end
+        if $roma.cr_writer.run_replication
+          k = k+hname  if hname != @defhash
+          fnc = 'delete'
+          Roma::ClusterReplicationProcess::push("#{fnc} #{key}\r\n", key)
         end
 
         nodes.delete(@nid)
