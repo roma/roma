@@ -209,8 +209,8 @@ class WriteBehindTest < Test::Unit::TestCase
   def teardown
     stop_roma
     Roma::Messaging::ConPool.instance.close_all
-   rescue => e
-     puts "#{e} #{$ERROR_POSITION}"
+  rescue => e
+    puts "#{e} #{$ERROR_POSITION}"
   end
 
   def test_wb2_stat

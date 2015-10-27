@@ -229,10 +229,10 @@ module Roma
       # switch_replication <true|false> [nid]
       def ev_switch_replication(s)
         unless s.length.between?(2, 3)
-          return send_data("CLIENT_ERROR number of arguments\n\r")
+          return send_data("CLIENT_ERROR number of arguments\r\n")
         end
         unless s[1] =~ /^(true|false)$/
-          return send_data("CLIENT_ERROR value must be true or false\n\r")
+          return send_data("CLIENT_ERROR value must be true or false\r\n")
         end
 
         res = broadcast_cmd("rswitch_replication #{s[1]} #{s[2]}\r\n")
