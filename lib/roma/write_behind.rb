@@ -221,22 +221,10 @@ module Roma
         nil
       end
 
-      def search_replica_vnode(key)
+      def search_replica_node(key)
         d = Digest::SHA1.hexdigest(key).hex % (2**@replica_rttable.dgst_bits)
         nodes = @replica_rttable.v_idx[d & @replica_rttable.search_mask]
-        nodes.each_index { |i|
-          return nodes[i]
-          #return [nodes[i], d] if @fail_cnt[nodes[i]] == 0
-        }
-        # for expecting an auto assign process
-        #svn = vn = d & @search_mask
-        #while( (vn = @rd.next_vnode(vn)) != svn )
-        #  nodes = @rd.v_idx[vn]
-        #  nodes.each_index { |i|
-        #    return [nodes[i], d] if @fail_cnt[nodes[i]] == 0
-        #  }
-        #end
-        #nil
+        return nodes[0] # for send primary node of replica cluster
       rescue => e
         @log.error("#{e}\n#{$@}")
         nil
@@ -245,7 +233,7 @@ module Roma
       def transmit(cmd, key, value)
         timeout(5) do
           @do_transmit = true
-          nid = search_replica_vnode(key)
+          nid = search_replica_node(key)
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           con.write(cmd)
           #@log.debug("ClusterReplication: key=[#{key}] value='#{value}'")
