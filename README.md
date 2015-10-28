@@ -74,5 +74,19 @@ END
 
 Refer to [Commands](http://roma-kvs.org/commands.html "Commands") for more detail information about ROMA Commands.
 
+
+## Contributing
+
+If you would like to contribute, please...
+
+1. Fork.
+2. Download [Ruby Client](https://github.com/roma/roma-ruby-client) to same directory.
+3. Make changes in a branch & add unit tests.
+4. Run Unit Test
+  * `ruby test/run_test.rb` (if unit test fails, run it again - it's fickle).
+5. Create a pull request.
+
+Contributions, improvements, comments and suggestions are welcome!
+
 ## Promoters
 Roma is promoted by [Rakuten, Inc.](http://global.rakuten.com/corp/) and [Rakuten Institute of Technology](http://rit.rakuten.co.jp/).
