@@ -226,13 +226,17 @@ module Roma
 
       # switch_replication command is change status of cluster replication
       # if you want to activate, assign 1 nid(addr_port) of replication cluster as argument.
-      # switch_replication <true|false> [nid]
+      # if you want to copy exising data, add the 'all' after nid as argument
+      # switch_replication <true|false> [nid] [copy target]
       def ev_switch_replication(s)
-        unless s.length.between?(2, 3)
+        unless s.length.between?(2, 4)
           return send_data("CLIENT_ERROR number of arguments\r\n")
         end
         unless s[1] =~ /^(true|false)$/
           return send_data("CLIENT_ERROR value must be true or false\r\n")
+        end
+        if s[3] && s[3] != 'all'
+          return send_data("CLIENT_ERROR [copy target] must be all or nil\r\n")
         end
 
         res = broadcast_cmd("rswitch_replication #{s[1]} #{s[2]}\r\n")
@@ -244,7 +248,7 @@ module Roma
             $roma.cr_writer.update_nodelist(s[2])
             $roma.cr_writer.update_rttable(s[2])
             $roma.cr_writer.run_replication = true
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable]))
+            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable])) if s[3] == 'all'
             res[@stats.ap_str] = "ACTIVATED"
           when 'false'
             $roma.cr_writer.replica_mklhash = nil
@@ -259,13 +263,16 @@ module Roma
         send_data("#{e.class}: #{e}\r\n")
       end
 
-      # rswitch_replication <true|false> [nid]
+      # rswitch_replication <true|false> [nid] [copy target]
       def ev_rswitch_replication(s)
-        unless s.length.between?(2, 3)
+        unless s.length.between?(2, 4)
           return send_data("CLIENT_ERROR number of arguments\n\r")
         end
         unless s[1] =~ /^(true|false)$/
           return send_data("CLIENT_ERROR value must be true or false\n\r")
+        end
+        if s[3] && s[3] != 'all'
+          return send_data("CLIENT_ERROR [copy target] must be all or nil\r\n")
         end
 
         timeout(1){
@@ -275,7 +282,7 @@ module Roma
             $roma.cr_writer.update_nodelist(s[2])
             $roma.cr_writer.update_rttable(s[2])
             $roma.cr_writer.run_replication = true
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable]))
+            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable])) if s[3] == 'all'
             send_data("ACTIVATED\r\n")
           when 'false'
             $roma.cr_writer.replica_mklhash = nil

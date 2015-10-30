@@ -205,7 +205,7 @@ class ClusterReplicationTest < Test::Unit::TestCase
     @rc.set('key2', 'val2')
     @rc.set('key3', 'val3')
 
-    send_cmd('localhost_11211', 'switch_replication true localhost_21211')
+    send_cmd('localhost_11211', 'switch_replication true localhost_21211 all')
     sleep 1
 
     assert_equal('val1', @rc_replica.get('key1'))
@@ -213,12 +213,25 @@ class ClusterReplicationTest < Test::Unit::TestCase
     assert_equal('val3', @rc_replica.get('key3'))
   end
 
+  def test_rc_background_copy_not_copy
+    @rc.set('key1', 'val1')
+    @rc.set('key2', 'val2')
+    @rc.set('key3', 'val3')
+
+    send_cmd('localhost_11211', 'switch_replication true localhost_21211')
+    sleep 1
+
+    assert_nil(@rc_replica.get('key1'))
+    assert_nil(@rc_replica.get('key2'))
+    assert_nil(@rc_replica.get('key3'))
+  end
+
   def test_rc_background_copy_not_overwrite
     @rc.set('key1', 'val1') #clk = 0
     @rc_replica.set('key1', 'replica1')
     @rc_replica.set('key1', 'replica1') # clk = 1
 
-    send_cmd('localhost_11211', 'switch_replication true localhost_21211')
+    send_cmd('localhost_11211', 'switch_replication true localhost_21211 all')
     sleep 1
 
     assert_equal('replica1', @rc_replica.get('key1'))
