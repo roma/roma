@@ -97,13 +97,18 @@ class ClusterReplicationTest < Test::Unit::TestCase
   end
 
   def test_rc_switch_replication_error
-    ret = send_cmd('localhost_11211', 'switch_replication true localhost_21211 localhost_21212')
+    ret = send_cmd('localhost_11211', 'switch_replication true localhost_21211 hoge fuga')
     assert_equal("CLIENT_ERROR number of arguments\r\n", ret)
+
+    ret = send_cmd('localhost_11211', 'switch_replication true localhost_21211 false')
+    assert_equal("CLIENT_ERROR [copy target] must be all or nil\r\n", ret)
+
     ret = send_cmd('localhost_11211', 'stat run_replication')
     assert_equal("write-behind.run_replication false\r\n", ret)
 
     ret = send_cmd('localhost_11211', 'switch_replication on localhost_21211')
     assert_equal("CLIENT_ERROR value must be true or false\r\n", ret)
+
     ret = send_cmd('localhost_11211', 'stat run_replication')
     assert_equal("write-behind.run_replication false\r\n", ret)
   end
