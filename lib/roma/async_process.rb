@@ -1045,6 +1045,7 @@ module Roma
     end
 
     def asyncev_start_replicate_existing_data_process(args)
+      # args is [$roma.cr_writer.replica_rttable])
       @log.debug("#{__method__} #{args}")
       t = Thread.new do
         begin
@@ -1060,13 +1061,14 @@ module Roma
     def replicate_existing_data_process(args)
       @log.info("#{__method__} #{args} :start.")
 
-      replica_nid = args[0]
       @storages.each_key do |hname|
         @rttable.v_idx.each_key do |vn|
-          res = push_a_vnode_stream(hname, vn, replica_nid)
-          if res != 'STORED'
-            @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
-            return false
+          args[0].v_idx[vn].each do |replica_nid|
+            res = push_a_vnode_stream(hname, vn, replica_nid)
+            if res != 'STORED'
+              @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+              return false
+            end
           end
         end
       end

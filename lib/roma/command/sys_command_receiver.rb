@@ -244,7 +244,7 @@ module Roma
             $roma.cr_writer.update_nodelist(s[2])
             $roma.cr_writer.update_rttable(s[2])
             $roma.cr_writer.run_replication = true
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [s[2]]))
+            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable]))
             res[@stats.ap_str] = "ACTIVATED"
           when 'false'
             $roma.cr_writer.replica_mklhash = nil
@@ -275,7 +275,7 @@ module Roma
             $roma.cr_writer.update_nodelist(s[2])
             $roma.cr_writer.update_rttable(s[2])
             $roma.cr_writer.run_replication = true
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [s[2]]))
+            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable]))
             send_data("ACTIVATED\r\n")
           when 'false'
             $roma.cr_writer.replica_mklhash = nil
