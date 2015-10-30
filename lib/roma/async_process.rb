@@ -643,7 +643,7 @@ module Roma
     end
 
     def push_a_vnode_stream(hname, vn, nid)
-      @log.info("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
+      @log.debug("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
 
       stop_clean_up
 
