@@ -239,7 +239,7 @@ module Roma
           return send_data("CLIENT_ERROR [copy target] must be all or nil\r\n")
         end
 
-        res = broadcast_cmd("rswitch_replication #{s[1]} #{s[2]}\r\n")
+        res = broadcast_cmd("rswitch_replication #{s[1]} #{s[2]} #{s[3]}\r\n")
 
         timeout(1){
           case s[1]
