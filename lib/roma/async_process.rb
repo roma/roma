@@ -1065,6 +1065,7 @@ module Roma
 
       @storages.each_key do |hname|
         @rttable.v_idx.each_key do |vn|
+          raise unless $roma.cr_writer.run_existing_data_replication
           args[0].v_idx[vn].each do |replica_nid|
             res = push_a_vnode_stream(hname, vn, replica_nid)
             if res != 'STORED'

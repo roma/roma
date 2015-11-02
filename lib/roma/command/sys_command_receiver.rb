@@ -259,7 +259,6 @@ module Roma
             $roma.cr_writer.replica_rttable = nil
             $roma.cr_writer.run_replication = false
             $roma.cr_writer.run_existing_data_replication = false
-            # toDO stop asynch
             res[@stats.ap_str] = "DEACTIVATED"
           end
         }
