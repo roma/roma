@@ -1049,10 +1049,12 @@ module Roma
       @log.debug("#{__method__} #{args}")
       t = Thread.new do
         begin
+          $roma.cr_writer.run_existing_data_replication = true
           replicate_existing_data_process(args)
         rescue => e
           @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
+          $roma.cr_writer.run_existing_data_replication = false
         end
       end
       t[:name] = __method__

@@ -226,7 +226,7 @@ module Roma
 
       # switch_replication command is change status of cluster replication
       # if you want to activate, assign 1 nid(addr_port) of replication cluster as argument.
-      # if you want to copy exising data, add the 'all' after nid as argument
+      # if you want to copy existing data, add the 'all' after nid as argument
       # switch_replication <true|false> [nid] [copy target]
       def ev_switch_replication(s)
         unless s.length.between?(2, 4)
@@ -248,13 +248,18 @@ module Roma
             $roma.cr_writer.update_nodelist(s[2])
             $roma.cr_writer.update_rttable(s[2])
             $roma.cr_writer.run_replication = true
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable])) if s[3] == 'all'
+            if s[3] == 'all'
+              $roma.cr_writer.run_existing_data_replication = true
+              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable]))
+            end
             res[@stats.ap_str] = "ACTIVATED"
           when 'false'
             $roma.cr_writer.replica_mklhash = nil
             $roma.cr_writer.replica_nodelist = []
             $roma.cr_writer.replica_rttable = nil
             $roma.cr_writer.run_replication = false
+            $roma.cr_writer.run_existing_data_replication = false
+            # toDO stop asynch
             res[@stats.ap_str] = "DEACTIVATED"
           end
         }
@@ -282,13 +287,17 @@ module Roma
             $roma.cr_writer.update_nodelist(s[2])
             $roma.cr_writer.update_rttable(s[2])
             $roma.cr_writer.run_replication = true
-            Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable])) if s[3] == 'all'
+            if s[3] == 'all'
+              $roma.cr_writer.run_existing_data_replication = true
+              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable]))
+            end
             send_data("ACTIVATED\r\n")
           when 'false'
             $roma.cr_writer.replica_mklhash = nil
             $roma.cr_writer.replica_nodelist = []
             $roma.cr_writer.replica_rttable = nil
             $roma.cr_writer.run_replication = false
+            $roma.cr_writer.run_existing_data_replication = false
             send_data("DEACTIVATED\r\n")
           end
         }

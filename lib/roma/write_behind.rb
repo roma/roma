@@ -128,6 +128,7 @@ module Roma
     class StreamWriter
 
       attr_accessor :run_replication
+      attr_accessor :run_existing_data_replication
       attr_accessor :replica_mklhash
       attr_accessor :replica_nodelist
       attr_accessor :replica_rttable
@@ -135,6 +136,7 @@ module Roma
       def initialize(log)
         @log = log
         @run_replication = false
+        @run_existing_data_replication = false
         @replica_mklhash = nil
         @replica_nodelist = []
         @replica_rttable = nil
@@ -144,6 +146,7 @@ module Roma
       def get_stat
         ret = {}
         ret['write-behind.run_replication'] = @run_replication
+        ret['write-behind.run_existing_data_replication'] = @run_existing_data_replication
         ret['write-behind.replica_mklhash'] = @replica_mklhash
         ret['write-behind.replica_nodelist'] = @replica_nodelist
         ret

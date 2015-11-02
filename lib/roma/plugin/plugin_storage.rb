@@ -156,11 +156,6 @@ module Roma
         if @stats.wb_command_map.key?(:delete)
           Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:delete], key, res[4])
         end
-        if $roma.cr_writer.run_replication
-          k = k+hname  if hname != @defhash
-          fnc = 'delete'
-          Roma::ClusterReplicationProcess::push("#{fnc} #{key}\r\n", key)
-        end
 
         nodes[1..-1].each{ |nid|
           res2 = send_cmd(nid,"rdelete #{key}\e#{hname} #{res[2]}\r\n")
@@ -170,6 +165,13 @@ module Roma
           end
         }
         return send_data("NOT_FOUND\r\n") unless res[4]
+
+        if $roma.cr_writer.run_replication
+          k = k+hname  if hname != @defhash
+          fnc = 'delete'
+          Roma::ClusterReplicationProcess::push("#{fnc} #{key}\r\n", key)
+        end
+
         send_data("DELETED\r\n")
       end
 
@@ -203,11 +205,6 @@ module Roma
         if @stats.wb_command_map.key?(:delete)
           Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:delete], key, res[4])
         end
-        if $roma.cr_writer.run_replication
-          k = k+hname  if hname != @defhash
-          fnc = 'delete'
-          Roma::ClusterReplicationProcess::push("#{fnc} #{key}\r\n", key)
-        end
 
         nodes.delete(@nid)
         nodes.each{ |nid|
@@ -218,6 +215,13 @@ module Roma
           end
         }
         return send_data("NOT_FOUND\r\n") unless res[4]
+
+        if $roma.cr_writer.run_replication
+          k = k+hname  if hname != @defhash
+          fnc = 'delete'
+          Roma::ClusterReplicationProcess::push("#{fnc} #{key}\r\n", key)
+        end
+
         send_data("DELETED\r\n")
       end
 
@@ -348,12 +352,12 @@ module Roma
 @log.debug(":set_export")
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], key, expt.to_s)
           end
+          redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           if $roma.cr_writer.run_replication
             k = k+hname  if hname != @defhash
             fnc = 'set_expt'
             Roma::ClusterReplicationProcess::push("#{fnc} #{key} #{expt}\r\n", key, expt)
           end
-          redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           send_data("STORED\r\n")
         else
           return send_data("NOT_STORED\r\n")
@@ -390,12 +394,12 @@ module Roma
           if @stats.wb_command_map.key?(:set_expt)
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], key, expt.to_s)
           end
+          redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           if $roma.cr_writer.run_replication
             k = k+hname  if hname != @defhash
             fnc = 'set_expt'
             Roma::ClusterReplicationProcess::push("#{fnc} #{key} #{expt}\r\n", key, expt)
           end
-          redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           send_data("STORED\r\n")
         else
           return send_data("NOT_STORED\r\n")
@@ -490,11 +494,11 @@ module Roma
           if @stats.wb_command_map.key?(fnc)
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, ret[4])
           end
+          redundant(nodes, hname, k, d, ret[2], expt, ret[4])
           if $roma.cr_writer.run_replication
             k = k+hname  if hname != @defhash
             Roma::ClusterReplicationProcess::push("#{fnc} #{k} 0 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
           end
-          redundant(nodes, hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")
         else
           @log.error("#{fnc} NOT_STORED:#{hname} #{vn} #{k} #{d} #{expt}")

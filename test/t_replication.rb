@@ -76,24 +76,55 @@ class ClusterReplicationTest < Test::Unit::TestCase
   end
 
   def test_rc_switch_replication_default
+    # default activate
     ret = send_cmd('localhost_11211', 'switch_replication true localhost_21211')
     assert_equal("{\"localhost_11212\"=>\"ACTIVATED\", \"localhost_11211\"=>\"ACTIVATED\"}\r\n", ret)
+    # run_replication status
     ret = send_cmd('localhost_11211', 'stat run_replication')
     assert_equal("write-behind.run_replication true\r\n", ret)
+    # replica_mklhash
     pre_mklhash = send_cmd('localhost_11211', 'stat replica_mklhash')
     assert_match(/write-behind\.replica_mklhash [\d\w]{40}\r\n/, pre_mklhash)
+    # replica_nodelist
+    pre_mklhash = send_cmd('localhost_11211', 'stat replica_mklhash')
     ret = send_cmd('localhost_11211', 'stat replica_nodelist')
     assert_equal("write-behind.replica_nodelist [\"localhost_21211\", \"localhost_21212\"]\r\n", ret)
 
+    # default deactivate
     ret = send_cmd('localhost_11211', 'switch_replication false')
     assert_equal("{\"localhost_11212\"=>\"DEACTIVATED\", \"localhost_11211\"=>\"DEACTIVATED\"}\r\n", ret)
+    # run_replication status
     ret = send_cmd('localhost_11211', 'stat run_replication')
     assert_equal("write-behind.run_replication false\r\n", ret)
+    # replica_mklhash
     post_mklhash = send_cmd('localhost_11211', 'stat replica_mklhash')
     assert_match("write-behind\.replica_mklhash \r\n", post_mklhash)
     assert_not_equal(pre_mklhash, post_mklhash)
+    # replica_nodelist
     ret = send_cmd('localhost_11211', 'stat replica_nodelist')
     assert_equal("write-behind.replica_nodelist []\r\n", ret)
+
+    # activate with all data option
+    ret = send_cmd('localhost_11211', 'switch_replication true localhost_21211 all')
+    assert_equal("{\"localhost_11212\"=>\"ACTIVATED\", \"localhost_11211\"=>\"ACTIVATED\"}\r\n", ret)
+    # run_existing_data_replication status 
+    ret = send_cmd('localhost_11211', 'stat run_existing_data_replication')
+    assert_equal("write-behind.run_existing_data_replication true\r\n", ret)
+
+    sleep 1 # wait finish existing data copy
+    # run_existing_data_replication status
+    ret = send_cmd('localhost_11211', 'stat run_existing_data_replication')
+    assert_equal("write-behind.run_existing_data_replication false\r\n", ret)
+    # run_replication status
+    ret = send_cmd('localhost_11211', 'stat run_replication')
+    assert_equal("write-behind.run_replication true\r\n", ret)
+    # replica_mklhash
+    pre_mklhash = send_cmd('localhost_11211', 'stat replica_mklhash')
+    assert_match(/write-behind\.replica_mklhash [\d\w]{40}\r\n/, pre_mklhash)
+    # replica_nodelist
+    pre_mklhash = send_cmd('localhost_11211', 'stat replica_mklhash')
+    ret = send_cmd('localhost_11211', 'stat replica_nodelist')
+    assert_equal("write-behind.replica_nodelist [\"localhost_21211\", \"localhost_21212\"]\r\n", ret)
   end
 
   def test_rc_switch_replication_error
@@ -205,7 +236,7 @@ class ClusterReplicationTest < Test::Unit::TestCase
     assert_equal(4, @rc_replica.get("cnt"))
   end
 
-  def test_rc_background_copy
+  def test_rc_background_copy_activate
     @rc.set('key1', 'val1')
     @rc.set('key2', 'val2')
     @rc.set('key3', 'val3')
@@ -218,7 +249,7 @@ class ClusterReplicationTest < Test::Unit::TestCase
     assert_equal('val3', @rc_replica.get('key3'))
   end
 
-  def test_rc_background_copy_not_copy
+  def test_rc_background_copy_unactivate
     @rc.set('key1', 'val1')
     @rc.set('key2', 'val2')
     @rc.set('key3', 'val3')
