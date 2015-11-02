@@ -1046,7 +1046,6 @@ module Roma
 
     def asyncev_start_replicate_existing_data_process(args)
       # args is [$roma.cr_writer.replica_rttable])
-      @log.debug("#{__method__} #{args}")
       t = Thread.new do
         begin
           $roma.cr_writer.run_existing_data_replication = true
@@ -1061,7 +1060,7 @@ module Roma
     end
 
     def replicate_existing_data_process(args)
-      @log.info("#{__method__} #{args} :start.")
+      @log.info("#{__method__} :start.")
 
       @storages.each_key do |hname|
         @rttable.v_idx.each_key do |vn|
