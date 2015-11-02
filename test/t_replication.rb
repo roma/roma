@@ -149,31 +149,41 @@ class ClusterReplicationTest < Test::Unit::TestCase
 
     # set/get
     @rc.set('key1', 'val1')
+    sleep 0.1
     assert_equal('val1', @rc_replica.get('key1'))
 
     # add
     @rc.add('key2', 'val2')
+    sleep 0.1
     assert_equal('val2', @rc_replica.get('key2'))
     @rc.add("key2", "val3")
+    sleep 0.1
     assert_equal('val2', @rc_replica.get('key2'))
 
     # replace
     @rc.set('key3', 'val3')
+    sleep 0.1
     @rc.replace('key3', 'val4')
+    sleep 0.1
     assert_equal('val4', @rc_replica.get('key3'))
     @rc.replace('key4', 'val4')
+    sleep 0.1
     assert_nil( @rc_replica.get('key4'))
    
     # append
     @rc.set('key5','value5', 0, true)
+    sleep 0.1
     assert_equal('value5', @rc_replica.get('key5', true))
     @rc.append("key5","_end")
+    sleep 0.1
     assert_equal("value5_end", @rc_replica.get('key5',true))
 
     # prepend
     @rc.set('key6','value6', 0, true)
+    sleep 0.1
     assert_equal('value6', @rc_replica.get('key6', true))
     @rc.prepend("key6","start_")
+    sleep 0.1
     assert_equal("start_value6", @rc_replica.get('key6',true))
   end
 
@@ -182,30 +192,39 @@ class ClusterReplicationTest < Test::Unit::TestCase
 
     # delete
     @rc.set('key1', 'val1')
+    sleep 0.1
     assert_equal('val1', @rc_replica.get('key1'))
     @rc.delete('key1')
+    sleep 0.1
     assert_nil(@rc_replica.get('key1'))
 
     # incr
     @rc.set('key2','100',0,true)
+    sleep 0.1
     assert_equal('100', @rc_replica.get('key2', true))
     @rc.incr('key2')
+    sleep 0.1
     assert_equal('101', @rc_replica.get('key2', true))
     @rc.incr('key2', 10)
+    sleep 0.1
     assert_equal('111', @rc_replica.get('key2', true))
 
     # decr
     @rc.set('key3','100', 0, true)
+    sleep 0.1
     assert_equal('100', @rc_replica.get('key3', true))
 
     @rc.decr('key3')
+    sleep 0.1
     assert_equal('99', @rc_replica.get('key3', true))
 
     @rc.decr('key3', 10)
+    sleep 0.1
     assert_equal('89', @rc_replica.get('key3', true))
 
     # expt
     @rc.set('key4', 'val4', 1)
+    sleep 0.1
     assert_equal('val4', @rc_replica.get('key4'))
     sleep 2
     assert_nil( @rc_replica.get('key4') )

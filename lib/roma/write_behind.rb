@@ -283,6 +283,8 @@ module Roma
       end
       @wb_thread.exit
       @wb_writer.close_all
+      @cr_thread.exit
+      @cr_writer.close_all
     end
 
     def wb_rotate(hname)
@@ -304,6 +306,8 @@ module Roma
     def wb_process_loop
       loop {
         while dat = @@wb_queue.pop
+          # dat ====> [hname, cmd, key, value]
+          @cr_writer.transmit(dat[1], dat[2], dat[3]) unless dat[0]
           @wb_writer.write(dat[0], dat[1], dat[2], dat[3])
         end
       }
@@ -314,44 +318,5 @@ module Roma
     private :wb_process_loop
 
   end # module WriteBehindProcess
-
-  module ClusterReplicationProcess
-
-    @@cr_queue = Queue.new
-
-    def self.push(cmd, key, value=nil) # nil for delete command
-      @@cr_queue.push([cmd, key, value])
-    end
-
-    def start_cr_process
-      @cr_thread = Thread.new{
-        cr_process_loop
-      }
-      @cr_thread[:name] = 'cluster_replication'
-    rescue =>e
-      @log.error("#{e}\n#{$@}")
-    end
-
-    def stop_cr_process
-      until @@cr_queue.empty?
-        sleep 0.01
-      end
-      @cr_thread.exit
-      @cr_writer.close_all
-    end
-
-    def cr_process_loop
-      loop {
-        while dat = @@cr_queue.pop
-          @cr_writer.transmit(dat[0], dat[1], dat[2]) # cmd, key, value
-        end
-      }
-    rescue =>e
-      @log.error("#{e}\n#{$@}")
-      retry
-    end
-    private :cr_process_loop
-
-  end # module ClusterReplicationProcess
 
 end # module Roma

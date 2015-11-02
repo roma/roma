@@ -169,7 +169,7 @@ module Roma
         if $roma.cr_writer.run_replication
           k = k+hname  if hname != @defhash
           fnc = 'delete'
-          Roma::ClusterReplicationProcess::push("#{fnc} #{key}\r\n", key)
+          Roma::WriteBehindProcess::push(nil, "#{fnc} #{key}\r\n", key, nil)
         end
 
         send_data("DELETED\r\n")
@@ -219,7 +219,7 @@ module Roma
         if $roma.cr_writer.run_replication
           k = k+hname  if hname != @defhash
           fnc = 'delete'
-          Roma::ClusterReplicationProcess::push("#{fnc} #{key}\r\n", key)
+          Roma::WriteBehindProcess::push(nil, "#{fnc} #{key}\r\n", key, nil)
         end
 
         send_data("DELETED\r\n")
@@ -356,7 +356,7 @@ module Roma
           if $roma.cr_writer.run_replication
             k = k+hname  if hname != @defhash
             fnc = 'set_expt'
-            Roma::ClusterReplicationProcess::push("#{fnc} #{key} #{expt}\r\n", key, expt)
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{key} #{expt}\r\n", key, expt)
           end
           send_data("STORED\r\n")
         else
@@ -398,7 +398,7 @@ module Roma
           if $roma.cr_writer.run_replication
             k = k+hname  if hname != @defhash
             fnc = 'set_expt'
-            Roma::ClusterReplicationProcess::push("#{fnc} #{key} #{expt}\r\n", key, expt)
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{key} #{expt}\r\n", key, expt)
           end
           send_data("STORED\r\n")
         else
@@ -497,7 +497,7 @@ module Roma
           redundant(nodes, hname, k, d, ret[2], expt, ret[4])
           if $roma.cr_writer.run_replication
             k = k+hname  if hname != @defhash
-            Roma::ClusterReplicationProcess::push("#{fnc} #{k} 0 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{k} 1 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
           end
           send_data("STORED\r\n")
         else
@@ -536,7 +536,7 @@ module Roma
           if $roma.cr_writer.run_replication
             k = k+hname  if hname != @defhash
             fnc = 'set' # To restrain a defference between main and replica cluster due to clk 
-            Roma::ClusterReplicationProcess::push("#{fnc} #{k} 0 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{k} 0 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
           end
           redundant(nodes, hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")          
@@ -638,7 +638,7 @@ module Roma
           end
           if $roma.cr_writer.run_replication
             k = k+hname  if hname != @defhash
-            Roma::ClusterReplicationProcess::push("#{fnc} #{k} #{v}\r\n", k, v)
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{k} #{v}\r\n", k, v)
           end
           redundant(nodes, hname, k, d, res[2], res[3], res[4])
           send_data("#{res[4]}\r\n")
