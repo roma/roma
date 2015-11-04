@@ -20,7 +20,6 @@ module RomaTestUtils
   DEFAULT_PORTS = %w(11211 11212)
   DEFAULT_NODES = DEFAULT_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }
   DEFAULT_TIMEOUT_SEC = 90
-  REPLICA_CONFIG = 'config4replica.rb'
   REPLICA_PORTS = %w(21211 21212)
   REPLICA_NODES = REPLICA_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }
   SHELL_LOG = 'roma_test_outputs.log'

@@ -283,7 +283,6 @@ module Roma
       end
       @wb_thread.exit
       @wb_writer.close_all
-      @cr_thread.exit
       @cr_writer.close_all
     end
 
