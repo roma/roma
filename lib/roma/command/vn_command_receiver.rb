@@ -6,7 +6,7 @@ module Roma
 
     module VnodeCommandReceiver
 
-      # spushv <true/false>
+      # spushv_protection <true/false>
       def ev_spushv_protection(s)
         if s.length == 1
           send_data("#{@stats.spushv_protection}\r\n")

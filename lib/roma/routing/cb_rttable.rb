@@ -142,7 +142,7 @@ module Roma
         hosts.length < @rd.rn
       end
 
-      # Retuens the list of losted-data vnode newer than argument time.
+      # Returns the list of losted-data vnode newer than argument time.
       def search_lost_vnodes(t)
         ret = []
         @rd.each_log_all(@fname){|log_t,line|

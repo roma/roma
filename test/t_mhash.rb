@@ -99,7 +99,7 @@ class MHashTest < Test::Unit::TestCase
     assert_equal('STORED', @rc.set('roma', 'hname=test'))
     assert_equal('hname=test', @rc.get('roma'))
 
-    # stop roam
+    # stop roma
     stop_roma
 
     # restart roma

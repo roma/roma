@@ -20,6 +20,8 @@ module RomaTestUtils
   DEFAULT_PORTS = %w(11211 11212)
   DEFAULT_NODES = DEFAULT_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }
   DEFAULT_TIMEOUT_SEC = 90
+  REPLICA_PORTS = %w(21211 21212)
+  REPLICA_NODES = REPLICA_PORTS.map { |port| "#{DEFAULT_HOST}_#{port}" }
   SHELL_LOG = 'roma_test_outputs.log'
 
   Roma::Logging::RLogger.create_singleton_instance("#{Roma::Config::LOG_PATH}/roma_test.log",
@@ -37,6 +39,20 @@ module RomaTestUtils
     sleep 0.2
 
     DEFAULT_NODES.each do |node|
+      do_command_romad(node, conf, replication_in_host)
+    end
+    sleep 1
+  end
+
+  def start_roma_replica(conf = DEFAULT_CONFIG, div_bits: 3, replication_in_host: true)
+    FileUtils.rm_rf(Dir.glob("#{Roma::Config::STORAGE_PATH}/#{REPLICA_NODES[0][0..-2]}?*"))
+    FileUtils.rm_rf(Dir.glob("#{Roma::Config::STORAGE_PATH}/#{DEFAULT_IP}_#{REPLICA_PORTS[0][0..-2]}?*"))
+    sleep 0.1
+
+    system("#{ruby_path} #{mkroute_path} #{REPLICA_NODES.join(' ')} -d #{div_bits} --replication_in_host >> #{SHELL_LOG} 2>&1")
+    sleep 0.2
+
+    REPLICA_NODES.each do |node|
       do_command_romad(node, conf, replication_in_host)
     end
     sleep 1
@@ -115,6 +131,13 @@ module RomaTestUtils
   def stop_roma
     balse_message = %w(balse yes)
     send_message(messages: balse_message)
+    Roma::Client::ConPool.instance.close_all
+    Roma::Messaging::ConPool.instance.close_all
+  end
+
+  def stop_roma_replica
+    balse_message = %w(balse yes)
+    send_message(messages: balse_message, node: REPLICA_NODES[0])
     Roma::Client::ConPool.instance.close_all
     Roma::Messaging::ConPool.instance.close_all
   end

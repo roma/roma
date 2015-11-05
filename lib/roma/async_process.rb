@@ -643,7 +643,7 @@ module Roma
     end
 
     def push_a_vnode_stream(hname, vn, nid)
-      @log.info("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
+      @log.debug("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
 
       stop_clean_up
 
@@ -670,7 +670,7 @@ module Roma
         con.write(data)
         sleep @stats.stream_copy_wait_param
       end
-      con.write("\0" * 20) # end of steram
+      con.write("\0" * 20) # end of stream
 
       res = con.gets # STORED\r\n or error string
       Roma::Messaging::ConPool.instance.return_connection(nid, con)
@@ -1043,5 +1043,42 @@ module Roma
 
       get_point(f, target_time, type, latency_time, new_pos, target_pos)
     end
+
+    def asyncev_start_replicate_existing_data_process(args)
+      # args is [$roma.cr_writer.replica_rttable])
+      t = Thread.new do
+        begin
+          $roma.cr_writer.run_existing_data_replication = true
+          replicate_existing_data_process(args)
+        rescue => e
+          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+        ensure
+          $roma.cr_writer.run_existing_data_replication = false
+        end
+      end
+      t[:name] = __method__
+    end
+
+    def replicate_existing_data_process(args)
+      @log.info("#{__method__} :start.")
+
+      @storages.each_key do |hname|
+        @rttable.v_idx.each_key do |vn|
+          raise unless $roma.cr_writer.run_existing_data_replication
+          args[0].v_idx[vn].each do |replica_nid|
+            res = push_a_vnode_stream(hname, vn, replica_nid)
+            if res != 'STORED'
+              @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+              return false
+            end
+          end
+        end
+      end
+
+      @log.info("#{__method__} has done.")
+    rescue => e
+      @log.error("#{e}\n#{$ERROR_POSITION}")
+    end
+
   end # module AsyncProcess
 end # module Roma

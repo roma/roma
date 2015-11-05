@@ -224,6 +224,86 @@ module Roma
         end
       end
 
+      # switch_replication command is change status of cluster replication
+      # if you want to activate, assign 1 nid(addr_port) of replication cluster as argument.
+      # if you want to copy existing data, add the 'all' after nid as argument
+      # switch_replication <true|false> [nid] [copy target]
+      def ev_switch_replication(s)
+        unless s.length.between?(2, 4)
+          return send_data("CLIENT_ERROR number of arguments\r\n")
+        end
+        unless s[1] =~ /^(true|false)$/
+          return send_data("CLIENT_ERROR value must be true or false\r\n")
+        end
+        if s[3] && s[3] != 'all'
+          return send_data("CLIENT_ERROR [copy target] must be all or nil\r\n")
+        end
+
+        res = broadcast_cmd("rswitch_replication #{s[1]} #{s[2]} #{s[3]}\r\n")
+
+        timeout(1){
+          case s[1]
+          when 'true'
+            $roma.cr_writer.update_mklhash(s[2])
+            $roma.cr_writer.update_nodelist(s[2])
+            $roma.cr_writer.update_rttable(s[2])
+            $roma.cr_writer.run_replication = true
+            if s[3] == 'all'
+              $roma.cr_writer.run_existing_data_replication = true
+              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable]))
+            end
+            res[@stats.ap_str] = "ACTIVATED"
+          when 'false'
+            $roma.cr_writer.replica_mklhash = nil
+            $roma.cr_writer.replica_nodelist = []
+            $roma.cr_writer.replica_rttable = nil
+            $roma.cr_writer.run_replication = false
+            $roma.cr_writer.run_existing_data_replication = false
+            res[@stats.ap_str] = "DEACTIVATED"
+          end
+        }
+        send_data("#{res}\r\n")
+      rescue => e
+        send_data("#{e.class}: #{e}\r\n")
+      end
+
+      # rswitch_replication <true|false> [nid] [copy target]
+      def ev_rswitch_replication(s)
+        unless s.length.between?(2, 4)
+          return send_data("CLIENT_ERROR number of arguments\n\r")
+        end
+        unless s[1] =~ /^(true|false)$/
+          return send_data("CLIENT_ERROR value must be true or false\n\r")
+        end
+        if s[3] && s[3] != 'all'
+          return send_data("CLIENT_ERROR [copy target] must be all or nil\r\n")
+        end
+
+        timeout(1){
+          case s[1]
+          when 'true'
+            $roma.cr_writer.update_mklhash(s[2])
+            $roma.cr_writer.update_nodelist(s[2])
+            $roma.cr_writer.update_rttable(s[2])
+            $roma.cr_writer.run_replication = true
+            if s[3] == 'all'
+              $roma.cr_writer.run_existing_data_replication = true
+              Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_replicate_existing_data_process', [$roma.cr_writer.replica_rttable]))
+            end
+            send_data("ACTIVATED\r\n")
+          when 'false'
+            $roma.cr_writer.replica_mklhash = nil
+            $roma.cr_writer.replica_nodelist = []
+            $roma.cr_writer.replica_rttable = nil
+            $roma.cr_writer.run_replication = false
+            $roma.cr_writer.run_existing_data_replication = false
+            send_data("DEACTIVATED\r\n")
+          end
+        }
+      rescue => e
+        send_data("#{e.class}: #{e}\r\n")
+      end
+
       # dcnice command is setting priority for a data-copy thread.
       # a niceness of 1 is the highest priority and 5 is the lowest priority.
       # dcnice <priority:1 to 5>
