@@ -240,7 +240,7 @@ module Roma
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           con.write(cmd)
           #@log.debug("ClusterReplication: key=[#{key}] value='#{value}'")
-          res = con.gets # essential for return con of MessagingConPool
+          con.gets # for return connection
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
         end
       rescue => e
