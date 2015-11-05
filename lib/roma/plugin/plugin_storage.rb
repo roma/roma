@@ -126,6 +126,7 @@ module Roma
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
         vn = @rttable.get_vnode_id(d)
         nodes = @rttable.search_nodes_for_write(vn)
+
         if nodes[0] != @nid
           cmd = "fdelete #{key}\e#{hname}"
           s[2..-1].each{|c| cmd << " #{c}"}
@@ -137,6 +138,7 @@ module Roma
           end
           return send_data("#{res}\r\n")
         end
+
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
@@ -167,9 +169,8 @@ module Roma
         return send_data("NOT_FOUND\r\n") unless res[4]
 
         if $roma.cr_writer.run_replication
-          k = "#{key}\e#{hname}" if hname != @defhash
           fnc = 'delete'
-          Roma::WriteBehindProcess::push(nil, "#{fnc} #{k}\r\n", k, nil)
+          Roma::WriteBehindProcess::push(nil, "#{fnc} #{s[1]}\r\n", s[1], nil)
         end
 
         send_data("DELETED\r\n")
@@ -217,9 +218,8 @@ module Roma
         return send_data("NOT_FOUND\r\n") unless res[4]
 
         if $roma.cr_writer.run_replication
-          k = "#{key}\e#{hname}" if hname != @defhash
           fnc = 'delete'
-          Roma::WriteBehindProcess::push(nil, "#{fnc} #{k}\r\n", k, nil)
+          Roma::WriteBehindProcess::push(nil, "#{fnc} #{s[1]}\r\n", s[1], nil)
         end
 
         send_data("DELETED\r\n")
@@ -354,9 +354,8 @@ module Roma
           end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           if $roma.cr_writer.run_replication
-            k = "#{key}\e#{hname}" if hname != @defhash
             fnc = 'set_expt'
-            Roma::WriteBehindProcess::push(nil, "#{fnc} #{k} #{expt}\r\n", k, expt)
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{s[1]} #{expt}\r\n", s[1], expt)
           end
           send_data("STORED\r\n")
         else
@@ -396,9 +395,8 @@ module Roma
           end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
           if $roma.cr_writer.run_replication
-            k = "#{key}\e#{hname}" if hname != @defhash
             fnc = 'set_expt'
-            Roma::WriteBehindProcess::push(nil, "#{fnc} #{k} #{expt}\r\n", k, expt)
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{s[1]} #{expt}\r\n", s[1], expt)
           end
           send_data("STORED\r\n")
         else

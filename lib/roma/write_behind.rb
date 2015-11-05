@@ -224,7 +224,7 @@ module Roma
         nil
       end
 
-      def search_replica_node(key)
+      def search_replica_primary_node(key)
         d = Digest::SHA1.hexdigest(key).hex % (2**@replica_rttable.dgst_bits)
         nodes = @replica_rttable.v_idx[d & @replica_rttable.search_mask]
         return nodes[0] # for send primary node of replica cluster
@@ -233,13 +233,12 @@ module Roma
         nil
       end
 
-      def transmit(cmd, key, value)
+      def transmit(cmd, key, value) # value is for error log
         timeout(5) do
           @do_transmit = true
-          nid = search_replica_node(key)
+          nid = search_replica_primary_node(key)
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           con.write(cmd)
-          #@log.debug("ClusterReplication: key=[#{key}] value='#{value}'")
           con.gets # for return connection
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
         end
