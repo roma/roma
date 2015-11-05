@@ -406,6 +406,59 @@ module Roma
         end
       end
 
+      # If you want to get expired time as UNIXTIME, set the true in last argument
+      # Unless set last argument or false, expired time will be sent back as date format.
+      # get_expt <key> [true|false]
+      def ev_get_expt(s)
+        unless s.length.between?(2, 3)
+          @log.error("get_expt: wrong number of arguments(#{s.length-1} to 2-3)")
+          return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+        case s[2]
+        when 'true'
+          is_unix = true
+        when 'false', nil
+          is_unix = false
+        else
+          @log.error("get_expt: wrong format of arguments.")
+          return send_data("CLIENT_ERROR Wrong format of arguments.\r\n")
+        end
+
+        key, hname = s[1].split("\e")
+        hname ||= @defhash
+        unless @storages.key?(hname)
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
+          return
+        end
+
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+        vn = @rttable.get_vnode_id(d)
+
+        nodes = @rttable.search_nodes(vn)
+        unless nodes.include?(@nid)
+          @log.warn("forward get_expt #{s[1]} #{is_unix}")
+          res = forward_get_expt(nodes[0], vn, s[1], is_unix)
+          if res
+            send_data(res)
+          else
+            send_data("SERVER_ERROR Message forward failed.\r\n")
+          end
+          return
+        end
+
+        data = @storages[hname].db_get(vn, key)
+        if data
+          if is_unix
+            expt = data.unpack('NNNNa*')[3]
+          else
+            expt = Time.at(data.unpack('NNNNa*')[3])
+          end
+          send_data("#{expt}\r\n")
+        end
+        send_data("END\r\n")
+      end
+
+
       # set_size_of_zredundant <n>
       def ev_set_size_of_zredundant(s)
         if s.length != 2 || s[1].to_i == 0
@@ -472,6 +525,22 @@ module Roma
       rescue => e
         @rttable.proc_failed(nid)
         @log.error("forward gets failed:nid=#{nid} key=#{keys}")
+        nil
+      end
+
+      def forward_get_expt(nid, vn, key, is_unix)
+        con = get_connection(nid)
+        con.send("get_expt #{key} #{is_unix}\r\n")
+        res = ''
+        while((line = con.gets)!="END\r\n")
+          res = line.chomp
+        end
+        return_connection(nid, con)
+        @rttable.proc_succeed(nid)
+        res
+      rescue => e
+        @rttable.proc_failed(nid)
+        @log.error("forward get_expt failed:nid=#{nid} key=#{key}")
         nil
       end
 
