@@ -42,39 +42,6 @@ module StorageTests
     assert_nil( @st.get(0,'abc',0))
   end
 
-  # toDO dev ruby client 
-  #  
-  def test_get_expt
-    now=Time.now.to_i
-    # 90 days
-    @st.set(0, 'key1', 0, now+7776000,'val1')
-    assert_equal(now+7776000, @st.get_expt(0,'key1',0) )
-    assert_equal(now+7776000, @st.get_expt(0,'key1',0, false) )
-    assert_equal(Time.at(now+7776000), @st.get_expt(0,'key1',0, true) )
-
-    # 7days to die
-    @st.set(0, 'key2', 0, 604800,'val2')
-    assert_equal(now+604800, @st.get_expt(0,'key2',0) )
-    assert_equal(now+604800, @st.get_expt(0,'key2',0, false) )
-    assert_equal(Time.at(now+604800), @st.get_expt(0,'key2',0, true) )
-
-    # set 0
-    @st.set(0, 'key3', 0, 0,'val3')
-    assert_equal(2147483647, @st.get_expt(0,'key3',0) )
-    assert_equal(2147483647, @st.get_expt(0,'key3',0, false) )
-    assert_equal('2038-01-19 12:14:07 +09007', @st.get_expt(0,'key3',0, true) )
-
-    # expire time is a second ago
-    @st.set(0,'abc',0,Time.now.to_i-1,'abc_data')
-    # returns a nil when expired
-    assert_nil( @st.get_expt(0,'key4',0))
-    assert_nil( @st.get_expt(0,'key4',0, true))
-    assert_nil( @st.get_expt(0,'key4',0, false))
-
-    # argument (no,, format)
-    assert_equal(now+604800, @st.get_expt(0,'key2',0) )
-  end
-
   def test_set_get_raw
     n = 100
     n.times{|i|

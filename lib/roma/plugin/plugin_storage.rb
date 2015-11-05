@@ -406,18 +406,18 @@ module Roma
         end
       end
 
-      # If you want to get expired time as UNIXTIME, set the true in last argument
-      # Unless set last argument or false, expired time will be sent back as date format.
-      # get_expt <key> [true|false]
+      # If you want to get expired time as UNIXTIME, set the 'unix' in last argument
+      # Unless set this, expired time will be sent back as date format.
+      # get_expt <key> [unix]
       def ev_get_expt(s)
         unless s.length.between?(2, 3)
           @log.error("get_expt: wrong number of arguments(#{s.length-1} to 2-3)")
           return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
         end
         case s[2]
-        when 'true'
+        when 'unix'
           is_unix = true
-        when 'false', nil
+        when nil
           is_unix = false
         else
           @log.error("get_expt: wrong format of arguments.")
@@ -436,8 +436,8 @@ module Roma
 
         nodes = @rttable.search_nodes(vn)
         unless nodes.include?(@nid)
-          @log.warn("forward get_expt #{s[1]} #{is_unix}")
-          res = forward_get_expt(nodes[0], vn, s[1], is_unix)
+          @log.warn("forward get_expt #{s[1]} #{s[2]}")
+          res = forward_get_expt(nodes[0], vn, s[1], s[2])
           if res
             send_data(res)
           else
@@ -528,7 +528,7 @@ module Roma
         nil
       end
 
-      def forward_get_expt(nid, vn, key, is_unix)
+      def forward_get_expt(nid, vn, key, is_unix=nil)
         con = get_connection(nid)
         con.send("get_expt #{key} #{is_unix}\r\n")
         res = ''
