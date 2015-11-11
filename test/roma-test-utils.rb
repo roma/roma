@@ -6,6 +6,7 @@ require 'roma/config'
 require 'roma/messaging/con_pool'
 require 'roma/logging/rlogger'
 require 'roma/client/rclient'
+require 'roma/client/version'
 require 'roma/client/client_pool'
 
 Roma::Client::RomaClient.class_eval do
