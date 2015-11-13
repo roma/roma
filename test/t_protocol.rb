@@ -128,4 +128,50 @@ class ProtocolTest < Test::Unit::TestCase
     assert_equal("VALUE key 0 0", @sock.gets.chomp)
     assert_equal("", @sock.gets.chomp)
   end
+
+  def test_get_expt
+    # argument
+    @sock.write("get_expt\r\n")
+    assert_equal('CLIENT_ERROR Wrong number of arguments.', @sock.gets.chomp)
+    @sock.write("get_expt key1 true\r\n")
+    assert_equal('CLIENT_ERROR Wrong format of arguments.', @sock.gets.chomp)
+    @sock.write("get_expt key1 unix nil\r\n")
+    assert_equal('CLIENT_ERROR Wrong number of arguments.', @sock.gets.chomp)
+
+    # No data
+    @sock.write("get_expt key1\r\n")
+    assert_equal("END", @sock.gets.chomp)
+
+    # set 0
+    @sock.write("set key1 0 0 4\r\nval1\r\n")
+    assert_equal('STORED', @sock.gets.chomp )
+    @sock.write("get_expt key1\r\n")
+    assert_equal('2038-01-19 12:14:07 +0900', @sock.gets.chomp )
+    assert_equal('END', @sock.gets.chomp )
+    @sock.write("get_expt key1 unix\r\n")
+    assert_equal("2147483647", @sock.gets.chomp )
+    assert_equal('END', @sock.gets.chomp )
+
+    # under 30days
+    now = Time.now.to_i
+    @sock.write("set_expt key1 600\r\n") # 10 min
+    assert_equal("STORED", @sock.gets.chomp )
+    @sock.write("get_expt key1\r\n")
+    assert_equal("#{Time.at(now+600)}", @sock.gets.chomp )
+    assert_equal("END", @sock.gets.chomp )
+    @sock.write("get_expt key1 unix\r\n")
+    assert_equal("#{now+600}", @sock.gets.chomp )
+    assert_equal("END", @sock.gets.chomp )
+
+    # over 30days
+    @sock.write("set_expt key1 #{t2 = Time.now.to_i+7776000}\r\n") # 90days
+    assert_equal("STORED", @sock.gets.chomp )
+    @sock.write("get_expt key1\r\n")
+    assert_equal("#{Time.at(t2)}", @sock.gets.chomp )
+    assert_equal("END", @sock.gets.chomp )
+    @sock.write("get_expt key1 unix\r\n")
+    assert_equal("#{t2}", @sock.gets.chomp )
+    assert_equal("END", @sock.gets.chomp )
+  end
+
 end

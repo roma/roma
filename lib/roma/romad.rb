@@ -22,6 +22,7 @@ module Roma
     attr :rttable
     attr :stats
     attr :wb_writer
+    attr :cr_writer
 
     attr_accessor :eventloop
     attr_accessor :startup
@@ -229,6 +230,8 @@ module Roma
                                                      Roma::Config::WRITEBEHIND_PATH,
                                                      Roma::Config::WRITEBEHIND_SHIFT_SIZE,
                                                      @log)
+
+      @cr_writer = Roma::WriteBehind::StreamWriter.new(@log)
     end
 
     def initialize_plugin
@@ -600,6 +603,15 @@ module Roma
           @stats.run_receive_a_vnode.empty? &&
           @stats.do_clean_up?)
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_storage_clean_up_process'))
+      end
+
+      if @cr_writer.run_replication
+        if @cr_writer.change_mklhash?
+          nid = @cr_writer.replica_nodelist.sample
+          @cr_writer.update_mklhash(nid)
+          @cr_writer.update_nodelist(nid)
+          @cr_writer.update_rttable(nid)
+        end
       end
 
       @stats.clear_counters

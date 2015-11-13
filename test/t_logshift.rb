@@ -30,7 +30,6 @@ class  LogShiftTest  < Test::Unit::TestCase
     assert_equal("END", @sock_port_1.gets.chomp)
     assert_equal('{"localhost_11212"=>"STORED", "localhost_11211"=>"STORED"}', @sock_port_1.gets.chomp)
     @sock_port_1.write("stat log_shift_size\r\n")
-    puts "Old value was : #{old_log_shift_size} "
     assert_equal( "stats.log_shift_size 4096" , @sock_port_1.gets.chomp);
     assert_equal("END", @sock_port_1.gets.chomp)
 
@@ -51,7 +50,6 @@ class  LogShiftTest  < Test::Unit::TestCase
     assert_equal("END", @sock_port_1.gets.chomp)
     assert_equal('{"localhost_11212"=>"STORED", "localhost_11211"=>"STORED"}', @sock_port_1.gets.chomp)
     @sock_port_1.write("stat log_shift_age\r\n")
-    puts "Old value was : #{old_log_shift_age} "
     assert_equal( "stats.log_shift_age 7" , @sock_port_1.gets.chomp);
     assert_equal("END", @sock_port_1.gets.chomp)
 
@@ -72,7 +70,6 @@ class  LogShiftTest  < Test::Unit::TestCase
     assert_equal("END", @sock_port_1.gets.chomp)
     assert_equal('{"localhost_11212"=>"STORED", "localhost_11211"=>"STORED"}', @sock_port_1.gets.chomp)
     @sock_port_1.write("stat log_shift_age\r\n")
-    puts "Old value was : #{old_log_shift_age} "
     assert_equal( "stats.log_shift_age min" , @sock_port_1.gets.chomp);
     assert_equal("END", @sock_port_1.gets.chomp)
 

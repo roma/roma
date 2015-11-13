@@ -126,6 +126,7 @@ module Roma
         d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
         vn = @rttable.get_vnode_id(d)
         nodes = @rttable.search_nodes_for_write(vn)
+
         if nodes[0] != @nid
           cmd = "fdelete #{key}\e#{hname}"
           s[2..-1].each{|c| cmd << " #{c}"}
@@ -137,6 +138,7 @@ module Roma
           end
           return send_data("#{res}\r\n")
         end
+
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
@@ -165,6 +167,12 @@ module Roma
           end
         }
         return send_data("NOT_FOUND\r\n") unless res[4]
+
+        if $roma.cr_writer.run_replication
+          fnc = 'delete'
+          Roma::WriteBehindProcess::push(nil, "#{fnc} #{s[1]}\r\n", s[1], nil)
+        end
+
         send_data("DELETED\r\n")
       end
 
@@ -208,6 +216,12 @@ module Roma
           end
         }
         return send_data("NOT_FOUND\r\n") unless res[4]
+
+        if $roma.cr_writer.run_replication
+          fnc = 'delete'
+          Roma::WriteBehindProcess::push(nil, "#{fnc} #{s[1]}\r\n", s[1], nil)
+        end
+
         send_data("DELETED\r\n")
       end
 
@@ -339,6 +353,10 @@ module Roma
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], key, expt.to_s)
           end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
+          if $roma.cr_writer.run_replication
+            fnc = 'set_expt'
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{s[1]} #{expt}\r\n", s[1], expt)
+          end
           send_data("STORED\r\n")
         else
           return send_data("NOT_STORED\r\n")
@@ -376,11 +394,68 @@ module Roma
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:set_expt], key, expt.to_s)
           end
           redundant(nodes[1..-1], hname, key, d, ret[2], ret[3], ret[4])
+          if $roma.cr_writer.run_replication
+            fnc = 'set_expt'
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{s[1]} #{expt}\r\n", s[1], expt)
+          end
           send_data("STORED\r\n")
         else
           return send_data("NOT_STORED\r\n")
         end
       end
+
+      # If you want to get expired time as UNIXTIME, set the 'unix' in last argument
+      # Unless set this, expired time will be sent back as date format.
+      # get_expt <key> [unix]
+      def ev_get_expt(s)
+        unless s.length.between?(2, 3)
+          @log.error("get_expt: wrong number of arguments(#{s.length-1} to 2-3)")
+          return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
+        end
+        case s[2]
+        when 'unix'
+          is_unix = true
+        when nil
+          is_unix = false
+        else
+          @log.error("get_expt: wrong format of arguments.")
+          return send_data("CLIENT_ERROR Wrong format of arguments.\r\n")
+        end
+
+        key, hname = s[1].split("\e")
+        hname ||= @defhash
+        unless @storages.key?(hname)
+          send_data("SERVER_ERROR #{hname} does not exists.\r\n")
+          return
+        end
+
+        d = Digest::SHA1.hexdigest(key).hex % @rttable.hbits
+        vn = @rttable.get_vnode_id(d)
+
+        nodes = @rttable.search_nodes(vn)
+        unless nodes.include?(@nid)
+          @log.warn("forward get_expt #{s[1]} #{s[2]}")
+          res = forward_get_expt(nodes[0], vn, s[1], s[2])
+          if res
+            send_data(res)
+          else
+            send_data("SERVER_ERROR Message forward failed.\r\n")
+          end
+          return
+        end
+
+        data = @storages[hname].db_get(vn, key)
+        if data
+          if is_unix
+            expt = data.unpack('NNNNa*')[3]
+          else
+            expt = Time.at(data.unpack('NNNNa*')[3])
+          end
+          send_data("#{expt}\r\n")
+        end
+        send_data("END\r\n")
+      end
+
 
       # set_size_of_zredundant <n>
       def ev_set_size_of_zredundant(s)
@@ -451,6 +526,22 @@ module Roma
         nil
       end
 
+      def forward_get_expt(nid, vn, key, is_unix=nil)
+        con = get_connection(nid)
+        con.send("get_expt #{key} #{is_unix}\r\n")
+        res = ''
+        while((line = con.gets)!="END\r\n")
+          res = line.chomp
+        end
+        return_connection(nid, con)
+        @rttable.proc_succeed(nid)
+        res
+      rescue => e
+        @rttable.proc_failed(nid)
+        @log.error("forward get_expt failed:nid=#{nid} key=#{key}")
+        nil
+      end
+
       def store(fnc, hname, vn, k, d, expt, v, nodes)
         expt = chg_time_expt(expt)
         unless @storages.key?(hname)
@@ -471,6 +562,10 @@ module Roma
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, ret[4])
           end
           redundant(nodes, hname, k, d, ret[2], expt, ret[4])
+          if $roma.cr_writer.run_replication
+            k = "#{k}\e#{hname}" if hname != @defhash
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{k} 1 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
+          end
           send_data("STORED\r\n")
         else
           @log.error("#{fnc} NOT_STORED:#{hname} #{vn} #{k} #{d} #{expt}")
@@ -504,6 +599,11 @@ module Roma
         else
           if @stats.wb_command_map.key?(:cas)
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[:cas], k, ret[4])
+          end
+          if $roma.cr_writer.run_replication
+            k = "#{k}\e#{hname}" if hname != @defhash
+            fnc = 'set' # To restrain a defference between main and replica cluster due to clk 
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{k} 0 #{expt} #{v.length} \r\n#{v}\r\n", k, v)
           end
           redundant(nodes, hname, k, d, ret[2], expt, ret[4])
           send_data("STORED\r\n")          
@@ -585,7 +685,7 @@ module Roma
         store(fnc, hname, vn, key, d, s[3].to_i, v, nodes)
       end
 
-      def store_incr_decr(fnc, hname, vn, k, d,  v, nodes)
+      def store_incr_decr(fnc, hname, vn, k, d, v, nodes)
         unless @storages.key?(hname)
           send_data("SERVER_ERROR #{hname} does not exists.\r\n")
           return
@@ -602,6 +702,10 @@ module Roma
         if res
           if @stats.wb_command_map.key?(fnc)
             Roma::WriteBehindProcess::push(hname, @stats.wb_command_map[fnc], k, res[4])
+          end
+          if $roma.cr_writer.run_replication
+            k = "#{k}\e#{hname}" if hname != @defhash
+            Roma::WriteBehindProcess::push(nil, "#{fnc} #{k} #{v}\r\n", k, v)
           end
           redundant(nodes, hname, k, d, res[2], res[3], res[4])
           send_data("#{res[4]}\r\n")
