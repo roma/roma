@@ -377,6 +377,36 @@ class NewFuncTest < Test::Unit::TestCase
     -v, --version                    Show version", res.chomp)
   end
 
+  def test_check_tc_flag
+    stop_roma
+    res = `#{bin_dir}/check_tc_flag -h`
+    assert_equal("usage:check_tc_flag --path [directory path]
+    -h, --help                       Show this message
+        --storage <dir_path>         Specify the TC Storage directory
+                                     Ex.)/roma/ds/localhost_10001/roma
+        --library <dir_path>         Specify the TC library directory
+                                     Ex.)/roma/libexec", res.chomp)
+
+    start_roma 'cpdbtest/config4cpdb_tc.rb'
+    stop_roma
+    res = `#{bin_dir}/check_tc_flag --storage ./localhost_11211/roma --library /usr/local/roma/libexec`
+    assert_match(/\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
+\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)/, res.chomp)
+  end
+
+  def test_waiting_node
+    log = File.read("./localhost_11211.log")
+    assert_equal(true, log.include?("I'm waiting for booting the localhost_11211 instance"))
+  end
+
   def test_check_enabled_repeathost
     res = `#{bin_dir}/romad localhost -p 11211 -d --enabled_repeathost`
     assert_equal('Warning: "--enabled_repeathost" is deplicated. Please use "--replication_in_host"', res.chomp)
