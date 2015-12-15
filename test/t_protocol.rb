@@ -146,7 +146,8 @@ class ProtocolTest < Test::Unit::TestCase
     @sock.write("set key1 0 0 4\r\nval1\r\n")
     assert_equal('STORED', @sock.gets.chomp )
     @sock.write("get_expt key1\r\n")
-    assert_equal('2038-01-19 12:14:07 +0900', @sock.gets.chomp )
+    t = Time.at(2147483647)
+    assert_equal(t.to_s, @sock.gets.chomp ) # 2038-01-19 03:14:07 +0000
     assert_equal('END', @sock.gets.chomp )
     @sock.write("get_expt key1 unix\r\n")
     assert_equal("2147483647", @sock.gets.chomp )
