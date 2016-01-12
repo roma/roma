@@ -70,32 +70,6 @@ class NewFuncTest < Test::Unit::TestCase
     assert_nil(@sock.gets)
   end
 
-#  def test_shutdown_self_yes
-#    @sock.write("switch_dns_caching on \r\n")
-#    assert_equal('{"localhost_11212"=>"ENABLED", "localhost_11211"=>"ENABLED"}', @sock.gets.chomp)
-#
-#    @sock.write("shutdown_self\r\n")
-#    assert_equal("", @sock.gets.chomp)
-#    assert_equal("=================================================================", @sock.gets.chomp)
-#    assert_equal("CAUTION!!: ", @sock.gets.chomp)
-#    assert_equal("\tThis command kill the instance!", @sock.gets.chomp)
-#    assert_equal("\tThere is some possibility of occuring redundancy down!", @sock.gets.chomp)
-#    assert_equal("=================================================================", @sock.gets.chomp)
-#    assert_equal("", @sock.gets.chomp)
-#    assert_equal("Are you sure to shutdown this instance?(yes/no)", @sock.gets.chomp)
-#
-#    @sock.write("yes\r\n")
-#    assert_equal("BYE", @sock.gets.chomp)
-#    assert_nil(@sock.gets)
-#
-#    sock2 = TCPSocket.new("localhost", 11212)
-#    sock2.write("nodelist\r\n")
-#    nodelist = sock2.gets.chomp.split("\s")
-#puts nodelist
-#    assert_equal(1, nodelist.size)
-#    assert_equal("localhost_11212", nodelist[0])
-#  end
-
   def test_get_key_info
     @sock.write("set key1 0 0 4\r\nval1\r\n")
     assert_equal("STORED", @sock.gets.chomp)
@@ -405,16 +379,6 @@ class NewFuncTest < Test::Unit::TestCase
   def test_waiting_node
     log = File.read("./localhost_11211.log")
     assert_equal(true, log.include?("I'm waiting for booting the localhost_11211 instance"))
-  end
-
-  def test_check_enabled_repeathost
-    res = `#{bin_dir}/romad localhost -p 11211 -d --enabled_repeathost`
-    assert_equal('Warning: "--enabled_repeathost" is deplicated. Please use "--replication_in_host"', res.chomp)
-  end
-
-  def test_check_replication_in_host
-    res = `#{bin_dir}/romad localhost -p 11211 -d --replication_in_host`
-    assert_equal('', res.chomp)
   end
 
 end
