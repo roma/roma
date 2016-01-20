@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 class RoutingLogicTest < Test::Unit::TestCase
+  self.test_order = :defined
   include RomaTestUtils
 
   NEW_PORTS = %w(11213 11214)

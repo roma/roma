@@ -10,6 +10,7 @@ Roma::Client::RomaClient.class_eval{
 }
 
 class StorageErrorTest < Test::Unit::TestCase
+  self.test_order = :defined
   include RomaTestUtils
 
   def setup

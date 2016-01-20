@@ -4,6 +4,7 @@ require 'roma/routing/routing_data'
 require 'yaml'
 
 class RoutingDataTest < Test::Unit::TestCase
+  self.test_order = :defined
   def setup
   end
 
@@ -77,16 +78,16 @@ class RoutingDataTest < Test::Unit::TestCase
     assert( rd.rn==1 )
 
     # digest bit count 32
-    # vn bit count 16
+    # vn bit count 9
     # redundancy 2
     # array of node ID ['roma0_3300','roma1_3300','roma2_3300']
-    rd=Roma::Routing::RoutingData.create(32,16,2,['roma0_3300','roma1_3300','roma2_3300'])
+    rd=Roma::Routing::RoutingData.create(32,9,2,['roma0_3300','roma1_3300','roma2_3300'])
 
-    assert( rd.v_idx.length==65536 )
+    assert( rd.v_idx.length==512 )
     assert( rd.nodes.length==3 )
-    assert( rd.search_mask==0xffff0000 )
+    assert( rd.search_mask==4286578688 )
     assert( rd.dgst_bits==32 )
-    assert( rd.div_bits==16 )
+    assert( rd.div_bits==9 )
     assert( rd.rn==2 )
 
     c0=c1=c2=0

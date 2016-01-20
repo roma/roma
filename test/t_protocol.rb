@@ -3,6 +3,7 @@
 require 'socket'
 
 class ProtocolTest < Test::Unit::TestCase
+  self.test_order = :defined
   include RomaTestUtils
 
   def setup
@@ -17,33 +18,50 @@ class ProtocolTest < Test::Unit::TestCase
     puts "#{e} #{$@}"
   end
 
-  def test_set_get_delete
+  def test_set_get
+    sleep 10
+
     # Set data
     @sock.write("set key 0 0 5\r\nvalue\r\n")
+    sleep 1
     assert_equal("STORED", @sock.gets.chomp)
 
     # Get data
     @sock.write("get key\r\n")
+    sleep 1
     assert_equal("VALUE key 0 5", @sock.gets.chomp)
     assert_equal("value", @sock.gets.chomp)
     assert_equal("END", @sock.gets.chomp)
 
     # Update data
     @sock.write("set key 0 0 9\r\nnew_value\r\n")
+    sleep 1
     assert_equal("STORED", @sock.gets.chomp)
 
     # Confirm updated data
     @sock.write("get key\r\n")
+    sleep 1
     assert_equal("VALUE key 0 9", @sock.gets.chomp)
     assert_equal("new_value", @sock.gets.chomp)
     assert_equal("END", @sock.gets.chomp)
+  end
+
+  def test_delete
+    sleep 1
+
+    # Set data
+    @sock.write("set key 0 0 5\r\nvalue\r\n")
+    sleep 1
+    assert_equal("STORED", @sock.gets.chomp)
 
     # Delete data
     @sock.write("delete key\r\n")
+    sleep 1
     assert_equal("DELETED", @sock.gets.chomp)
 
     # Confirm deleted data
     @sock.write("get key\r\n")
+    sleep 1
     assert_equal("END", @sock.gets.chomp)
   end
 

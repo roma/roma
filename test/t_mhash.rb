@@ -9,6 +9,7 @@ Roma::Client::RomaClient.class_eval do
 end
 
 class MHashTest < Test::Unit::TestCase
+  self.test_order = :defined
   include RomaTestUtils
 
   def setup

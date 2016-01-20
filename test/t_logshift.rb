@@ -4,6 +4,7 @@ require 'socket'
 require 'test/unit'
 
 class  LogShiftTest  < Test::Unit::TestCase
+  self.test_order = :defined
   include RomaTestUtils
 
   def setup

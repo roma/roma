@@ -135,6 +135,7 @@ class DefCmdTest
 end
 
 class DefineCommandTest < Test::Unit::TestCase
+  self.test_order = :defined
 
   def setup
     @obj = DefCmdTest.new
@@ -287,6 +288,7 @@ class DefCmdTestNoHash < DefCmdTest
 end
 
 class DefineCommandNoHashTest < Test::Unit::TestCase
+  self.test_order = :defined
   def setup
     @obj = DefCmdTestNoHash.new
   end

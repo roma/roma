@@ -3,6 +3,7 @@
 require 'eventmachine'
 
 class EventMachineTest < Test::Unit::TestCase
+  self.test_order = :defined
   LOOP_NUM = 5
 
   def test_context_switch

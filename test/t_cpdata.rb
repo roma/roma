@@ -82,6 +82,7 @@ end
 
 # test of copying vnode
 class CopyDataTest < Test::Unit::TestCase
+  self.test_order = :defined
   include RomaTestUtils
 
   def setup

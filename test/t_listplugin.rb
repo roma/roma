@@ -610,10 +610,12 @@ module ListPluginTests
 end # ListPluginTests
 
 class ListPluginTest < Test::Unit::TestCase
+  self.test_order = :defined
   include ListPluginTests
 end
 
 class ListPluginTestForceForward < Test::Unit::TestCase
+  self.test_order = :defined
   include ListPluginTests
 
   def setup

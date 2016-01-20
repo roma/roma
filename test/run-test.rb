@@ -20,4 +20,10 @@ Dir["#{base_path}/test/t_*.rb"].each do |test_file|
   require File.basename(test_file, '*.rb')
 end
 
+### optional test
+require_relative './optional_test/t_routing_logic.rb'
+#require_relative './optional_test/t_mkroute_rich.rb'
+#require_relative './optional_test/t_other_database.rb'
+#require_relative './optional_test/t_other_cpdb.rb'
+
 exit(Test::Unit::AutoRunner.run)

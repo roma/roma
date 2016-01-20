@@ -3,6 +3,7 @@
 require 'socket'
 
 class NewFuncTest < Test::Unit::TestCase
+  self.test_order = :defined
   include RomaTestUtils
 
   def setup
@@ -49,9 +50,10 @@ class NewFuncTest < Test::Unit::TestCase
 
   def test_stat_secondary
     @sock.write("stat secondary\r\n")
+    sleep 1
     column, param = @sock.gets.chomp.split("\s")
     assert_equal("routing.secondary1", column)
-    assert_equal(true, param.to_i > 1)
+    assert_equal(true, param.to_i > 0)
     assert_equal("END", @sock.gets.chomp)
   end
 
