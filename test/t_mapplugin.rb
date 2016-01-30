@@ -113,10 +113,12 @@ module MapPluginTests
 end # MapPluginTests
 
 class MapPluginTest < Test::Unit::TestCase
+  self.test_order = :defined
   include MapPluginTests
 end
 
 class MapPluginTestForceForward < Test::Unit::TestCase
+  self.test_order = :defined
   include MapPluginTests
 
   def setup

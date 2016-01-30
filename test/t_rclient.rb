@@ -181,10 +181,12 @@ module RClientTests
 end
 
 class RClientTest < Test::Unit::TestCase
+  self.test_order = :defined
   include RClientTests
 end
 
 class RClientTestForceForward < Test::Unit::TestCase
+  self.test_order = :defined
   include RClientTests
 
   def setup

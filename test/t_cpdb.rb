@@ -5,6 +5,7 @@ require 'roma/config'
 require 'pathname'
 
 class CpdbBaseTest < Test::Unit::TestCase
+  self.test_order = :defined
   include RomaTestUtils
 
   def teardown
@@ -23,11 +24,6 @@ class GroongaTest < CpdbBaseTest
     @sock = TCPSocket.new("localhost", 11211)
   end
 
-  def test_cpdb
-    value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is GroongaStorage", value)
-  end
-
   def test_st_class_grn
     @sock.write("stat st_class\r\n")
     assert_equal("storages[roma].storage.st_class GroongaStorage", @sock.gets.chomp)
@@ -41,10 +37,6 @@ class RubyHashTest < CpdbBaseTest
     start_roma 'cpdbtest/config4cpdb_rh.rb'
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
     @sock = TCPSocket.new("localhost", 11211)
-  end
-  def test_cpdb
-    value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is RubyHashStorage", value)
   end
   def test_st_class_rh
       @sock.write("stat st_class\r\n")
@@ -83,50 +75,9 @@ class TcMemTest < CpdbBaseTest
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
     @sock = TCPSocket.new("localhost", 11211)
   end
-  def test_cpdb
-    value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is TCMemStorage" , value)
-  end
   def test_st_class_tcmem
       @sock.write("stat st_class\r\n")
       assert_equal('storages[roma].storage.st_class TCMemStorage', @sock.gets.chomp)
       assert_equal('END', @sock.gets.chomp)
   end
 end
-
-# Dbm Storage Test
-class DbmTest < CpdbBaseTest
-  def setup
-    start_roma 'cpdbtest/config4cpdb_dbm.rb'
-    @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
-    @sock = TCPSocket.new("localhost", 11211)
-  end
-  def test_cpdb
-    value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is DbmStorage", value)
-  end
-  def test_st_class_dbm
-      @sock.write("stat st_class\r\n")
-      assert_equal('storages[roma].storage.st_class DbmStorage', @sock.gets.chomp)
-      assert_equal('END', @sock.gets.chomp)
-  end
-end
-
-# Sqlite3 Storage Test
-class Sqlite3Test < CpdbBaseTest
-  def setup
-    start_roma 'cpdbtest/config4cpdb_sqlite3.rb'
-    @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
-    @sock = TCPSocket.new("localhost", 11211)
-  end
-  def test_cpdb
-    value = `#{bin_dir}/cpdb 11211`.chomp
-    assert_equal("ERROR:cpdb supports just TCStorage system, your storage type is SQLite3Storage", value)
-  end
-  def test_st_class_sqlite3
-      @sock.write("stat st_class\r\n")
-      assert_equal('storages[roma].storage.st_class SQLite3Storage', @sock.gets.chomp)
-      assert_equal('END', @sock.gets.chomp)
-  end
-end
-

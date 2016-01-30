@@ -181,6 +181,7 @@ module FileWriterTests
 end
 
 class FileWriterTest < Test::Unit::TestCase
+  self.test_order = :defined
   include FileWriterTests
 
   def setup
@@ -195,6 +196,7 @@ class FileWriterTest < Test::Unit::TestCase
 end
 
 class WriteBehindTest < Test::Unit::TestCase
+  self.test_order = :defined
   include FileWriterTests
   include RomaTestUtils
 
@@ -228,6 +230,7 @@ class WriteBehindTest < Test::Unit::TestCase
     send_cmd('localhost_11211', 'wb_command_map {:set=>1}')
     assert_equal('STORED', @rc.set('abc', 'value abc', 0, true))
     send_cmd('localhost_11211', 'writebehind_rotate roma')
+    sleep 1
 
     wb0 = read_wb("#{wb_path}/0.wb")
     assert_equal(1, wb0.length)
@@ -244,6 +247,7 @@ class WriteBehindTest < Test::Unit::TestCase
     assert_equal('STORED', @rc.set('abc', 'val1', 0, true))
     assert_equal('STORED', @rc.set('abc', 'val2', 0, true))
     send_cmd('localhost_11211', 'writebehind_rotate roma')
+    sleep 1
 
     res = [[1, 'abc', 'val1'], [2, 'abc', 'val1'], [1, 'abc', 'val2']]
     wb0 = read_wb("#{wb_path}/0.wb")
@@ -276,6 +280,7 @@ class WriteBehindTest < Test::Unit::TestCase
     res = send_cmd('localhost_11211', 'set_expt abc 100')
     assert_equal('STORED', res.chomp)
     send_cmd('localhost_11211', 'writebehind_rotate roma')
+    sleep 1
 
     res = { 1 => '1', 2 => '1', 3 => '1', 4 => '2', 5 => '23', 6 => '123', 7 => '128', 8 => '129', 9 => '128', 10 => nil }
     wb0 = read_wb("#{wb_path}/0.wb")
@@ -316,6 +321,7 @@ class WriteBehindTest < Test::Unit::TestCase
     assert_equal('STORED', res.chomp)
 
     send_cmd('localhost_11211', 'writebehind_rotate roma')
+    sleep 1
 
     res = [
       [1, 'abc', '1'], [12, 'abc', '1'],
@@ -379,6 +385,7 @@ class WriteBehindTest < Test::Unit::TestCase
     assert_equal('DELETED', @rc.alist_delete_at('abc', 1)) # ['13','5','4','2','1','8','9','10','12']
     assert_equal('CLEARED', @rc.alist_clear('abc'))
     send_cmd('localhost_11211', 'writebehind_rotate roma')
+    sleep 1   
 
     res = {
       10 => '1', 4 => '2', 5 => '3', 6 => '4', 7 => '5', 8 => '6', 9 => '7', 11 => '8', 12 => '9',
@@ -408,6 +415,7 @@ class WriteBehindTest < Test::Unit::TestCase
     assert_equal('STORED', @rc.map_set('abc', 'mapkey1', 'value1'))
     assert_equal('CLEARED', @rc.map_clear('abc'))
     send_cmd('localhost_11211', 'writebehind_rotate roma')
+    sleep 1   
 
     res = { 1 => { 'mapkey1' => 'value1' }, 2 => {}, 3 => {} }
     wb0 = read_wb("#{wb_path}/0.wb")
@@ -435,6 +443,7 @@ class WriteBehindTest < Test::Unit::TestCase
     assert_equal('STORED', @rc.map_set('abc', 'mapkey1', 'value1'))
     assert_equal('CLEARED', @rc.map_clear('abc'))
     send_cmd('localhost_11211', 'writebehind_rotate roma')
+    sleep 1   
 
     res = [
       [1, { 'mapkey1' => 'value1' }],

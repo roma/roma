@@ -629,7 +629,7 @@ module Roma
     def node_check(nid)
       if @startup && @rttable.enabled_failover == false
         unless Roma::Messaging::ConPool.instance.check_connection(nid) 
-          @log.info("I'm wating for booting the #{nid} instance.")
+          @log.info("I'm waiting for booting the #{nid} instance.")
           return false
         end
       end

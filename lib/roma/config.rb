@@ -4,7 +4,7 @@ module Roma
   
   module Config
     # check when the booting
-    VERSION = "1.3.0-dev"
+    VERSION = "1.3.0"
 
     DEFAULT_PORT = 12000
     DEFAULT_NAME = 'ROMA'

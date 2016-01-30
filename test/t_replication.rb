@@ -32,6 +32,7 @@ end # end of StreamWriterTests module
 
 
 class StreamWriterTest < Test::Unit::TestCase
+  self.test_order = :defined
   include StreamWriterTests
   include RomaTestUtils
 
@@ -61,6 +62,7 @@ class StreamWriterTest < Test::Unit::TestCase
 end #  end of StreamWriterTest class
 
 class ClusterReplicationTest < Test::Unit::TestCase
+  self.test_order = :defined
   include StreamWriterTests
   include RomaTestUtils
 
@@ -231,9 +233,10 @@ class ClusterReplicationTest < Test::Unit::TestCase
 
     # set_expt
     @rc.set('key5', 'val5')
+    sleep 0.1
     assert_equal('val5', @rc_replica.get('key5'))
     send_cmd('localhost_11211', 'set_expt key5 1')
-    sleep 2
+    sleep 5
     assert_nil( @rc_replica.get('key5') )
 
     # cas
@@ -242,6 +245,7 @@ class ClusterReplicationTest < Test::Unit::TestCase
       assert_equal(1, v)
       v += 1
     }
+    sleep 0.1
     assert_equal(2, @rc_replica.get("cnt"))
 
     res = @rc.cas("cnt"){|v|
