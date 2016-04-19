@@ -1,0 +1,21 @@
+language: ruby
+
+sudo: false
+
+cache: bundler
+
+addons:
+  apt:
+    packages:
+      - libtokyocabinet-dev
+
+rvm:
+  - 2.1.0
+  - 2.2.3
+  - ruby-head
+
+script: bundle exec ruby test/run-test.rb
+
+matrix:
+  allow_failures:
+    - rvm: ruby-head
