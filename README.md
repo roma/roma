@@ -53,7 +53,7 @@ $ romad localhost -p 10001 -d --replication_in_host
 $ romad localhost -p 10002 -d --replication_in_host
 ```
 
-Refer to [Commands](http://roma-kvs.org/commands.html "Commands") for more detail information about Shell Commands.  
+Refer to [Shell Commands](http://roma-kvs.org/commands.html#dist-jump-link-shell_commands) for more detail information about Shell Commands.  
 
 ## Usage
 Like memcached, you can connect to ROMA with telnet. Connect to the ROMA process that you ran above.
