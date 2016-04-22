@@ -10,14 +10,15 @@ end
 RDOC_OPTIONS = [
                 '--line-numbers',
                 '--inline-source',
-                "--main", "README",
+                "--main", "README.md",
                 "-c UTF-8",
                ]
 
-Rake::RDocTask.new("doc") { |rdoc|
+Rake::RDocTask.new("doc") do |rdoc|
   rdoc.rdoc_dir = 'doc'
   rdoc.title = "ROMA documents"
   rdoc.options.concat RDOC_OPTIONS
   rdoc.rdoc_files.include('lib/**/*.rb')
-  rdoc.rdoc_files.include("README")
-}
+  rdoc.rdoc_files.include("README.md")
+  rdoc.rdoc_files.include("ChangeLog.md")
+end
