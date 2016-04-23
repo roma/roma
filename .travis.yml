@@ -10,8 +10,9 @@ addons:
       - libtokyocabinet-dev
 
 rvm:
-  - 2.1.0
+  - 2.1.6
   - 2.2.3
+  - 2.3.0
   - ruby-head
 
 script: bundle exec ruby test/run-test.rb
