@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.3.1 (Not Released Yet)
+
+* Use travis, [satoryu](https://github.com/satoryu), [#126](https://github.com/roma/roma/pull/126)
+
 ## 1.3.0 (Jan 21 2016)
 
 * change unit test to pass in the poor env [hiroaki-iwase] f0d9cc8
