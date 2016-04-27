@@ -22,3 +22,25 @@ Rake::RDocTask.new("doc") do |rdoc|
   rdoc.rdoc_files.include("README.md")
   rdoc.rdoc_files.include("ChangeLog.md")
 end
+
+namespace :changelog do
+  task :update do
+    last_released_tag = `git tag -l --sort=-creatordate | head -n1`.chomp
+    prs = `git log --oneline #{last_released_tag}...master | grep --color=never -G -e 'Merge pull request' | awk '{gsub("#",""); print $5}'`.chomp
+
+    require 'net/http'
+    require 'json'
+    http = Net::HTTP.new('api.github.com', 443)
+    http.use_ssl = true
+
+    prs.each_line do |pr|
+      req = Net::HTTP::Get.new("/repos/roma/roma/pulls/#{pr.chomp}")
+      res = http.request(req)
+
+      if Net::HTTPSuccess === res
+        json = JSON.parse(res.body)
+        puts "* #{json['title']}, [#{json['user']['login']}](#{json['user']['html_url']}), [##{json['number']}](#{json['html_url']})"
+      end
+    end
+  end
+end
