@@ -1,17 +1,23 @@
-*1.3.0 (Jan 21 2016)*
+# Change Log
+
+## 1.3.1 (Not Released Yet)
+
+* Use travis, [satoryu](https://github.com/satoryu), [#126](https://github.com/roma/roma/pull/126)
+
+## 1.3.0 (Jan 21 2016)
 
 * change unit test to pass in the poor env [hiroaki-iwase] f0d9cc8
 
-*1.3.0RC1 (Nov 13 2015)*
+## 1.3.0RC1 (Nov 13 2015)
 
 * Update README.md [Paras Patel] 3350844
-* automation some manual tests [hiroaki-iwase] dea72fa
+* Automation some manual tests [hiroaki-iwase] dea72fa
   * auto_recover
   * set_routing_trans_timeout
   * st_class
   * adm_tool
   * check_enable_repeathost
-  * check_replication _in_host
+  * check_replication_in_host
 * add below func's unit test [hiroaki-iwase] f9a1721
  * jaro-winkler 
  * stat log level 
@@ -41,7 +47,7 @@
 * add progress rate to data accumulation tool [hiroaki-iwase] 2f9d8aa
 * implement consistency check tool [Hiroaki Iwase] 3211bd9
 
-*1.2.0 (Aug 19 2015)*
+## 1.2.0 (Aug 19 2015)
 
 * Change gemspec [Hiroaki Iwase] db2bb42
 * Modify unit-test [Hiroaki Iwase] 7479034
@@ -62,7 +68,7 @@
 * Add Dynamic Log Shift size and age Test  Script [Paras Patel] 081ebd2
 * Remove unnecessary path in ssroute booting file [Hiroaki Iwase] 4f678cd
 
-*1.1.0 (Mar 30 2015)*
+## 1.1.0 (Mar 30 2015)
 
 * I improved connection performance during booting [Takahiro Tokunaga] ee411f0
 * change support ruby version [hiroaki-iwase] 69c9cab
@@ -87,11 +93,11 @@
 * add replication_in_host option [Takahiro Tokunaga] 2284a53
 * Define rome.gemspec [Tatsuya Sato] e4c4a89
 
-*1.1.0RC2 (Jan 19 2015)*
+## 1.1.0RC2 (Jan 19 2015)
 
 * modify merge prob(delete ruby/server dir, mv groonga relating file) [hiroaki-iwase] 699e0b7
 
-*1.1.0RC1 (Jan 7 2015)*
+## 1.1.0RC1 (Jan 7 2015)
 
 * allow cpdb in just case of RubyHashStorage & TCStorage [hiroaki-iwase] 42ef43b
 * add storage type checking to cpdb [hiroaki-iwase] 47c4e56
@@ -102,7 +108,7 @@
 * Use auto test runner [Kouhei Sutou] 2e8367f
 * Use test-unit gem [Kouhei Sutou] 81677d1
 
-*1.0.0 (Sep 30 2014)*
+## 1.0.0 (Sep 30 2014)
 
 * Add new function to get vnodes information of each data [hiroaki-iwase] ad25c6e
 * Add new function to get key list without stopping ROMA [hiroaki-iwase] f36e907
@@ -121,7 +127,7 @@
 * {func}__prev support in write-behind [junji torii] 96af508
 * each_vn_dump supported in normal status [junji torii] 546ee7d
 
-*0.8.14 (Mar 26 2014)*
+## 0.8.14 (Mar 26 2014)
 
 * add timeout parameter for a vnode copy [junji torii] 0522750
 * add command to change routing_trans_timeout [Rui Bando] 8247698
@@ -133,7 +139,7 @@
 * add snapshot function [junji torii] 2ab928f
 * add safecopy_integration_test for snapshot [hiroaki-iwase] 8e799c1
 
-*0.8.13-p1 (Jan 15 2014)*
+## 0.8.13-p1 (Jan 15 2014)
 
 * add timeout parameter for a vnode copy [junji torii] 0522750
 * remove some debug log [hiroaki-iwase] 94d96dc
@@ -141,7 +147,7 @@
 * Ignore test related files. [Hiroki Matsue] 556a931
 * fix:add rescue in timer_event_1sec [junji torii] 11cc4ea
 
-*0.8.13 (Sep 12 2013)*
+## 0.8.13 (Sep 12 2013)
 
 * change target ruby version about encoding problem (upper 1.9.2 => upper 1.9.1) [hiroaki-iwase] e56d2f4
 * modify end message of join. [hiroaki-iwase] a649dfb
@@ -166,7 +172,7 @@
 * remove utf-8 manifesto # -*- coding: utf-8 -*-" # encoding: utf-8 [hiroaki-iwase] d54e30c
 * translate comment JP to ENG [hiroaki-iwase] 1b091fd
 
-*0.8.12 (Feb 12 2013)*
+## 0.8.12 (Feb 12 2013)
 
 * refactor: for protocol [Hiroki Matsue] a6f9152
 * Add test for context switch with eventmachine. [Hiroki Matsue] 50d0a84
@@ -197,7 +203,7 @@
 * Modify set command safer. [Hiroki Matsue] 91de5a8
 * fix:for a problem of encording on 1.9.3 [junji torii] 0c68a58
 
-*0.8.11 (Aug 8 2012)*
+## 0.8.11 (Aug 8 2012)
 
 * Allocate cmd_aliases plugin. [firejun] f7555c2
 * Add a tool for log. [firejun] bea6c87
@@ -208,7 +214,7 @@
 * fix:[can't add a new key into hash during iteration] occurring in leter then ruby 1.9.1 fixed. [junji torii] 2987536
 * Fix result view of mkconfig. [Hiroki Matsue] bfb0f4a
 
-*0.8.10 (Feb 20 2012)*
+## 0.8.10 (Feb 20 2012)
 
 * Add authors and homepage info to gem. [Hiroki Matsue] 35c5db4
 * Change default number of CONNECTION_EXPTIME. [Hiroki Matsue] 48933ca
@@ -236,32 +242,32 @@
 * implement mapcount_get to support sub_keys. [Hiroki Matsue] 4c9be9a
 * fix module name [yukio.goto] 3c0e21c
 
-*0.8.9 (Dec 16 2011)*
+## 0.8.9 (Dec 16 2011)
 
 * add chg_time_expt() method [junji torii] 305cefc
 * implement to check hash does not exist. [yukio.goto] cef82e0
 
-*0.8.8 (Jun 30 2011)*
+## 0.8.8 (Jun 30 2011)
 
 * create a lock file in the open method,and remove a lock file in the close method. [junji torii] 874f76a
 * for dynamic write-behind [junji torii] 0885028
 
-*0.8.7 (Nov 24 2010)*
+## 0.8.7 (Nov 24 2010)
 
 * refactor: add storage exception [junji torii] 5739597
 
-*0.8.6 (Oct 20 2010)*
+## 0.8.6 (Oct 20 2010)
 
 * refactor: class macro for a plugin [junji torii] 7d89e4e
 * add a map plugin [junji torii] 7db2f64
 * bugfix: restart eventmachine by unbind event [junji torii] c457a70
 
-*0.8.5 (Aug 16 2010)*
+## 0.8.5 (Aug 16 2010)
 
 * bugfix: for zero byte read [junji torii] ef2dada
 * bugfix: for connection expire logic [junji torii] 0d883f6
 
-*0.8.4 (Jun 21 2010)*
+## 0.8.4 (Jun 21 2010)
 
 * refactor: modified a result of a stats command [junji torii] 9e966ed
 * bugfix: connection leak was corrected when a connection expired in irregular connection [junji torii] d23bde9
@@ -269,7 +275,7 @@
 * added a selection of a system call configuration, which of an epoll or select [junji torii] 24c41e2
 * refactor: supported epoll [junji torii] 5c777f1
 
-*0.8.3 (Jun 11 2010)*
+## 0.8.3 (Jun 11 2010)
 
 * added a new command for change to max length of a connection pool [junji torii] 1fbbe29
 * added a switch_failover command [junji torii] 6489383
@@ -302,7 +308,7 @@
 * improved a vnode balance parameter. [junji torii] 40c762c
 * Bug was fixed that auto-termination logic when my node doesn't exist in the routing-table. [junji torii] 4300767
 
-*0.8.2 (Jan 6 2010)*
+## 0.8.2 (Jan 6 2010)
 
 * cron.rb removed. [junji torii] dce07ab
 * added a showbalance command. [junji torii] 0094287
@@ -312,7 +318,7 @@
 * improve a log level setting. [junji torii] ab97ead
 * supported a gets command in ruby client. [junji torii] b553b8b
 
-*0.8.1 (Nov 26 2009)*
+## 0.8.1 (Nov 26 2009)
 
 * update version. [junji torii] c9267c5
 * supported a gets command. [junji torii] 8301706
@@ -339,4 +345,4 @@
 * fixed bug in t_rclient.rb. [junji torii] 68880b5
 * support running test with Ruby not named as 'ruby'. [Kouhei Sutou] 6fd1ec2
 
-*0.8.0 (Oct 23 2009)* 
+## 0.8.0 (Oct 23 2009)
