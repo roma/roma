@@ -9,6 +9,9 @@ addons:
     packages:
       - libtokyocabinet-dev
 
+before_install:
+  - gem install bundler
+
 rvm:
   - 2.1.6
   - 2.2.3
