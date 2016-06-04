@@ -33,6 +33,27 @@ You can simply install ROMA and dependency libralies by using a "gems" command o
 $ gem install roma
 ```
 
+### Troubleshooting
+
+#### Building failure about gem native extension (Ubuntu 14.04)
+
+On Ubuntu 14.04, it reports a failure about building gem native extension while doing `bundle install` under ROMA source directory:
+
+    Using tokyocabinet 1.32.0 from git://github.com/roma/tokyocabinet-ruby.git (at master@f270943)
+
+    Gem::Ext::BuildError: ERROR: Failed to build gem native extension.
+
+This is because of the lack of `libbz2-dev`, so that the `tokyocabinet` cannot be built.
+However, the error message is not very helpful, unless one takes a look at the `mkmf.log`.
+
+    /usr/bin/ld: cannot find -lbz2
+
+To solve it, install the package from `apt-get`:
+
+    sudo apt-get install libbz2-dev
+
+Then re-run `bundle install` to install all the depencies.
+
 ### Make routing files
 
 ROMA is required to make the routing files before starting up.  
