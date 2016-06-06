@@ -361,11 +361,20 @@ class NewFuncTest < Test::Unit::TestCase
         --storage <dir_path>         Specify the TC Storage directory
                                      Ex.)/roma/ds/localhost_10001/roma
         --library <dir_path>         Specify the TC library directory
-                                     Ex.)/roma/libexec", res.chomp)
+                                     Ex.)/roma/libexec
+        --binary <binary_path>       Specify the TC mgr command
+                                     Ex.)/usr/bin/tchmgr", res.chomp)
 
     start_roma 'cpdbtest/config4cpdb_tc.rb'
     stop_roma
-    res = `#{bin_dir}/check_tc_flag --storage ./localhost_11211/roma --library /usr/local/roma/libexec`
+
+    # If `tchmgr` is system-widly known, use it.
+    # If not, assume it is under the libexec directory.
+    path_tchmgr = `which tchmgr`
+    command_path_tchmgr = "--binary #{path_tchmgr}" if "" != path_tchmgr
+    command_path_tchmgr = "--library /usr/local/roma/libexec" if "" == path_tchmgr
+    res = `#{bin_dir}/check_tc_flag --storage ./localhost_11211/roma #{command_path_tchmgr}`
+
     assert_match(/\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
 \.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
 \.\/localhost_11211\/roma\/\d\.tc : \(no flag\)

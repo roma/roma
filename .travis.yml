@@ -8,6 +8,7 @@ addons:
   apt:
     packages:
       - libtokyocabinet-dev
+      - tokyocabinet-bin 
 
 rvm:
   - 2.1.0
