@@ -365,7 +365,17 @@ class NewFuncTest < Test::Unit::TestCase
 
     start_roma 'cpdbtest/config4cpdb_tc.rb'
     stop_roma
-    res = `#{bin_dir}/check_tc_flag --storage ./localhost_11211/roma --library /usr/local/roma/libexec`
+
+    # If `tchmgr` is system-widley known, like installation from `apt-get`,
+    # set the library path as it's parent directory.
+    #
+    # If not, assume it is under the libexec directory.
+    path_tchmgr = `which tchmgr`
+    libpath = File.expand_path(File.join(path_tchmgr.chomp, '..', '..')) if "" != path_tchmgr
+    libpath = "/usr/local/roma/libexec" if "" == path_tchmgr
+
+    res = `#{bin_dir}/check_tc_flag --storage ./localhost_11211/roma --library #{libpath}`
+
     assert_match(/\.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
 \.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
 \.\/localhost_11211\/roma\/\d\.tc : \(no flag\)
