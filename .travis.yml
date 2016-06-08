@@ -8,6 +8,7 @@ addons:
   apt:
     packages:
       - libtokyocabinet-dev
+      - tokyocabinet-bin 
 
 before_install:
   - gem install bundler
