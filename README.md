@@ -27,7 +27,7 @@ More information is [here](http://roma-kvs.org/ "ROMA").
 
 ## Installation
 ### Install ROMA
-You can simply install ROMA and dependency libralies by using a "gems" command of Ruby as follows.  
+You can simply install ROMA and dependency libralies by using a `gem` command of Ruby as follows.
 
 ```
 $ gem install roma
