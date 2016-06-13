@@ -1,7 +1,6 @@
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib)
 
-require 'rake'
 require 'roma/version'
 
 Gem::Specification.new do |s|
@@ -14,7 +13,7 @@ Gem::Specification.new do |s|
   s.description = <<-EOF
     ROMA is one of the data storing systems for distributed key-value stores. It is a completely decentralized distributed system that consists of multiple processes, called nodes, on several machines. It is based on pure P2P architecture like a distributed hash table, thus it provides high availability and scalability.
   EOF
-  s.files = FileList[
+  s.files = Dir[
     '[A-Z]*',
     'bin/**/*',
     'lib/**/*',
@@ -43,7 +42,7 @@ Gem::Specification.new do |s|
                 "--main", "README.md",
                 "-c UTF-8"
                ]
-  s.extra_rdoc_files = ["README.md", "CHANGELOG"]
+  s.extra_rdoc_files = ["README.md", "CHANGELOG.md"]
 
   s.add_dependency 'eventmachine', '~> 1.0.0'
   s.add_dependency 'jaro_winkler', '~> 1.3.5'
