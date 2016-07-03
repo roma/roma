@@ -81,8 +81,8 @@ Refer to [Commands](http://roma-kvs.org/commands.html "Commands") for more detai
 
 If you would like to contribute, please...
 
-1. Fork.
-2. Download [Ruby Client](https://github.com/roma/roma-ruby-client) to same directory.
+1. Fork and git clone it.
+2. Install gems required for development.
 3. Make changes in a branch & add unit tests.
 4. Run Unit Test
   * `ruby test/run_test.rb` (if unit test fails, run it again - it's fickle).
