@@ -16,7 +16,7 @@ require 'roma_test_utils'
 puts "* ROMA Version : #{Roma::Config::VERSION}"
 puts "* Ruby Client Version : #{Roma::Client::VERSION::STRING}"
 
-Dir["#{base_path}/test/t_*.rb"].each do |test_file|
+Dir["#{base_path}/test/test_*.rb"].each do |test_file|
   require File.basename(test_file, '*.rb')
 end
 
