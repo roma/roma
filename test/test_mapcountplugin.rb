@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 require 'roma/client'
 require 'roma/client/plugin/mapcount'
 

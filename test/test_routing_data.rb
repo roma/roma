@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 
 require 'roma/routing/routing_data'
 require 'yaml'

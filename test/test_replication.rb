@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 require 'logger'
 require 'roma/write_behind'
 require 'roma/client/rclient'

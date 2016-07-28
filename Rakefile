@@ -1,5 +1,6 @@
 require 'bundler/gem_tasks'
 require 'rake'
+require 'rake/testtask'
 
 begin
   require 'rdoc/task'
@@ -23,6 +24,12 @@ Rake::RDocTask.new("doc") do |rdoc|
   rdoc.rdoc_files.include("ChangeLog.md")
 end
 
+Rake::TestTask.new do |t|
+  t.libs << 'test'
+  t.test_files = FileList['test/**/test_*.rb']
+  t.verbose = true
+end
+
 namespace :changelog do
   task :update do
     last_released_tag = `git tag -l --sort=-creatordate | head -n1`.chomp
@@ -44,3 +51,5 @@ namespace :changelog do
     end
   end
 end
+
+task default: :test

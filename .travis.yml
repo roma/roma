@@ -19,7 +19,7 @@ rvm:
   - 2.3.1
   - ruby-head
 
-script: bundle exec ruby test/run-test.rb
+script: bundle exec rake test
 
 matrix:
   allow_failures:
