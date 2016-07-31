@@ -425,6 +425,7 @@ module StorageTests
     res = @st.each_vn_dump(0){|data|
       vn, last, clk, expt, klen = data.slice!(0..19).unpack('NNNNN')
       k = data.slice!(0..(klen-1))
+      data.slice!(0..3).umpack('N')
       v = data
       count += 1
 
@@ -645,6 +646,7 @@ module StorageTests
     @st.each_cache_dump_pack(dn, keys) do |data|
       vn, _last, _clk, _expt, klen = data.slice!(0..19).unpack('NNNNN')
       k = data.slice!(0..(klen-1))
+      data.slice!(0..3).unpack('N')
       v = data
 
       assert_match(/key\d/, k)
