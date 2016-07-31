@@ -425,10 +425,9 @@ module StorageTests
     res = @st.each_vn_dump(0){|data|
       vn, last, clk, expt, klen = data.slice!(0..19).unpack('NNNNN')
       k = data.slice!(0..(klen-1))
-      vlen, = data.slice!(0..3).unpack('N')
       v = data
       count += 1
-#      puts "#{vn} #{last} #{clk} #{expt} #{klen} #{k} #{vlen} #{v}"
+
       assert_equal('key',k[0..2])
       assert_equal('val',v[0..2]) if k[3..-1].to_i < 90
 
@@ -437,7 +436,7 @@ module StorageTests
     }
     assert(res)
     assert_equal(100,count)
-    
+
     count = 0
     @st.each_vn_dump(1){|data| count += 1 }
     assert_equal(0,count )
@@ -472,14 +471,8 @@ module StorageTests
     }
 
     count = 0
-    res = @st.each_vn_dump(0){|data|
-      vn, last, clk, expt, klen = data.slice!(0..19).unpack('NNNNN')
-      k = data.slice!(0..(klen-1))
-      vlen, = data.slice!(0..3).unpack('N')
-      v = data
-      count += 1
-#      puts "#{vn} #{last} #{clk} #{expt} #{klen} #{k} #{vlen} #{v}"
-    }
+    res = @st.each_vn_dump(0) { |_| count += 1 }
+
     assert_equal(false, res)
     assert_equal(0, count)
   end
@@ -650,11 +643,10 @@ module StorageTests
       keys << k
     end
     @st.each_cache_dump_pack(dn, keys) do |data|
-      vn, last, clk, expt, klen = data.slice!(0..19).unpack('NNNNN')
+      vn, _last, _clk, _expt, klen = data.slice!(0..19).unpack('NNNNN')
       k = data.slice!(0..(klen-1))
-      vlen, = data.slice!(0..3).unpack('N')
       v = data
-#      puts "#{vn} #{last} #{clk} #{expt} #{klen} #{k} #{vlen} #{v}"
+
       assert_match(/key\d/, k)
       assert_match("val#{k[3..-1]}", v)
     end
