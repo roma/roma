@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-
 module StorageTests
   def ndat
     1000
@@ -425,7 +423,7 @@ module StorageTests
     res = @st.each_vn_dump(0){|data|
       vn, last, clk, expt, klen = data.slice!(0..19).unpack('NNNNN')
       k = data.slice!(0..(klen-1))
-      data.slice!(0..3).umpack('N')
+      data.slice!(0..3).unpack('N')
       v = data
       count += 1
 
