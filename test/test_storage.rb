@@ -1,6 +1,6 @@
 require 'test_helper'
 
-require_relative './roma-test-storage'
+require 'roma-test-storage'
 require 'roma/storage/tc_storage'
 require 'roma/storage/rh_storage'
 require 'roma/storage/groonga_storage'

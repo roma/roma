@@ -1,6 +1,6 @@
 require 'test_helper'
 
-require_relative '../roma-test-storage'
+require 'roma-test-storage'
 require 'roma/storage/dbm_storage'
 require 'roma/storage/sqlite3_storage'
 
