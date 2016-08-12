@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 
 require_relative './roma-test-storage'
 require 'roma/storage/tc_storage'
