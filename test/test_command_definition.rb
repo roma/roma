@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 require 'roma/command/command_definition'
 require 'digest/sha1'
 require 'test/unit'

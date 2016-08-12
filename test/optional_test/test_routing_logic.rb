@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 
 class RoutingLogicTest < Test::Unit::TestCase
   self.test_order = :defined
