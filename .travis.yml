@@ -13,6 +13,10 @@ addons:
 before_install:
   - gem install bundler
 
+env:
+  matrix:
+    - OPTIONAL=yes
+
 rvm:
   - 2.1.10
   - 2.2.5
@@ -24,3 +28,4 @@ script: bundle exec rake test
 matrix:
   allow_failures:
     - rvm: ruby-head
+    - env: OPTIONAL=yes
