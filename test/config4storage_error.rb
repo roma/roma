@@ -1,5 +1,5 @@
 require 'roma/storage/rh_storage'
-require 'roma/storage/storage_error_storage'
+require_relative './storage_error_storage'
 
 module Roma
   

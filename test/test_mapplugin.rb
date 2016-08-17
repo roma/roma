@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 require 'roma/client/rclient'
 require 'roma/plugin/plugin_map'
 require 'roma/client/plugin/map'

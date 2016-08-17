@@ -13,14 +13,22 @@ addons:
 before_install:
   - gem install bundler
 
+env:
+  matrix:
+    - STORAGE=sqlite3
+    - STORAGE=dbm
+    - STORAGE=groonga
+    - OPTIONAL=yes
+
 rvm:
   - 2.1.10
   - 2.2.5
   - 2.3.1
   - ruby-head
 
-script: bundle exec ruby test/run-test.rb
+script: bundle exec rake test
 
 matrix:
   allow_failures:
     - rvm: ruby-head
+    - env: OPTIONAL=yes

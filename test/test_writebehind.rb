@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 require 'logger'
 require 'stringio'
 require 'roma/write_behind'

@@ -1,29 +1,7 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 
-require_relative './roma-test-storage'
-require 'roma/storage/tc_storage'
+require 'roma-test-storage'
 require 'roma/storage/rh_storage'
-require 'roma/storage/groonga_storage'
-
-class TCStorageTest < Test::Unit::TestCase
-  self.test_order = :defined
-  include StorageTests
-
-  def setup
-    rmtestdir('storage_test')
-    @st=Roma::Storage::TCStorage.new
-    @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
-    @st.storage_path = 'storage_test'
-    @st.opendb
-  rescue =>e
-    p e
-  end
-
-  def teardown
-    @st.closedb
-    rmtestdir('storage_test')
-  end
-end
 
 class RubyHashStorageTest < Test::Unit::TestCase
   self.test_order = :defined
@@ -88,39 +66,4 @@ class RubyHashStorageTest < Test::Unit::TestCase
     assert_operator(0,:>, @st.send(:cmp_clk,clk2, clk1) )
   end
 
-end
-
-class TCMemStorageTest < Test::Unit::TestCase
-  self.test_order = :defined
-  include StorageTests
-
-  def setup
-    rmtestdir('storage_test')
-    @st=Roma::Storage::TCMemStorage.new
-    @st.vn_list = [0,1,2,3,4,5,6,7,8,9]
-    @st.storage_path = 'storage_test'
-    @st.opendb
-  end
-end
-
-class GroongaStorageTest < Test::Unit::TestCase
-  self.test_order = :defined
-  include StorageTests
-
-  def storage_path
-    'groonga_storage_test'
-  end
-
-  def setup
-    rmtestdir(storage_path)
-    @st = Roma::Storage::GroongaStorage.new
-    @st.vn_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    @st.storage_path = storage_path
-    @st.opendb
-  end
-
-  def teardown
-    @st.closedb
-    rmtestdir(storage_path)
-  end
 end

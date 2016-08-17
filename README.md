@@ -85,7 +85,8 @@ If you would like to contribute, please...
 2. Install gems required for development.
 3. Make changes in a branch & add unit tests.
 4. Run Unit Test
-  * `ruby test/run_test.rb` (if unit test fails, run it again - it's fickle).
+  * `bundle exec rake` (if unit test fails, run it again - it's fickle).
+  * Specify `STORAGE` to test test cases related to storages such as groonga, sqlite3 and dbm.
 5. Create a pull request.
 
 Contributions, improvements, comments and suggestions are welcome!

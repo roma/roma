@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+require 'test_helper'
 require 'roma/client/rclient'
 require 'roma/messaging/con_pool'
 require 'roma/config'
@@ -14,15 +14,11 @@ class StorageErrorTest < Test::Unit::TestCase
   include RomaTestUtils
 
   def setup
-    base_path = Pathname(__FILE__).dirname.parent.expand_path
-    `ln -s #{base_path}/test/storage_error_storage.rb #{base_path}/lib/roma/storage`
     start_roma 'config4storage_error.rb'
     @rc=Roma::Client::RomaClient.new(["localhost_11211","localhost_11212"])
   end
 
   def teardown
-    base_path = Pathname(__FILE__).dirname.parent.expand_path
-    `rm -f #{base_path}/lib/roma/storage/storage_error_storage.rb`
     stop_roma
     Roma::Messaging::ConPool::instance.close_all
    rescue => e
