@@ -52,7 +52,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'ffi'
   s.add_development_dependency 'gdbm'
   s.add_development_dependency 'sqlite3'
-  s.add_development_dependency 'rroonga'
+  s.add_development_dependency 'rroonga', '~> 6.0.7'
   s.add_development_dependency 'test-unit'
   s.add_development_dependency 'rake'
   s.add_development_dependency 'roma-client'
