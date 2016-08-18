@@ -16,7 +16,7 @@ RDOC_OPTIONS = [
                ]
 
 Rake::RDocTask.new("doc") do |rdoc|
-  rdoc.rdoc_dir = 'doc'
+  rdoc.rdoc_dir = 'rdoc'
   rdoc.title = "ROMA documents"
   rdoc.options.concat RDOC_OPTIONS
   rdoc.rdoc_files.include('lib/**/*.rb')

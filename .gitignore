@@ -1,5 +1,5 @@
 pkg
-doc
+rdoc
 .bundle
 Gemfile.lock
 ruby/server/wb_test/
