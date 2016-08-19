@@ -1,4 +1,6 @@
 # ROMA - A Distributed Key-Value Store in Ruby 
+
+[![Join the chat at https://gitter.im/roma/roma](https://badges.gitter.im/roma/roma.svg)](https://gitter.im/roma/roma?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/roma?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
 [![Build Status](https://travis-ci.org/roma/roma.svg?branch=master)](https://travis-ci.org/roma/roma)
 
