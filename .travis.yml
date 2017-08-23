@@ -33,3 +33,10 @@ matrix:
   allow_failures:
     - rvm: ruby-head
     - env: OPTIONAL=yes
+
+notifications:
+  email: false
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/6f2391f05f5fd4d55bf0
+
