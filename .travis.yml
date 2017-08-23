@@ -27,9 +27,16 @@ rvm:
   - 2.4
   - ruby-head
 
-script: bundle exec rake test
+script: 
+  - bundle exec rake test
 
 matrix:
   allow_failures:
     - rvm: ruby-head
     - env: OPTIONAL=yes
+
+addons:
+  code_climate:
+    repo_token:
+      secure: "oe4xWJO8lDmY61zPZX8659VwOMrEHILd25o6X369E7z+0BW/IjVRAC82uxFRKmDwYoXSFqlctISpE6FMejEdlLtRU+YjPPzCaGZUUlLw1s3fc5MfbfnLF3BBy1somz+sLCpT71kmfnG2X2tHfqV7NfhbZYkRY2xDt5QXpiiquMY="
+
