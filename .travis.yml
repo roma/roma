@@ -30,8 +30,9 @@ rvm:
   - 2.4
   - ruby-head
 
-script: 
+script:
   - bundle exec rake test
+  - bundle exec codeclimate-test-reporter
 
 matrix:
   allow_failures:
