@@ -1,7 +1,7 @@
 # ROMA - A Distributed Key-Value Store in Ruby 
 [![Gitter](https://badges.gitter.im/roma/roma.svg)](https://gitter.im/roma/roma?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Build Status](https://travis-ci.org/roma/roma.svg?branch=master)](https://travis-ci.org/roma/roma)
-[![Coverage Status](https://coveralls.io/repos/github/roma/roma/badge.svg?branch=master)](https://coveralls.io/github/roma/roma?branch=master)
+[![Test Coverage](https://codeclimate.com/github/roma/roma/badges/coverage.svg)](https://codeclimate.com/github/roma/roma/coverage)
 [![Code Climate](https://codeclimate.com/github/roma/roma/badges/gpa.svg)](https://codeclimate.com/github/roma/roma)
 [![Issue Count](https://codeclimate.com/github/roma/roma/badges/issue_count.svg)](https://codeclimate.com/github/roma/roma)
 
