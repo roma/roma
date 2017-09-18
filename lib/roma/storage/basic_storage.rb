@@ -1,5 +1,6 @@
 require 'digest/sha1'
 require 'thread'
+require 'fileutils'
 
 module Roma
   module Storage
@@ -73,11 +74,11 @@ module Roma
         ret
       end
 
-      # Compare this clock with the specified.  
+      # Compare this clock with the specified.
       #
       # -1, 0 or 1 as +clk1+ is numerically less than, equal to,
       # or greater than the +clk2+ given as the parameter.
-      # 
+      #
       # logical clock space is a 32bit ring.
       def cmp_clk(clk1, clk2)
         if (clk1-clk2).abs < 0x80000000 # 1<<31
@@ -95,23 +96,9 @@ module Roma
       end
       protected :create_div_hash
 
-      def mkdir_p(md_path)
-        path = ''
-        md_path.split('/').each do |p|
-          if p.length == 0
-            path = '/'
-            next
-          end
-          path << p
-          Dir::mkdir(path) unless File.exist?(path)
-          path << '/'
-        end
-      end
-      protected :mkdir_p
-
       def opendb
         create_div_hash
-        mkdir_p(@storage_path)
+        FileUtils.mkdir_p(@storage_path)
         @divnum.times do |i|
           # open database file
           @hdb[i] = open_db("#{@storage_path}/#{i}.#{@ext_name}")
@@ -243,7 +230,7 @@ module Roma
           return nil if Time.now.to_i <= expt2
           clk = (clk + 1) & 0xffffffff
         end
-        
+
         # not exist
         ret = [vn, Time.now.to_i, clk, expt, v]
         return ret if db_put(vn, k, pack_data(*ret))
@@ -323,7 +310,7 @@ module Roma
           data = unpack_header(buf)
           if t - data[1] < @logic_clock_expire && cmp_clk(clk,data[2]) <= 0
             @error_message = "error:#{t-data[1]} < #{@logic_clock_expire} && cmp_clk(#{clk},#{data[2]})<=0"
-            return nil 
+            return nil
           end
         end
 
@@ -347,9 +334,9 @@ module Roma
           vn, t, clk, expt, v2 = unpack_data(buf)
           return :deletemark if expt == 0
           clk = (clk + 1) & 0xffffffff
-          v = v2 if v2 && v2.length != 0 && Time.now.to_i <= expt  
+          v = v2 if v2 && v2.length != 0 && Time.now.to_i <= expt
         end
- 
+
         # [ 0.. 3] vn
         # [ 4.. 7] physical clock(unix time)
         # [ 8..11] logical clock
@@ -364,7 +351,7 @@ module Roma
 
       def out(vn, k, d)
         @hdb[@hdiv[vn]].out(k)
-      end 
+      end
 
       def incr(vn, k, d, v)
         buf = db_get(vn, k)
@@ -451,7 +438,7 @@ module Roma
                 hdb.out(k) if hdb.get(k) == v
               end
             end
-            return unless @do_clean_up # 2nd ckeck 
+            return unless @do_clean_up # 2nd ckeck
             sleep @each_clean_up_sleep
           end
         end
@@ -572,7 +559,7 @@ module Roma
             return [vn, last, clk, expt, k.length, k, val.length, val].pack("NNNNNa#{k.length}Na#{val.length}")
           else
             return [vn, last, clk, expt, k.length, k, 0].pack("NNNNNa#{k.length}N")
-          end          
+          end
       end
       private :vn_dump_pack
 
@@ -612,7 +599,7 @@ module Roma
         @hdbc[dn].out(key)
       end
 
-      # Calls the geven block, 
+      # Calls the geven block,
       # passes the cache(@hdbc) element.
       # +dn+:: number of database
       # +keys+:: key list
@@ -624,7 +611,7 @@ module Roma
         end
       end
 
-      # Calls the geven block, 
+      # Calls the geven block,
       # passes the cache(@hdbc) element as the spushv command data format.
       # +dn+:: number of database
       # +keys+:: key list
