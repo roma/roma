@@ -130,7 +130,7 @@ module Roma
       end
 
       def send_stat_result(prefix,h,regexp = nil)
-        h.each{|k,v|         
+        h.each{|k,v|
           if prefix
             key = "#{prefix}#{k}"
           else
@@ -178,7 +178,7 @@ module Roma
           return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
         end
         res = broadcast_cmd("rwritebehind_get_path #{s[1]}\r\n")
-        
+
         ret = $roma.wb_get_path(s[1])
         res[@stats.ap_str] = ret
 
@@ -190,11 +190,11 @@ module Roma
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
         end
-        
+
         ret = $roma.wb_get_path(s[1])
         send_data("#{ret}\r\n")
       end
-      
+
       # writebehind_get_current_file [hash_name]
       def ev_writebehind_get_current_file(s)
         if s.length < 2
@@ -241,7 +241,7 @@ module Roma
 
         res = broadcast_cmd("rswitch_replication #{s[1]} #{s[2]} #{s[3]}\r\n")
 
-        timeout(1){
+       Timeout.timeout(1){
           case s[1]
           when 'true'
             $roma.cr_writer.update_mklhash(s[2])
@@ -279,7 +279,7 @@ module Roma
           return send_data("CLIENT_ERROR [copy target] must be all or nil\r\n")
         end
 
-        timeout(1){
+       Timeout.timeout(1){
           case s[1]
           when 'true'
             $roma.cr_writer.update_mklhash(s[2])
@@ -323,7 +323,7 @@ module Roma
 
         send_data("#{dcnice(s[1].to_i)}\r\n")
       end
-      
+
       def ev_restart(s)
         res = broadcast_cmd("rrestart\r\n")
         $roma.eventloop = true
@@ -344,7 +344,7 @@ module Roma
         send_data("RESTARTED\r\n")
       end
 
-      # set_log_level [ 'debug' | 'info' | 'warn' | 'error' ] 
+      # set_log_level [ 'debug' | 'info' | 'warn' | 'error' ]
       def ev_set_log_level(s)
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 1)\r\n")
@@ -518,7 +518,7 @@ module Roma
 
       # set_latency_avg_calc_rule <mode> <count> <command1> <command2>....
       # <mode> is on/off
-      # <count> is denominator to calculate average. 
+      # <count> is denominator to calculate average.
       # <commandx> is target command
       def ev_set_latency_avg_calc_rule(s)
         #check argument
@@ -648,7 +648,7 @@ module Roma
         if s.length < 2
           return send_data("CLIENT_ERROR number of arguments (0 for 2)\r\n")
         end
-        
+
         #check support commands
         s.each_index {|idx|
           if idx >= 1 && !@stats.latency_check_cmd.include?(s[idx])
@@ -978,7 +978,7 @@ module Roma
 
         send_data("STORED\r\n")
       end
-      
+
       # set_spushv_read_timeout <sec>
       def ev_set_spushv_read_timeout(s)
         if s.length != 2
@@ -1034,33 +1034,33 @@ module Roma
       # set_spushv_klength_warn <byte>
       def ev_set_spushv_klength_warn(s)
         if s.length != 2
-          return send_data("CLIENT_ERROR number of arguments\n\r")        
+          return send_data("CLIENT_ERROR number of arguments\n\r")
         end
         if s[1].to_i <= 0
           return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
         end
         res = broadcast_cmd("rset_spushv_klength_warn #{s[1]}\r\n")
-        @stats.spushv_klength_warn = s[1].to_i 
+        @stats.spushv_klength_warn = s[1].to_i
         res[@stats.ap_str] = "STORED"
         send_data("#{res}\r\n")
       end
- 
+
       # rset_set_spushv_klength_warn <byte>
       def ev_rset_spushv_klength_warn(s)
-        if s.length != 2   
+        if s.length != 2
           return send_data("CLIENT_ERROR number of arguments\n\r")
         end
         if s[1].to_i <= 0
           return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
-        end 
-        @stats.spushv_klength_warn = s[1].to_i 
-        send_data("STORED\r\n") 
+        end
+        @stats.spushv_klength_warn = s[1].to_i
+        send_data("STORED\r\n")
       end
 
       # set_spushv_vlength_warn <byte>
       def ev_set_spushv_vlength_warn(s)
         if s.length != 2
-          return send_data("CLIENT_ERROR number of arguments\n\r")       
+          return send_data("CLIENT_ERROR number of arguments\n\r")
         end
         if s[1].to_i <= 0
           return send_data("CLIENT_ERROR size value must be larger than 0 \r\n")
@@ -1070,17 +1070,17 @@ module Roma
         res[@stats.ap_str] = "STORED"
         send_data("#{res}\r\n")
       end
- 
+
       # rset_set_spushv_vlength_warn <byte>
       def ev_rset_spushv_vlength_warn(s)
-        if s.length != 2   
+        if s.length != 2
           return send_data("CLIENT_ERROR number of arguments\n\r")
         end
         if s[1].to_i <= 0
           return send_data("CLIENT_ERROR size value must be larger than 0\r\n")
-        end 
-        @stats.spushv_vlength_warn = s[1].to_i 
-        send_data("STORED\r\n") 
+        end
+        @stats.spushv_vlength_warn = s[1].to_i
+        send_data("STORED\r\n")
       end
 
       # wb_command_map <hash string>
@@ -1122,7 +1122,7 @@ module Roma
           send_data("#{map}\r\n")
         else
           send_data("CLIENT_ERROR hash string parse error\r\n")
-        end        
+        end
       end
 
       # set_wb_shift_size <size>
@@ -1188,7 +1188,7 @@ module Roma
         else
           return send_data("CLIENT_ERROR status parse error\r\n")
         end
-        
+
         send_data("PUSHED\r\n")
       end
 
@@ -1275,7 +1275,7 @@ module Roma
         elsif s[1].to_i < 1
           return send_data("CLIENT_ERROR length must be greater than zero\r\n")
         end
-        
+
         @log.set_log_shift_size(s[1].to_i)
         @stats.log_shift_size = s[1].to_i
         send_data("STORED\r\n")
@@ -1319,7 +1319,7 @@ module Roma
         send_data("STORED\r\n")
       end
 
-      private 
+      private
 
       def dcnice(p)
         case(p)

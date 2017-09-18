@@ -11,7 +11,7 @@ module Roma
 
     def check_flag
       status = {}
-      timeout(5){
+     Timeout.timeout(5){
         Dir.glob("#{@storage_path}/*.tc").each{|f|
           res = `#{@library_path}/bin/tchmgr inform #{f}`
           res =~ /additional flags:(.*)\n/

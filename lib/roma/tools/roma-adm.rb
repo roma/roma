@@ -40,7 +40,7 @@ module Roma
       elsif @halt_cmd
         return `echo -e "#{@cmd}" | nc -i1 #{host} #{@port}` # bash
       else
-        timeout(5) {
+       Timeout.timeout(5) {
           res = []
           TCPSocket.open(host, @port) do |sock|
             sock.puts @cmd

@@ -81,7 +81,7 @@ module Roma
         host, port = node.split(':')
         sock = nil
         begin
-          timeout(@conf['timeout'].to_i) {
+         Timeout.timeout(@conf['timeout'].to_i) {
             line = nil
             TCPSocket.open(host, port) do |sock|
               sock.puts Message::COMMAND_NODELIST

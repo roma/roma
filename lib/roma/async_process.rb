@@ -302,7 +302,7 @@ module Roma
       @rttable.auto_recover_status = 'preparing'
       t = Thread.new do
         begin
-          timeout(@rttable.auto_recover_time)do
+         Timeout.timeout(@rttable.auto_recover_time)do
             loop do
               sleep 1
               break if @rttable.auto_recover_status != 'preparing'
