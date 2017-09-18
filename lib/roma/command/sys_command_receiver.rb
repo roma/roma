@@ -241,7 +241,7 @@ module Roma
 
         res = broadcast_cmd("rswitch_replication #{s[1]} #{s[2]} #{s[3]}\r\n")
 
-       Timeout.timeout(1){
+        Timeout.timeout(1){
           case s[1]
           when 'true'
             $roma.cr_writer.update_mklhash(s[2])
@@ -279,7 +279,7 @@ module Roma
           return send_data("CLIENT_ERROR [copy target] must be all or nil\r\n")
         end
 
-       Timeout.timeout(1){
+        Timeout.timeout(1){
           case s[1]
           when 'true'
             $roma.cr_writer.update_mklhash(s[2])

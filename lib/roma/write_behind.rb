@@ -2,6 +2,7 @@ require 'thread'
 require 'roma/stats'
 require 'socket'
 require 'roma/messaging/con_pool'
+require 'timeout'
 
 module Roma
 
@@ -174,7 +175,7 @@ module Roma
       end
 
       def update_mklhash(nid)
-       Timeout.timeout(1) do
+        Timeout.timeout(1) do
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           con.write("mklhash 0\r\n")
           @replica_mklhash = con.gets.chomp
@@ -186,7 +187,7 @@ module Roma
       end
 
       def update_nodelist(nid)
-       Timeout.timeout(1) do
+        Timeout.timeout(1) do
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           con.write("nodelist\r\n")
           @replica_nodelist = con.gets.chomp.split("\s")
@@ -198,7 +199,7 @@ module Roma
       end
 
       def update_rttable(nid)
-       Timeout.timeout(1) do
+        Timeout.timeout(1) do
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           con.write "routingdump\r\n"
           routes_length = con.gets.to_i
@@ -234,7 +235,7 @@ module Roma
       end
 
       def transmit(cmd, key, value) # value is for error log
-       Timeout.timeout(5) do
+        Timeout.timeout(5) do
           @do_transmit = true
           nid = search_replica_primary_node(key)
           con = Roma::Messaging::ConPool.instance.get_connection(nid)

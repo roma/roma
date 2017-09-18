@@ -733,7 +733,7 @@ module Roma
     def async_send_cmd(nid, cmd, tout=nil)
       con = res = nil
       if tout
-       Timeout.timeout(tout){
+        Timeout.timeout(tout){
           con = Roma::Messaging::ConPool.instance.get_connection(nid)
           unless con
             @rttable.proc_failed(nid) if @rttable
