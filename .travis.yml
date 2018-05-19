@@ -31,7 +31,7 @@ rvm:
   - ruby-head
 
 script:
-  - bundle exec rake test
+  - bundle exec rake test TEST=test/test_replication.rb
   - bundle exec codeclimate-test-reporter
 
 matrix:
