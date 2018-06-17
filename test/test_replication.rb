@@ -68,7 +68,6 @@ class ClusterReplicationTest < Test::Unit::TestCase
 
   def test_rc_status
     ret = send_cmd('localhost_11211', 'stat run_replication')
-    puts ret
     assert_equal("write-behind.run_replication false\r\n", ret)
 
     ret = send_cmd('localhost_11211', 'stat replica_mklhash')
