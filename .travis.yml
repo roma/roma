@@ -1,7 +1,7 @@
 language: ruby
 
-sudo: false
-dist: precise
+sudo: required
+dist: trusty
 
 cache: bundler
 
