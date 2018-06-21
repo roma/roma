@@ -1,7 +1,7 @@
 require 'test_helper'
 
 require 'roma-test-storage'
-require 'roma/storage/rh_storage'
+require 'roma/storage/ruby_hash_storage'
 
 class RubyHashStorageTest < Test::Unit::TestCase
   self.test_order = :defined

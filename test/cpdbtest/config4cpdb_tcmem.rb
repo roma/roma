@@ -1,4 +1,4 @@
-require 'roma/storage/tc_storage'
+require 'roma/storage/tokyocabinet'
 require_relative 'config4cpdb_base'
 
 module Roma

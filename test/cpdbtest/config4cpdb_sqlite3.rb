@@ -1,4 +1,4 @@
-require 'roma/storage/sqlite3_storage'
+require 'roma/storage/sqlite3'
 require_relative 'config4cpdb_base'
 
 module Roma

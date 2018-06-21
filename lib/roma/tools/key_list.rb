@@ -5,12 +5,12 @@
 module Roma
   module Storage
   end
-  Storage::autoload(:TCStorage,'roma/storage/tc_storage')
-  Storage::autoload(:DbmStorage,'roma/storage/dbm_storage')
-  Storage::autoload(:SQLite3Storage,'roma/storage/sqlite3_storage')
+  Storage::autoload(:TCStorage,'roma/storage/tokyocabinet')
+  Storage::autoload(:DbmStorage,'roma/storage/dbm')
+  Storage::autoload(:SQLite3Storage,'roma/storage/sqlite3')
 
   class KeyList
-    
+
     def initialize(strgpath, param_sleep)
       each_hash(strgpath){|hname, dir|
         STDERR.puts "### #{hname} #{dir}"
@@ -41,7 +41,7 @@ module Roma
         next unless File::directory?(dir)
         hname = dir[dir.rindex('/')+1..-1]
         yield hname,dir
-      }     
+      }
     end
 
     def open_storage(path)
@@ -54,7 +54,7 @@ module Roma
       ext = File::extname(Dir::glob("#{path}/0.*")[0])[1..-1]
       # count a number of divided files
       divnum = Dir::glob("#{path}/*.#{ext}").length
-        
+
       st = new_storage(ext)
       st.divnum = divnum
       st.vn_list = []
@@ -77,7 +77,7 @@ module Roma
     end
 
   end
-  
+
 end
 
 if ARGV.length < 1

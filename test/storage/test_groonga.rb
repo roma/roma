@@ -1,9 +1,9 @@
-require 'test_helper'
-
-require 'roma-test-storage'
-require 'roma/storage/groonga_storage'
-
 if ENV['STORAGE'] == 'groonga'
+  require 'test_helper'
+
+  require 'roma-test-storage'
+  require 'roma/storage/groonga'
+
   class GroongaStorageTest < Test::Unit::TestCase
     self.test_order = :defined
     include StorageTests

@@ -1,9 +1,9 @@
-require 'test_helper'
-
-require 'roma-test-storage'
-require 'roma/storage/dbm_storage'
-
 if ENV['STORAGE'] == 'dbm'
+  require 'test_helper'
+
+  require 'roma-test-storage'
+  require 'roma/storage/dbm'
+
   class DbmStorageTest < Test::Unit::TestCase
     self.test_order = :defined
     include StorageTests

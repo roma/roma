@@ -1,8 +1,8 @@
-require 'roma/storage/rh_storage'
-require 'roma/storage/tc_storage'
+require 'roma/storage/ruby_hash_storage'
+require 'roma/storage/tokyocabinet'
 
 module Roma
-  
+
   module Config
     VERSION = "1.3.0"
 

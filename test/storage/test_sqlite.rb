@@ -1,9 +1,9 @@
-require 'test_helper'
-
-require 'roma-test-storage'
-require 'roma/storage/sqlite3_storage'
-
 if ENV['STORAGE'] == 'sqlite3'
+  require 'test_helper'
+
+  require 'roma-test-storage'
+  require 'roma/storage/sqlite3'
+
   class SQLite3StorageTest < Test::Unit::TestCase
     self.test_order = :defined
     include StorageTests

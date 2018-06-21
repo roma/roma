@@ -1,7 +1,7 @@
 require 'test_helper'
 
 require 'roma-test-storage'
-require 'roma/storage/tc_storage'
+require 'roma/storage/tokyocabinet'
 
 class TCMemStorageTest < Test::Unit::TestCase
   self.test_order = :defined
