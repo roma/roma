@@ -1,13 +1,14 @@
 language: ruby
 
-sudo: false
-dist: precise
+sudo: required
+dist: trusty
 
 cache: bundler
 
 addons:
   apt:
     packages:
+      - libbz2-dev
       - libtokyocabinet-dev
       - tokyocabinet-bin
   code_climate:
