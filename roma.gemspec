@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   ]
 
   # Specify Ruby version of roma-1.1.0
-  s.required_ruby_version = '>= 2.1.0'
+  s.required_ruby_version = '>= 2.3.0'
 
   # Use these for libraries.
   s.require_path = 'lib'
