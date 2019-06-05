@@ -1,7 +1,6 @@
 require 'test_helper'
 require 'roma/client/rclient'
 require 'roma/plugin/plugin_alist'
-require 'roma/storage/tokyocabinet'
 require 'roma/messaging/con_pool'
 require 'roma/client/plugin/alist'
 

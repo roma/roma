@@ -1,5 +1,4 @@
 require 'roma/storage/ruby_hash_storage'
-require 'roma/storage/tokyocabinet'
 
 module Roma
 
@@ -28,7 +27,7 @@ module Roma
     CONNECTION_CONTINUOUS_LIMIT = '200:30:300'
 
     # storage setting
-    STORAGE_CLASS = Storage::TCStorage
+    STORAGE_CLASS = Storage::RubyHashStorage
     STORAGE_DIVNUM = 10
     STORAGE_PATH = '.'
     STORAGE_DUMP_PATH = '/tmp'
