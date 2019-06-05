@@ -19,9 +19,6 @@ before_install:
 
 env:
   matrix:
-    - STORAGE=sqlite3
-    - STORAGE=dbm
-    - STORAGE=groonga
     - OPTIONAL=yes
 
 rvm:
