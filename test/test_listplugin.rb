@@ -584,7 +584,7 @@ module ListPluginTests
     nid,d = @rc.rttable.search_node("aa")
     vn = @rc.rttable.get_vnode_id(d)
 
-    st = Roma::Storage::TCMemStorage.new
+    st = Roma::Storage::RubyHashStorage.new
     st.vn_list = [vn]
     st.storage_path = 'storage_test'
     st.opendb
