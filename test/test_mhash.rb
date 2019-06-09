@@ -133,41 +133,4 @@ class MHashTest < Test::Unit::TestCase
     ret = con.gets.chomp
     assert_equal('STORED', ret)
   end
-
-  def test_mounthash
-    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
-
-    # umount
-    con.write("umounthash test\r\n")
-    ret = con.gets.chomp
-    assert_equal('SERVER_ERROR test does not find.', ret)
-
-    # add 'test' hash
-    con.write("createhash test\r\n")
-    ret = eval con.gets.chomp
-    assert_equal 2, ret.length
-    assert_equal 'CREATED', ret['localhost_11211']
-    assert_equal 'CREATED', ret['localhost_11212']
-
-    # umount
-    con.write("umounthash test\r\n")
-    ret = eval con.gets.chomp
-    assert_equal 2, ret.length
-    assert_equal 'UNMOUNTED', ret['localhost_11211']
-    assert_equal 'UNMOUNTED', ret['localhost_11212']
-
-    @rc.default_hash_name = 'test'
-    assert_raise(RuntimeError, 'SERVER_ERROR test does not exists.') do
-      @rc.set 'key', 'value'
-    end
-
-    # mount
-    con.write("mounthash test\r\n")
-    ret = eval con.gets.chomp
-    assert_equal 2, ret.length
-    assert_equal 'MOUNTED', ret['localhost_11211']
-    assert_equal 'MOUNTED', ret['localhost_11212']
-
-    assert_equal('STORED', @rc.set('key', 'value'))
-  end
 end
