@@ -1,4 +1,4 @@
-require 'roma/storage/groonga_storage'
+require 'roma/storage/groonga'
 require_relative 'config4cpdb_base'
 
 module Roma

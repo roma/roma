@@ -7,9 +7,9 @@ require 'roma/routing/routing_data'
 module Roma
   module Storage
   end
-  Storage::autoload(:TCStorage,'roma/storage/tc_storage')
-  Storage::autoload(:DbmStorage,'roma/storage/dbm_storage')
-  Storage::autoload(:SQLite3Storage,'roma/storage/sqlite3_storage')
+  Storage::autoload(:TCStorage,'roma/storage/tokyocabinet')
+  Storage::autoload(:DbmStorage,'roma/storage/dbm')
+  Storage::autoload(:SQLite3Storage,'roma/storage/sqlite3')
 
   class MakeRecentData
 

@@ -5,15 +5,15 @@ require 'optparse'
 module Roma
   module Storage
   end
-  Storage::autoload(:TCStorage,'roma/storage/tc_storage')
-  Storage::autoload(:DbmStorage,'roma/storage/dbm_storage')
-  Storage::autoload(:SQLite3Storage,'roma/storage/sqlite3_storage')
+  Storage::autoload(:TCStorage,'roma/storage/tokyocabinet')
+  Storage::autoload(:DbmStorage,'roma/storage/dbm')
+  Storage::autoload(:SQLite3Storage,'roma/storage/sqlite3')
 
   class KeyAccess
-    
+
     def initialize(argv)
       options(argv)
-      
+
       each_hash(@path){|hname, dir|
         puts "hash : #{hname}"
         st = open_storage(dir)
@@ -45,7 +45,7 @@ module Roma
     def options(argv)
       opts = OptionParser.new
       opts.banner="usage:#{File.basename($0)} storage-path key"
-      
+
       @sv = false
       opts.on("-v","--value","show value") { |v| @sv = true }
 
@@ -63,7 +63,7 @@ module Roma
         next unless File::directory?(dir)
         hname = dir[dir.rindex('/')+1..-1]
         yield hname,dir
-      }     
+      }
     end
 
     def open_storage(path)
@@ -76,7 +76,7 @@ module Roma
       ext = File::extname(Dir::glob("#{path}/0.*")[0])[1..-1]
       # count a number of divided files
       divnum = Dir::glob("#{path}/*.#{ext}").length
-        
+
       st = new_storage(ext)
       st.divnum = divnum
       st.vn_list = []
@@ -99,7 +99,7 @@ module Roma
     end
 
   end
-  
+
 end
 
 Roma::KeyAccess.new(ARGV)

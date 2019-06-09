@@ -1,4 +1,4 @@
-require 'roma/storage/dbm_storage'
+require 'roma/storage/dbm'
 require_relative 'config4cpdb_base'
 
 module Roma

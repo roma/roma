@@ -6,10 +6,6 @@ dist: precise
 cache: bundler
 
 addons:
-  apt:
-    packages:
-      - libtokyocabinet-dev
-      - tokyocabinet-bin
   code_climate:
     repo_token:
       secure: "oe4xWJO8lDmY61zPZX8659VwOMrEHILd25o6X369E7z+0BW/IjVRAC82uxFRKmDwYoXSFqlctISpE6FMejEdlLtRU+YjPPzCaGZUUlLw1s3fc5MfbfnLF3BBy1somz+sLCpT71kmfnG2X2tHfqV7NfhbZYkRY2xDt5QXpiiquMY="
@@ -17,15 +13,7 @@ addons:
 before_install:
   - gem install bundler
 
-env:
-  matrix:
-    - STORAGE=sqlite3
-    - STORAGE=dbm
-    - STORAGE=groonga
-    - OPTIONAL=yes
-
 rvm:
-  - 2.3.7
   - 2.4.4
   - 2.5.1
   - 2.6.0
@@ -38,11 +26,9 @@ script:
 matrix:
   allow_failures:
     - rvm: ruby-head
-    - env: OPTIONAL=yes
 
 notifications:
   email: false
   webhooks:
     urls:
       - https://webhooks.gitter.im/e/6f2391f05f5fd4d55bf0
-

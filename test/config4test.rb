@@ -1,4 +1,4 @@
-require 'roma/storage/rh_storage'
+require 'roma/storage/ruby_hash_storage'
 
 module Roma
 

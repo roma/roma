@@ -36,10 +36,6 @@ class MHashTest < Test::Unit::TestCase
     assert_equal 'CREATED', ret['localhost_11211']
     assert_equal 'CREATED', ret['localhost_11212']
 
-    # file check
-    assert(File.directory? './localhost_11211/test')
-    assert(File.directory? './localhost_11212/test')
-
     con.write("hashlist\r\n")
     ret = con.gets
     assert_equal('roma test', ret.chomp)
@@ -75,10 +71,6 @@ class MHashTest < Test::Unit::TestCase
     assert_equal 'DELETED', ret['localhost_11212']
 
     con.close
-
-    # file check
-    assert(File.directory?('./localhost_11211/test') == false)
-    assert(File.directory?('./localhost_11212/test') == false)
   end
 
   def test_createhash2
@@ -102,25 +94,6 @@ class MHashTest < Test::Unit::TestCase
 
     # stop roma
     stop_roma
-
-    # restart roma
-    sleep 1
-    DEFAULT_NODES.each do |node|
-      do_command_romad(node, 'config4mhash.rb')
-    end
-    sleep 1
-
-    Roma::Messaging::ConPool.instance.close_all
-    Roma::Client::ConPool.instance.close_all
-
-    @rc = Roma::Client::RomaClient.new(%w(localhost_11211 localhost_11212))
-
-    @rc.default_hash_name = 'test'
-    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
-    con.write("hashlist\r\n")
-    ret = con.gets
-
-    assert_equal('hname=test', @rc.get('roma'))
   end
 
   def test_createhash3
@@ -159,50 +132,5 @@ class MHashTest < Test::Unit::TestCase
     con.write("rdefhash test\r\n")
     ret = con.gets.chomp
     assert_equal('STORED', ret)
-  end
-
-  def test_mounthash
-    con = Roma::Messaging::ConPool.instance.get_connection('localhost_11211')
-
-    # file check
-    assert(File.directory?('./localhost_11211/test') == false)
-    assert(File.directory?('./localhost_11212/test') == false)
-
-    # umount
-    con.write("umounthash test\r\n")
-    ret = con.gets.chomp
-    assert_equal('SERVER_ERROR test does not find.', ret)
-
-    # add 'test' hash
-    con.write("createhash test\r\n")
-    ret = eval con.gets.chomp
-    assert_equal 2, ret.length
-    assert_equal 'CREATED', ret['localhost_11211']
-    assert_equal 'CREATED', ret['localhost_11212']
-
-    # file check
-    assert(File.directory? './localhost_11211/test')
-    assert(File.directory? './localhost_11212/test')
-
-    # umount
-    con.write("umounthash test\r\n")
-    ret = eval con.gets.chomp
-    assert_equal 2, ret.length
-    assert_equal 'UNMOUNTED', ret['localhost_11211']
-    assert_equal 'UNMOUNTED', ret['localhost_11212']
-
-    @rc.default_hash_name = 'test'
-    assert_raise(RuntimeError, 'SERVER_ERROR test does not exists.') do
-      @rc.set 'key', 'value'
-    end
-
-    # mount
-    con.write("mounthash test\r\n")
-    ret = eval con.gets.chomp
-    assert_equal 2, ret.length
-    assert_equal 'MOUNTED', ret['localhost_11211']
-    assert_equal 'MOUNTED', ret['localhost_11212']
-
-    assert_equal('STORED', @rc.set('key', 'value'))
   end
 end

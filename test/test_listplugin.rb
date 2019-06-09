@@ -1,7 +1,6 @@
 require 'test_helper'
 require 'roma/client/rclient'
 require 'roma/plugin/plugin_alist'
-require 'roma/storage/tc_storage'
 require 'roma/messaging/con_pool'
 require 'roma/client/plugin/alist'
 
@@ -112,7 +111,7 @@ module ListPluginTests
 
   def test_gets
     @rc.alist_clear("aa")
-    
+
     assert_nil( @rc.alist_gets("aa") )
     assert( @rc.alist_push("aa","11")=='STORED' )
     assert( @rc.alist_gets("aa") == [1,"11"] )
@@ -271,7 +270,7 @@ module ListPluginTests
     assert_equal(["aa","99","88","77","66","55","44","33","22","11"], @rc.alist_to_s("aa")[1])
     assert_equal('STORED', @rc.alist_expired_swap_and_sized_insert("aa",5,10,"bb"))
     assert_equal(["bb","aa","99","88","77","66","55","44","33","22"], @rc.alist_to_s("aa")[1])
-    
+
     # for swaped logic
     assert_equal('STORED', @rc.alist_expired_swap_and_sized_insert("aa",5,10,"55"))
     assert_equal(["55","bb","aa","99","88","77","66","44","33","22"], @rc.alist_to_s("aa")[1])
@@ -326,7 +325,7 @@ module ListPluginTests
     assert_equal('STORED', @rc.alist_push("aa","55"))
     assert_equal('STORED', @rc.alist_push("aa","66"))
     assert_equal('STORED', @rc.alist_push("aa","77"))
-  
+
     assert_nil( @rc.alist_to_json("aa",10) )
     assert_equal('["66"]', @rc.alist_to_json("aa",5))
     assert_equal('["22","33","44","55"]', @rc.alist_to_json("aa",1..4))
@@ -377,7 +376,7 @@ module ListPluginTests
     assert_equal(2, res.length )
     assert_equal(1, res[0] )
     assert_equal('11', res[1][0] )
-    
+
     assert_equal('STORED', @rc.alist_push("aa","22"))
     assert_equal('STORED', @rc.alist_push("aa","33"))
     assert_equal('STORED', @rc.alist_push("aa","44"))
@@ -468,7 +467,7 @@ module ListPluginTests
     assert_equal(["00","11","22","33","44","55","66","77","88","99"], @rc.alist_to_s("aa")[1])
     assert_equal('NOT_PUSHED', @rc.alist_expired_swap_and_sized_push("aa",5,10,"bb"))
     assert_equal(["00","11","22","33","44","55","66","77","88","99"], @rc.alist_to_s("aa")[1])
-      
+
     # for swaped logic
     assert_equal('STORED', @rc.alist_expired_swap_and_sized_push("aa",5,10,"55"))
     assert_equal(["00","11","22","33","44","66","77","88","99","55"], @rc.alist_to_s("aa")[1])
@@ -488,7 +487,7 @@ module ListPluginTests
     assert_equal('STORED', @rc.alist_push("aa","22"))
     assert_equal('STORED', @rc.alist_push("aa","33"))
     assert_equal('STORED', @rc.alist_push("aa","44"))
-    
+
     assert_equal(["00","11","22","33","44"], @rc.alist_to_s("aa")[1])
 
     assert_equal('NOT_FOUND', @rc.alist_update_at("aa",-1,"a0"))
@@ -562,9 +561,9 @@ module ListPluginTests
     @rc.alist_push("aa","11")
 
     push_a_vnode_stream(st, vn, nid)
-    
+
     assert_equal(["55", "33", "11", "22", "44"], @rc.alist_to_s("aa")[1])
-    
+
     # create a data out of list
     st.set(vn,'aa',0,0xffffffff,'val-aa')
     push_a_vnode_stream(st, vn, nid)
@@ -585,7 +584,7 @@ module ListPluginTests
     nid,d = @rc.rttable.search_node("aa")
     vn = @rc.rttable.get_vnode_id(d)
 
-    st = Roma::Storage::TCMemStorage.new
+    st = Roma::Storage::RubyHashStorage.new
     st.vn_list = [vn]
     st.storage_path = 'storage_test'
     st.opendb
@@ -603,7 +602,7 @@ module ListPluginTests
     }
     con.write("\0"*20) # end of steram
     res = con.gets # STORED\r\n or error string
-    Roma::Messaging::ConPool.instance.return_connection(nid,con)    
+    Roma::Messaging::ConPool.instance.return_connection(nid,con)
   end
   private :push_a_vnode_stream
 
@@ -630,7 +629,7 @@ class ListPluginTestForceForward < Test::Unit::TestCase
         @rd.v_idx[d & @search_mask][1]
       end
     }
-  end  
+  end
 
   undef test_alist_spushv
 end
