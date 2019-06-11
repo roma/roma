@@ -1,11 +1,13 @@
 require 'thor'
+require 'roma/cli/config'
 require 'roma/cli/server'
-require 'roma/cli/generator'
+require 'roma/cli/routes'
 
 module Roma
   class CLI < Thor
+    register(CLI::Config, 'config', '', '')
     register(CLI::Server, 'server', '', '')
-    register(CLI::Generator, 'generate', '', '')
+    register(CLI::Routes, 'routes', '', '')
 
     map '-V' => 'version'
 
