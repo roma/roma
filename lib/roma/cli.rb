@@ -1,9 +1,11 @@
 require 'thor'
 require 'roma/cli/server'
+require 'roma/cli/generator'
 
 module Roma
   class CLI < Thor
     register(CLI::Server, 'server', '', '')
+    register(CLI::Generator, 'generate', '', '')
 
     map '-V' => 'version'
 
