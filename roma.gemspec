@@ -47,7 +47,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'eventmachine', '~> 1.0.0'
   s.add_dependency 'jaro_winkler', '~> 1.3.5'
   s.add_dependency 'roma-storage', '~> 0.1.0'
-  #s.add_dependency 'levenshtein', '~> 0.2.2'
+  s.add_dependency 'thor', '~> 0.20.3'
 
   #s.add_development_dependency 'tokyocabinet', '~> 1.29.1' # we prepared customized gem(1.31a) for ruby2.1. Please use this.
   s.add_development_dependency 'ffi'
