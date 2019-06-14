@@ -9,7 +9,7 @@ require 'roma/logging/rlogger'
 require 'roma/command/receiver'
 require 'roma/messaging/con_pool'
 require 'roma/event/con_pool'
-require 'roma/routing/cb_rttable'
+require 'roma/routing/churn_based_routing_table'
 require 'timeout'
 
 module Roma

@@ -1,4 +1,4 @@
-require 'roma/routing/rttable'
+require 'roma/routing/routing_table'
 require 'roma/routing/random_partitioner'
 
 module Roma
