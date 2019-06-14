@@ -366,14 +366,14 @@ module Roma
       if @stats.join_ap
         initialize_routing_table_join
       else
-        fname = "#{Roma::Config::RTTABLE_PATH}/#{@stats.ap_str}.route"
-        raise "#{fname} not found." unless File::exist?(fname)
-        rd = Roma::Routing::RoutingData::load(fname)
-        raise "It failed in loading the routing table data." unless rd
+        file_path = "#{Roma::Config::RTTABLE_PATH}/#{@stats.ap_str}.route"
+        raise "#{file_path} not found." unless File::exist?(file_path)
+        routing_data = Roma::Routing::RoutingData::load(file_path)
+        raise "It failed in loading the routing table data." unless routing_data
         if Config.const_defined? :RTTABLE_CLASS
-          @routing_table = Config::RTTABLE_CLASS.new(rd,fname)
+          @routing_table = Config::RTTABLE_CLASS.new(routing_data,file_path)
         else
-          @routing_table = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
+          @routing_table = Roma::Routing::ChurnbasedRoutingTable.new(routing_data,file_path)
         end
       end
 
@@ -428,18 +428,18 @@ module Roma
           "me = \"#{@stats.name}\"  #{@stats.join_ap} = \"#{name}\""
       end
 
-      fname = "#{Roma::Config::routing_table_PATH}/#{@stats.ap_str}.route"
-      if rd = get_routedump(@stats.join_ap)
-        rd.save(fname)
+      file_path = "#{Roma::Config::RTTABLE_PATH}/#{@stats.ap_str}.route"
+      if routing_dump = get_routedump(@stats.join_ap)
+        routing_dump.save(file_path)
       else
         raise "It failed in getting the routing table data from #{@stats.join_ap}."
       end
 
-      if rd.nodes.include?(@stats.ap_str)
+      if routing_dump.nodes.include?(@stats.ap_str)
         raise "ROMA has already contained #{@stats.ap_str}."
       end
 
-      @routing_table = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
+      @routing_table = Roma::Routing::ChurnbasedRoutingTable.new(routing_dump,file_path)
       nodes = @routing_table.nodes
 
       nodes.each{|nid|
@@ -450,7 +450,7 @@ module Roma
             raise "Hotscale initialize failed.\n#{nid} is busy."
           end
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
-        rescue =>e
+        rescue => e
           raise "Hotscale initialize failed.\n#{nid} unreachable connection."
         end
       }
@@ -461,11 +461,11 @@ module Roma
       rcv = receive_routing_dump(nid, "routingdump bin\r\n")
       unless rcv
         rcv = receive_routing_dump(nid, "routingdump\r\n")
-        rd = Marshal.load(rcv)
+        routing_dump = Marshal.load(rcv)
       else
-        rd = Routing::RoutingData.decode_binary(rcv)
+        routing_dump = Routing::RoutingData.decode_binary(rcv)
       end
-      rd
+      routing_dump
     rescue
       nil
     end
