@@ -12,11 +12,12 @@ module Roma
       method_option :name, type: :string, aliases: '-n', default: Roma::Config::DEFAULT_NAME, desc: "Server's name"
       method_option :port, type: :numeric, default: Roma::Config::DEFAULT_PORT, aliases: '-p', desc: 'Port number'
       method_option :enabled_repeathost, type: :boolean, default: false, desc: 'Allow redundancy to same host'
+      method_option :replication_in_host, type: :boolean, default: false, desc: 'Allow redundancy to same host'
       method_option :disabled_cmd_protect, type: :boolean, default: false, desc: 'Command protection disable while starting'
       method_option :config, type: :string, default: nil, aliases: '-c', desc: 'File path to configuration'
       desc 'start [OPTIONS] ADDRESS', 'Launch ROMA server'
       def start(address)
-        server = Roma::Server.new(options)
+        server = Roma::Server.new(address, options)
         server.start
       end
     end

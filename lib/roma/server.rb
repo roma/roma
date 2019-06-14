@@ -26,10 +26,10 @@ module Roma
     attr_accessor :eventloop
     attr_accessor :startup
 
-    def initialize(options = {})
+    def initialize(address, options = {})
       @stats = Roma::Stats.instance
       @startup = true
-      # options(argv)
+      options[:address] ||= address
       initialize_stats(options)
       initialize_connection
       initialize_logger
@@ -184,11 +184,13 @@ module Roma
       unless require @stats.config_path
         STDERR.puts "The given configuration file has been already required: #{@stats.config_path}"
       end
+
+      @stats.address = options[:address]
       @stats.port = options[:port] || Config::DEFAULT_PORT
       @stats.name = options[:name] || Config::DEFAULT_NAME
 
       if @stats.join_ap
-        @stats.join_ap.sub!(':', '_')
+        @stats.join_ap = @stats.join_ap.sub(':', '_')
         raise "[address:port] can not be parsed." if !(@stats.join_ap =~ /^.+_\d+$/)
       end
 
@@ -336,18 +338,18 @@ module Roma
       st_class ||= Storage::RubyHashStorage
       st_divnum ||= 10
       st_option ||= nil
-      Dir.glob("#{path}/*").each{|f|
-        if File.directory?(f)
-          hname = File.basename(f)
-          st = st_class.new
-          st.storage_path = "#{path}/#{hname}"
-          st.vn_list = @rttable.vnodes
-          st.st_class = st_class
-          st.divnum = st_divnum
-          st.option = st_option
-          @storages[hname] = st
-        end
-      }
+      Dir.glob("#{path}/*").each do |f|
+        next unless File.directory?(f)
+        hname = File.basename(f)
+        st = st_class.new
+        st.storage_path = "#{path}/#{hname}"
+        st.vn_list = @rttable.vnodes
+        st.st_class = st_class
+        st.divnum = st_divnum
+        st.option = st_option
+        @storages[hname] = st
+      end
+
       if @storages.length == 0
         hname = 'roma'
         st = st_class.new
