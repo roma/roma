@@ -53,7 +53,7 @@ module Roma
       end
       @async_thread_latency[:name] = __method__
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
     end
 
     private
@@ -88,14 +88,14 @@ module Roma
               end
               t[:name] = __method__
             else
-              @log.error("async process retry out:#{msg.inspect}")
+              @logger.error("async process retry out:#{msg.inspect}")
               msg.callback.call(msg, false) if msg.callback
             end
           end
         end
       end
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
       retry
     end
 
@@ -113,19 +113,19 @@ module Roma
               end
               t[:name] = __method__
             else
-              @log.error("async process retry out:#{msg.inspect}")
+              @logger.error("async process retry out:#{msg.inspect}")
               msg.callback.call(msg, false) if msg.callback
             end
           end
         end
       end
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
       retry
     end
 
     def asyncev_broadcast_cmd(args)
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
       cmd, nids, tout = args
       t = Thread.new do
         async_broadcast_cmd("#{cmd}\r\n", nids, tout)
@@ -135,17 +135,17 @@ module Roma
     end
 
     def asyncev_start_join_process(_args)
-      @log.debug(__method__)
+      @logger.debug(__method__)
       if @stats.run_join
-        @log.error("#{__method__}:join process running")
+        @logger.error("#{__method__}:join process running")
         return true
       end
       if @stats.run_recover
-        @log.error("#{__method__}:recover process running")
+        @logger.error("#{__method__}:recover process running")
         return true
       end
       if @stats.run_balance
-        @log.error("#{__method__}:balance process running")
+        @logger.error("#{__method__}:balance process running")
         return true
       end
       @stats.run_join = true
@@ -153,7 +153,7 @@ module Roma
         begin
           join_process
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
           @stats.run_join = false
           @stats.join_ap = nil
@@ -164,17 +164,17 @@ module Roma
     end
 
     def asyncev_start_balance_process(_args)
-      @log.debug(__method__)
+      @logger.debug(__method__)
       if @stats.run_join
-        @log.error("#{__method__}:join process running")
+        @logger.error("#{__method__}:join process running")
         return true
       end
       if @stats.run_recover
-        @log.error("#{__method__}:recover process running")
+        @logger.error("#{__method__}:recover process running")
         return true
       end
       if @stats.run_balance
-        @log.error("#{__method__}:balance process running")
+        @logger.error("#{__method__}:balance process running")
         return true
       end
       @stats.run_balance = true
@@ -182,7 +182,7 @@ module Roma
         begin
           balance_process
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
           @stats.run_balance = false
         end
@@ -193,14 +193,14 @@ module Roma
 
     def asyncev_redundant(args)
       nid, hname, k, d, clk, expt, v = args
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
-        @log.warn("async redundant failed:#{nid} does not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}")
+        @logger.warn("async redundant failed:#{nid} does not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}")
         return true # no retry
       end
       res = async_send_cmd(nid, "rset #{k}\e#{hname} #{d} #{clk} #{expt} #{v.length}\r\n#{v}\r\n", 10)
       if res.nil? || res.start_with?('ERROR')
-        @log.warn("async redundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
+        @logger.warn("async redundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
         return false # retry
       end
       true
@@ -208,14 +208,14 @@ module Roma
 
     def asyncev_zredundant(args)
       nid, hname, k, d, clk, expt, zv = args
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
-        @log.warn("async zredundant failed:#{nid} does not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}")
+        @logger.warn("async zredundant failed:#{nid} does not found in routing table.#{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}")
         return true # no retry
       end
       res = async_send_cmd(nid, "rzset #{k}\e#{hname} #{d} #{clk} #{expt} #{zv.length}\r\n#{zv}\r\n", 10)
       if res.nil? || res.start_with?('ERROR')
-        @log.warn("async zredundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
+        @logger.warn("async zredundant failed:#{k}\e#{hname} #{d} #{clk} #{expt} #{v.length} -> #{nid}")
         return false # retry
       end
       true
@@ -223,14 +223,14 @@ module Roma
 
     def asyncev_rdelete(args)
       nid, hname, k, clk = args
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
       unless @rttable.nodes.include?(nid)
-        @log.warn("async rdelete failed:#{nid} does not found in routing table.#{k}\e#{hname} #{clk}")
+        @logger.warn("async rdelete failed:#{nid} does not found in routing table.#{k}\e#{hname} #{clk}")
         return true # no retry
       end
       res = async_send_cmd(nid, "rdelete #{k}\e#{hname} #{clk}\r\n", 10)
       unless res
-        @log.warn("async redundant failed:#{k}\e#{hname} #{clk} -> #{nid}")
+        @logger.warn("async redundant failed:#{k}\e#{hname} #{clk} -> #{nid}")
         return false # retry
       end
       true
@@ -238,16 +238,16 @@ module Roma
 
     def asyncev_reqpushv(args)
       vn, nid, p = args
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
       if @stats.run_iterate_storage
-        @log.warn("#{__method__}:already be iterated storage process.")
+        @logger.warn("#{__method__}:already be iterated storage process.")
       else
         @stats.run_iterate_storage = true
         t = Thread.new do
           begin
             sync_a_vnode(vn.to_i, nid, p == 'true')
           rescue => e
-            @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+            @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
           ensure
             @stats.run_iterate_storage = false
           end
@@ -257,17 +257,17 @@ module Roma
     end
 
     def asyncev_start_recover_process(args)
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
       if @stats.run_join
-        @log.error("#{__method__}:join process running")
+        @logger.error("#{__method__}:join process running")
         return true
       end
       if @stats.run_recover
-        @log.error("#{__method__}:recover process running.")
+        @logger.error("#{__method__}:recover process running.")
         return false
       end
       if @stats.run_balance
-        @log.error("#{__method__}:balance process running")
+        @logger.error("#{__method__}:balance process running")
         return true
       end
       @stats.run_recover = true
@@ -275,7 +275,7 @@ module Roma
         begin
           acquired_recover_process
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
           @stats.run_recover = false
         end
@@ -284,18 +284,18 @@ module Roma
     end
 
     def asyncev_start_auto_recover_process(args)
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
       # ##run_join don't have possibility to be true in this case.
       # if @stats.run_join
-      #  @log.error("#{__method__}:join process running")
+      #  @logger.error("#{__method__}:join process running")
       #  return true
       # end
       if @stats.run_recover
-        @log.error("#{__method__}:recover process running.")
+        @logger.error("#{__method__}:recover process running.")
         return false
       end
       if @stats.run_balance
-        @log.error("#{__method__}:balance process running")
+        @logger.error("#{__method__}:balance process running")
         return true
       end
 
@@ -311,23 +311,23 @@ module Roma
               break if @stats.run_balance
             end
           end
-          @log.debug('inactivated AUTO_RECOVER')
+          @logger.debug('inactivated AUTO_RECOVER')
         rescue
           case @rttable.lost_action
             when :auto_assign, :shutdown
               @stats.run_recover = true
               @rttable.auto_recover_status = 'executing'
               begin
-                @log.debug('auto recover start')
+                @logger.debug('auto recover start')
                 acquired_recover_process
               rescue => e
-                @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+                @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
               ensure
                 @stats.run_recover = false
                 @rttable.auto_recover_status = 'waiting'
               end
             when :no_action
-              @log.debug('auto recover NOT start. Because lost action is [no_action]')
+              @logger.debug('auto recover NOT start. Because lost action is [no_action]')
           end
         end
       end
@@ -335,9 +335,9 @@ module Roma
     end
 
     def asyncev_start_release_process(args)
-      @log.debug("#{__method__} #{args}")
+      @logger.debug("#{__method__} #{args}")
       if @stats.run_iterate_storage
-        @log.warn("#{__method__}:already be iterated storage process.")
+        @logger.warn("#{__method__}:already be iterated storage process.")
       else
         @stats.run_release = true
         @stats.run_iterate_storage = true
@@ -346,7 +346,7 @@ module Roma
           begin
             release_process
           rescue => e
-            @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+            @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
           ensure
             @stats.run_iterate_storage = false
             @stats.run_release = false
@@ -357,7 +357,7 @@ module Roma
     end
 
     def acquired_recover_process
-      @log.info("#{__method__}:start")
+      @logger.info("#{__method__}:start")
 
       exclude_nodes = @rttable.exclude_nodes_for_recover(@stats.ap_str, @stats.rep_host)
 
@@ -379,15 +379,15 @@ module Roma
           sleep 1
         end
       end
-      @log.info("#{__method__} has done.")
+      @logger.info("#{__method__} has done.")
     rescue => e
-      @log.error("#{e.inspect} #{$ERROR_POSITION}")
+      @logger.error("#{e.inspect} #{$ERROR_POSITION}")
     ensure
       @do_acquired_recover_process = false
     end
 
     def join_process
-      @log.info("#{__method__}:start")
+      @logger.info("#{__method__}:start")
       count = 0
       nv = @rttable.v_idx.length
       exclude_nodes = @rttable.exclude_nodes_for_join(@stats.ap_str, @stats.rep_host)
@@ -398,7 +398,7 @@ module Roma
 
         vn, nodes, is_primary = @rttable.select_vn_for_join(exclude_nodes, @stats.rep_host)
         unless vn
-          @log.warn("#{__method__}:vnode does not found")
+          @logger.warn("#{__method__}:vnode does not found")
           return false
         end
         ret = req_push_a_vnode(vn, nodes[0], is_primary)
@@ -410,14 +410,14 @@ module Roma
         end
       end
     rescue => e
-      @log.error("#{e.inspect} #{$ERROR_POSITION}")
+      @logger.error("#{e.inspect} #{$ERROR_POSITION}")
     ensure
-      @log.info("#{__method__} has done.")
+      @logger.info("#{__method__} has done.")
       @do_join_process = false
     end
 
     def balance_process
-      @log.info("#{__method__}:start")
+      @logger.info("#{__method__}:start")
       count = 0
       nv = @rttable.v_idx.length
       exclude_nodes = @rttable.exclude_nodes_for_balance(@stats.ap_str, @stats.rep_host)
@@ -428,7 +428,7 @@ module Roma
 
         vn, nodes, is_primary = @rttable.select_vn_for_balance(exclude_nodes, @stats.rep_host)
         unless vn
-          @log.warn("#{__method__}:vnode does not found")
+          @logger.warn("#{__method__}:vnode does not found")
           return false
         end
         ret = req_push_a_vnode(vn, nodes[0], is_primary)
@@ -439,9 +439,9 @@ module Roma
           count += 1
         end
       end
-      @log.info("#{__method__} has done.")
+      @logger.info("#{__method__} has done.")
     rescue => e
-      @log.error("#{e.inspect} #{$ERROR_POSITION}")
+      @logger.error("#{e.inspect} #{$ERROR_POSITION}")
     ensure
       @do_balance_process = false
     end
@@ -451,11 +451,11 @@ module Roma
       con.write("reqpushv #{vn} #{@stats.ap_str} #{is_primary}\r\n")
       res = con.gets # receive 'PUSHED\r\n' | 'REJECTED\r\n' | 'ERROR\r\n'
       if res == "REJECTED\r\n"
-        @log.warn("#{__method__}:request was rejected from #{src_nid}.")
+        @logger.warn("#{__method__}:request was rejected from #{src_nid}.")
         Roma::Messaging::ConPool.instance.return_connection(src_nid, con)
         return :rejected
       elsif res != "PUSHED\r\n"
-        @log.warn("#{__method__}:#{res}")
+        @logger.warn("#{__method__}:#{res}")
         return :rejected
       end
       Roma::Messaging::ConPool.instance.return_connection(src_nid, con)
@@ -466,21 +466,21 @@ module Roma
         count += 1
       end
       if count >= @stats.reqpushv_timeout_count
-        @log.warn("#{__method__}:request has been time-out.vn=#{vn} nid=#{src_nid}")
+        @logger.warn("#{__method__}:request has been time-out.vn=#{vn} nid=#{src_nid}")
         return :timeout
       end
       true
     rescue => e
-      @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+      @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
       @rttable.proc_failed(src_nid)
       false
     end
 
     def release_process
-      @log.info("#{__method__}:start.")
+      @logger.info("#{__method__}:start.")
 
       if @rttable.can_i_release?(@stats.ap_str, @stats.rep_host)
-        @log.error("#{__method__}:Sufficient nodes do not found.")
+        @logger.error("#{__method__}:Sufficient nodes do not found.")
         return
       end
 
@@ -494,19 +494,19 @@ module Roma
             to_nid, new_nids = @rttable.select_node_for_release(@stats.ap_str, @stats.rep_host, nids)
             res = sync_a_vnode_for_release(vn, to_nid, new_nids)
             if res == :abort
-              @log.error("#{__method__}:release_process aborted due to SERVER_ERROR received.")
+              @logger.error("#{__method__}:release_process aborted due to SERVER_ERROR received.")
               @do_release_process = false
             end
             if res == false
-              @log.warn("#{__method__}:error at vn=#{vn} to_nid=#{to_nid} new_nid=#{new_nids}")
+              @logger.warn("#{__method__}:error at vn=#{vn} to_nid=#{to_nid} new_nid=#{new_nids}")
               redo
             end
           end
         end
       end
-      @log.info("#{__method__} has done.")
+      @logger.info("#{__method__} has done.")
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
     ensure
       @do_release_process = false
       Roma::Messaging::ConPool.instance.close_all
@@ -516,7 +516,7 @@ module Roma
       nids = @rttable.search_nodes(vn)
 
       if nids.include?(to_nid) == false
-        @log.debug("#{__method__}:#{vn} #{to_nid}")
+        @logger.debug("#{__method__}:#{vn} #{to_nid}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid
         return false unless @rttable.transaction(vn, nids)
@@ -527,7 +527,7 @@ module Roma
 
           if res != 'STORED'
             @rttable.rollback(vn)
-            @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+            @logger.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
             return :abort if res.start_with?('SERVER_ERROR')
             return false
           end
@@ -535,7 +535,7 @@ module Roma
 
         if (clk = @rttable.commit(vn)) == false
           @rttable.rollback(vn)
-          @log.error("#{__method__}:routing table commit failed")
+          @logger.error("#{__method__}:routing table commit failed")
           return false
         end
 
@@ -547,12 +547,12 @@ module Roma
         cmd = "setroute #{vn} #{clk - 1}"
         new_nids.each { |nn| cmd << " #{nn}" }
         res = async_broadcast_cmd("#{cmd}\r\n")
-        @log.debug("#{__method__}:async_broadcast_cmd(#{cmd}) #{res}")
+        @logger.debug("#{__method__}:async_broadcast_cmd(#{cmd}) #{res}")
       end
 
       return true
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
       false
     end
 
@@ -560,7 +560,7 @@ module Roma
       nids = @rttable.search_nodes(vn)
 
       if nids.include?(to_nid) == false || (is_primary && nids[0] != to_nid)
-        @log.debug("#{__method__}:#{vn} #{to_nid} #{is_primary}")
+        @logger.debug("#{__method__}:#{vn} #{to_nid} #{is_primary}")
         # change routing data at the vnode and synchronize a data
         nids << to_nid
         return false unless @rttable.transaction(vn, nids)
@@ -571,14 +571,14 @@ module Roma
 
           if res != 'STORED'
             @rttable.rollback(vn)
-            @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+            @logger.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
             return false
           end
         end
 
         if (clk = @rttable.commit(vn)) == false
           @rttable.rollback(vn)
-          @log.error("#{__method__}:routing table commit failed")
+          @logger.error("#{__method__}:routing table commit failed")
           return false
         end
 
@@ -591,13 +591,13 @@ module Roma
         cmd = "setroute #{vn} #{clk - 1}"
         nids.each { |nn| cmd << " #{nn}" }
         res = async_broadcast_cmd("#{cmd}\r\n")
-        @log.debug("#{__method__}:async_broadcast_cmd(#{cmd}) #{res}")
+        @logger.debug("#{__method__}:async_broadcast_cmd(#{cmd}) #{res}")
       else
         # synchronize a data
         @storages.each_key do |hname|
           res = push_a_vnode_stream(hname, vn, to_nid)
           if res != 'STORED'
-            @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+            @logger.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
             return false
           end
         end
@@ -605,7 +605,7 @@ module Roma
 
       return true
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
       false
     end
 
@@ -643,7 +643,7 @@ module Roma
     end
 
     def push_a_vnode_stream(hname, vn, nid)
-      @log.debug("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
+      @logger.debug("#{__method__}:hname=#{hname} vn=#{vn} nid=#{nid}")
 
       stop_clean_up
 
@@ -663,7 +663,7 @@ module Roma
 
         unless @do_push_a_vnode_stream
           con.close
-          @log.error("#{__method__}:canceled in hname=#{hname} vn=#{vn} nid=#{nid}")
+          @logger.error("#{__method__}:canceled in hname=#{hname} vn=#{vn} nid=#{nid}")
           return 'CANCELED'
         end
 
@@ -676,19 +676,19 @@ module Roma
       Roma::Messaging::ConPool.instance.return_connection(nid, con)
       res.chomp! if res
       if res_dump == false
-        @log.error("#{__method__}:each_vn_dump in hname=#{hname} vn=#{vn} nid=#{nid}")
+        @logger.error("#{__method__}:each_vn_dump in hname=#{hname} vn=#{vn} nid=#{nid}")
         return 'CANCELED'
       end
       res
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
       e.to_s
     end
 
     def asyncev_start_storage_clean_up_process(_args)
-      #      @log.info("#{__method__}")
+      #      @logger.info("#{__method__}")
       if @stats.run_storage_clean_up
-        @log.error("#{__method__}:already in being")
+        @logger.error("#{__method__}:already in being")
         return
       end
       @stats.run_storage_clean_up = true
@@ -696,7 +696,7 @@ module Roma
         begin
           storage_clean_up_process
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
           @stats.last_clean_up = Time.now
           @stats.run_storage_clean_up = false
@@ -706,7 +706,7 @@ module Roma
     end
 
     def storage_clean_up_process
-      @log.info("#{__method__}:start")
+      @logger.info("#{__method__}:start")
       me = @stats.ap_str
       vnhash = {}
       @rttable.each_vnode do |vn, nids|
@@ -723,7 +723,7 @@ module Roma
       @storages.each_pair do |hname, st|
         break unless @stats.do_clean_up?
         st.each_clean_up(t, vnhash) do |key, vn|
-          # @log.debug("#{__method__}:key=#{key} vn=#{vn}")
+          # @logger.debug("#{__method__}:key=#{key} vn=#{vn}")
           if @stats.run_receive_a_vnode.key?("#{hname}_#{vn}")
             false
           else
@@ -732,9 +732,9 @@ module Roma
               nodes[1..-1].each do |nid|
                 res = async_send_cmd(nid, "out #{key}\e#{hname} #{vn}\r\n")
                 unless res
-                  @log.warn("send out command failed:#{key}\e#{hname} #{vn} -> #{nid}")
+                  @logger.warn("send out command failed:#{key}\e#{hname} #{vn} -> #{nid}")
                 end
-                # @log.debug("#{__method__}:res=#{res}")
+                # @logger.debug("#{__method__}:res=#{res}")
               end
             end
             count += 1
@@ -744,7 +744,7 @@ module Roma
         end
       end
       if count > 0
-        @log.info("#{__method__}:#{count} keys deleted.")
+        @logger.info("#{__method__}:#{count} keys deleted.")
       end
 
       # delete @rttable.logs
@@ -756,12 +756,12 @@ module Roma
         @rttable.logs.clear if gathered_time.to_i < Time.now.to_i - (60 * 5)
       end
     ensure
-      @log.info("#{__method__}:stop")
+      @logger.info("#{__method__}:stop")
     end
 
     def asyncev_calc_latency_average(args)
       latency, cmd = args
-      # @log.debug(__method__)
+      # @logger.debug(__method__)
 
       unless @stats.latency_data.key?(cmd) # only first execute target cmd
         @stats.latency_data[cmd].store('latency', [])
@@ -780,14 +780,14 @@ module Roma
         @stats.latency_data[cmd]['latency_min']['current'] = latency if latency < @stats.latency_data[cmd]['latency_min']['current']
 
       rescue => e
-        @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+        @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
 
       ensure
         if @stats.latency_check_time_count && Time.now.to_i - @stats.latency_data[cmd]['time'] > @stats.latency_check_time_count
           average = @stats.latency_data[cmd]['latency'].inject(0.0) { |r, i| r += i } / @stats.latency_data[cmd]['latency'].size
           max = @stats.latency_data[cmd]['latency_max']['current']
           min = @stats.latency_data[cmd]['latency_min']['current']
-          @log.debug("Latency average[#{cmd}]: #{sprintf('%.8f', average)}"\
+          @logger.debug("Latency average[#{cmd}]: #{sprintf('%.8f', average)}"\
                      "(denominator=#{@stats.latency_data[cmd]['latency'].length}"\
                      " max=#{sprintf('%.8f', max)}"\
                      " min=#{sprintf('%.8f', min)})"
@@ -807,20 +807,20 @@ module Roma
 
     def asyncev_start_storage_flush_process(args)
       hname, dn = args
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
 
       st = @storages[hname]
       if st.dbs[dn] != :safecopy_flushing
-        @log.error("Can not flush storage. stat = #{st.dbs[dn]}")
+        @logger.error("Can not flush storage. stat = #{st.dbs[dn]}")
         return true
       end
       t = Thread.new do
         begin
           st.flush_db(dn)
           st.set_db_stat(dn, :safecopy_flushed)
-          @log.info("#{__method__}:storage has flushed. (#{hname}, #{dn})")
+          @logger.info("#{__method__}:storage has flushed. (#{hname}, #{dn})")
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
         end
       end
@@ -830,18 +830,18 @@ module Roma
 
     def asyncev_start_storage_cachecleaning_process(args)
       hname, dn = args
-      @log.debug("#{__method__} #{args.inspect}")
+      @logger.debug("#{__method__} #{args.inspect}")
 
       st = @storages[hname]
       if st.dbs[dn] != :cachecleaning
-        @log.error("Can not start cachecleaning process. stat = #{st.dbs[dn]}")
+        @logger.error("Can not start cachecleaning process. stat = #{st.dbs[dn]}")
         return true
       end
       t = Thread.new do
         begin
           storage_cachecleaning_process(hname, dn)
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
         end
       end
@@ -861,17 +861,17 @@ module Roma
         break if keys.nil? || keys.length == 0
         break unless @do_storage_cachecleaning_process
 
-        # @log.debug("#{__method__}:#{keys.length} keys found")
+        # @logger.debug("#{__method__}:#{keys.length} keys found")
 
         # copy cache -> db
         st.each_cache_by_keys(dn, keys) do |vn, last, clk, expt, k, v|
           break unless @do_storage_cachecleaning_process
           if st.load_stream_dump_for_cachecleaning(vn, last, clk, expt, k, v)
             count += 1
-            # @log.debug("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was stored.")
+            # @logger.debug("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was stored.")
           else
             rcount += 1
-            # @log.debug("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was rejected.")
+            # @logger.debug("#{__method__}:[#{vn} #{last} #{clk} #{expt} #{k}] was rejected.")
           end
         end
 
@@ -879,23 +879,23 @@ module Roma
         keys.each { |key| st.out_cache(dn, key) }
       end
       if @do_storage_cachecleaning_process == false
-        @log.warn("#{__method__}:uncompleted")
+        @logger.warn("#{__method__}:uncompleted")
       else
         st.set_db_stat(dn, :normal)
       end
-      @log.debug("#{__method__}:#{count} keys loaded.")
-      @log.debug("#{__method__}:#{rcount} keys rejected.") if rcount > 0
+      @logger.debug("#{__method__}:#{count} keys loaded.")
+      @logger.debug("#{__method__}:#{rcount} keys rejected.") if rcount > 0
     ensure
       @do_storage_cachecleaning_process = false
     end
 
     def asyncev_start_get_routing_event(args)
-      @log.debug("#{__method__} #{args}")
+      @logger.debug("#{__method__} #{args}")
       t = Thread.new do
         begin
           get_routing_event
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
         end
       end
@@ -903,7 +903,7 @@ module Roma
     end
 
     def get_routing_event
-      @log.info("#{__method__}:start.")
+      @logger.info("#{__method__}:start.")
 
       routing_path = Config::RTTABLE_PATH
       f_list = Dir.glob("#{routing_path}/#{@stats.ap_str}*")
@@ -917,18 +917,18 @@ module Roma
         end
       end
 
-      @log.info("#{__method__} has done.")
+      @logger.info("#{__method__} has done.")
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
     end
 
     def asyncev_start_get_logs(args)
-      @log.debug("#{__method__} #{args}")
+      @logger.debug("#{__method__} #{args}")
       t = Thread.new do
         begin
           get_logs(args)
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
           @stats.gui_run_gather_logs = false
         end
@@ -937,7 +937,7 @@ module Roma
     end
 
     def get_logs(args)
-      @log.debug("#{__method__}:start.")
+      @logger.debug("#{__method__}:start.")
 
       log_path =  Config::LOG_PATH
       log_file = "#{log_path}/#{@stats.ap_str}.log"
@@ -958,10 +958,10 @@ module Roma
       # set gathered date for expiration
       @rttable.logs.unshift(Time.now)
 
-      @log.debug("#{__method__} has done.")
+      @logger.debug("#{__method__} has done.")
     rescue => e
       @rttable.logs = []
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
     ensure
       @stats.gui_run_gather_logs = false
     end
@@ -970,7 +970,7 @@ module Roma
       # hilatency check
       ps = Time.now - latency_time
       if ps > 5
-        @log.warn('gather_logs process was failed.')
+        @logger.warn('gather_logs process was failed.')
         fail
       end
 
@@ -1001,14 +1001,14 @@ module Roma
           if target_time < begining_time
             return 0
           elsif target_time > end_time
-            @log.error('irregular time was set.')
+            @logger.error('irregular time was set.')
             fail
           end
         when 'end'
           if target_time > end_time
             return f.size
           elsif target_time < begining_time
-            @log.error('irregular time was set.')
+            @logger.error('irregular time was set.')
             fail
           end
         end
@@ -1051,7 +1051,7 @@ module Roma
           $roma.cr_writer.run_existing_data_replication = true
           replicate_existing_data_process(args)
         rescue => e
-          @log.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
+          @logger.error("#{__method__}:#{e.inspect} #{$ERROR_POSITION}")
         ensure
           $roma.cr_writer.run_existing_data_replication = false
         end
@@ -1060,7 +1060,7 @@ module Roma
     end
 
     def replicate_existing_data_process(args)
-      @log.info("#{__method__} :start.")
+      @logger.info("#{__method__} :start.")
 
       @storages.each_key do |hname|
         @rttable.v_idx.each_key do |vn|
@@ -1068,16 +1068,16 @@ module Roma
           args[0].v_idx[vn].each do |replica_nid|
             res = push_a_vnode_stream(hname, vn, replica_nid)
             if res != 'STORED'
-              @log.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
+              @logger.error("#{__method__}:push_a_vnode was failed:hname=#{hname} vn=#{vn}:#{res}")
               return false
             end
           end
         end
       end
 
-      @log.info("#{__method__} has done.")
+      @logger.info("#{__method__} has done.")
     rescue => e
-      @log.error("#{e}\n#{$ERROR_POSITION}")
+      @logger.error("#{e}\n#{$ERROR_POSITION}")
     end
 
   end # module AsyncProcess

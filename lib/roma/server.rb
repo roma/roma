@@ -239,9 +239,9 @@ module Roma
       @wb_writer = Roma::WriteBehind::FileWriter.new(
                                                      Roma::Config::WRITEBEHIND_PATH,
                                                      Roma::Config::WRITEBEHIND_SHIFT_SIZE,
-                                                     @log)
+                                                     @loggger)
 
-      @cr_writer = Roma::WriteBehind::StreamWriter.new(@log)
+      @cr_writer = Roma::WriteBehind::StreamWriter.new(@loggger)
     end
 
     def initialize_plugin
