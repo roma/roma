@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-require 'optparse'
 require 'roma/version'
 require 'roma/stats'
 require 'roma/command_plugin'
@@ -53,8 +52,10 @@ module Roma
       @storages.each { |_, storage| storage.opendb }
 
       check_pid!
-      daemonize if daemon?
-      write_pid
+      if daemon?
+        daemonize
+        write_pid
+      end
 
       start_async_process
       start_wb_process
@@ -386,7 +387,7 @@ module Roma
         if @routing_table.lost_action == :shutdown
           async_broadcast_cmd("rbalse lose_data\r\n")
           EventMachine::stop_event_loop
-          @logger.error("Romad has stopped, so that lose data.")
+          @logger.error("Roma server has stopped, so that lose data.")
         end
       }
       @routing_table.set_recover_proc{|action|
@@ -669,35 +670,24 @@ module Roma
       end
     end
 
-    def async_send_cmd(nid, cmd, tout=nil)
-      con = res = nil
-      if tout
-        Timeout.timeout(tout){
-          con = Roma::Messaging::ConPool.instance.get_connection(nid)
-          unless con
-            @routing_table.proc_failed(nid) if @routing_table
-            @logger.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
-            return nil
-          end
-          con.write(cmd)
-          res = con.gets
-        }
-      else
-        con = Roma::Messaging::ConPool.instance.get_connection(nid)
-        unless con
+    def async_send_cmd(nid, cmd, timeout_sec=nil)
+      connection = res = nil
+      Timeout.timeout(timeout_sec) do
+        connection = Roma::Messaging::ConPool.instance.get_connection(nid)
+        unless connection
           @routing_table.proc_failed(nid) if @routing_table
           @logger.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
           return nil
         end
-        con.write(cmd)
-        res = con.gets
+        connection.write(cmd)
+        res = connection.gets
       end
       if res == nil
         @routing_table.proc_failed(nid) if @routing_table
         return nil
       elsif res.start_with?("ERROR") == false
         @routing_table.proc_succeed(nid) if @routing_table
-        Roma::Messaging::ConPool.instance.return_connection(nid, con)
+        Roma::Messaging::ConPool.instance.return_connection(nid, connection)
       end
       res.chomp
     rescue Exception => e
@@ -726,7 +716,7 @@ module Roma
       if @routing_table.instance_of?(Roma::Routing::ChurnbasedRoutingTable)
         @routing_table.close_log
       end
-      @logger.info("Romad has stopped: #{@stats.ap_str}")
+      @logger.info("Roma server has stopped: #{@stats.ap_str}")
     end
 
     def validate_version_number_in_config
