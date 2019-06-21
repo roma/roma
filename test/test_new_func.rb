@@ -326,33 +326,6 @@ class NewFuncTest < Test::Unit::TestCase
     assert_equal('END', @sock.gets.chomp)
   end
 
-  def test_adm_tool_sendcmd
-    res = `#{bin_dir}/roma-adm`
-    assert_equal('Argument Error: roma-adm [adm-command] [port No.]', res.chomp)
-
-    res = `#{bin_dir}/roma-adm -h`
-    assert_match(/usage:roma-adm \[command\] \[port No.\]\n\s+-h, --help\s+Show this message/, res.chomp)
-
-    res = `#{bin_dir}/roma-adm whoami 11211`
-    assert_equal(".\r\nROMA", res.chomp)
-  end
-
-  def test_romad_option
-    res = `#{bin_dir}/romad -h`
-    assert_equal("usage:romad [options] address
-    -d, --daemon
-    -j, --join [address:port]
-    -p, --port [PORT]
-        --verbose
-    -n, --name [name]
-        --enabled_repeathost         Allow redundancy to same host
-        --replication_in_host        Allow redundancy to same host
-        --disabled_cmd_protect       Command protection disable while starting
-        --config [file path of the config.rb]
-    -h, --help                       Show this message
-    -v, --version                    Show version", res.chomp)
-  end
-
   def test_waiting_node
     log = File.read("./localhost_11211.log")
     assert_equal(true, log.include?("I'm waiting for booting the localhost_11211 instance"))

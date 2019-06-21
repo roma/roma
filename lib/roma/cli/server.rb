@@ -18,6 +18,10 @@ module Roma
       desc 'start [OPTIONS] ADDRESS', 'Launch ROMA server'
       def start(address)
         server = Roma::Server.new(address, options)
+
+        # FIXME: DON'T WANNA USE ANY GLOBAL VARIABLE!!!!
+        $roma = server
+
         server.start
       end
     end

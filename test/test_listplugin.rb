@@ -14,7 +14,7 @@ module ListPluginTests
 
   def setup
     start_roma
-    @rc=Roma::Client::RomaClient.new(
+    @rc = Roma::Client::RomaClient.new(
                                      ["localhost_11211","localhost_11212"],
                                      [Roma::Client::Plugin::Alist])
   end

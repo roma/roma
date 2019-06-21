@@ -53,5 +53,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'ffi'
   s.add_development_dependency 'test-unit'
   s.add_development_dependency 'rake'
-  s.add_development_dependency 'roma-client'
+  s.add_development_dependency 'roma-client', '~> 0.4.5'
+  s.add_development_dependency 'ruby-debug-ide'
+  s.add_development_dependency 'debase'
 end

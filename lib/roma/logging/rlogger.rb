@@ -1,4 +1,4 @@
-# ROMA's logger.  
+# ROMA's logger.
 #
 # rlogger.rb - it is an extension to a standard logger for ROMA
 #
@@ -9,7 +9,7 @@ module Roma
 
     class RLogger
       VERSION = '0.0.1'
-      
+
       module Severity
         TRACE = -1
         DEBUG = 0
@@ -23,20 +23,20 @@ module Roma
 
       module ExtLogDev
         def extendLogDev()
-          if @logdev 
+          if @logdev
             @logdev.extend(ExtCheckShift)
             @logdev.extend(ExtShiftAge)
             @logdev.extend(AddSetShiftAge)
             @logdev.extend(AddSetShiftSize)
           end
         end
-        
+
         def set_shift_age(age)
           if @logdev
             @logdev.set_shift_age(age)
           end
         end
-        
+
         def set_shift_size(size)
           if @logdev
             @logdev.set_shift_size(size)
@@ -76,13 +76,13 @@ module Roma
               lock_shift_log { shift_log_period(period_end) }
             end
           end
-        end        
+        end
       end
-  
-      module ExtShiftAge
-        private 
 
-        def shift_log_period(now) 
+      module ExtShiftAge
+        private
+
+        def shift_log_period(now)
           postfix = previous_period_end(now).strftime("%Y%m%d%H%M")
           age_file = "#{@filename}.#{postfix}"
           if FileTest.exist?(age_file)
@@ -93,7 +93,7 @@ module Roma
           @dev = create_logfile(@filename)
           return true
         end
-    
+
         def previous_period_end(now)
           ret = nil
           case @shift_age
@@ -109,21 +109,21 @@ module Roma
             ret = eod(now - ((now.wday + 1) * SiD))
           when /^monthly$/
             ret = eod(now - now.mday * SiD)
-          else 
+          else
             ret = now
           end
           return ret
         end
       end
-  
+
       module ExtTrace
         private
         SEV_LABEL = %w{DEBUG INFO WARN ERROR FATAL ANY}
-        
+
         def format_severity(severity)
           if @level <= RLogger::TRACE and severity <= RLogger::TRACE
             return 'TRACE'
-          else 
+          else
             return SEV_LABEL[severity] || 'ANY'
           end
         end
@@ -132,6 +132,7 @@ module Roma
       @@singleton_instance = nil
 
       def self.create_singleton_instance(logdev, shift_age = 0, shift_size = 1048576)
+        return if @@singleton_instance
         @@singleton_instance = RLogger.new(logdev, shift_age, shift_size)
         private_class_method  :new, :allocate
       end
@@ -142,7 +143,7 @@ module Roma
 
       def initialize(logdev, shift_age = 0, shift_size = 1048576)
         @wrap_logger = Logger.new(logdev, shift_age, shift_size)
-        @wrap_logger.extend(ExtTrace) 
+        @wrap_logger.extend(ExtTrace)
         @wrap_logger.extend(ExtLogDev)
         @wrap_logger.extendLogDev()
       end
@@ -150,47 +151,47 @@ module Roma
       def level=(severity)
         @wrap_logger.level = severity
       end
-      
-      def trace?; @wrap_logger.level <= TRACE; end 
-      
-      def debug?; @wrap_logger.debug?; end 
-      
+
+      def trace?; @wrap_logger.level <= TRACE; end
+
+      def debug?; @wrap_logger.debug?; end
+
       def info?; @wrap_logger.info?; end
-      
+
       def warn?; @wrap_logger.warn?; end
-  
+
       def error?; @wrap_logger.error?; end
-      
+
       def fatal?; @wrap_logger.fatal?; end
-  
+
       def trace(progname = nil, &block)
         @wrap_logger.add(TRACE, nil, progname, &block)
       end
-    
+
       def debug(progname = nil, &block)
         @wrap_logger.debug(progname, &block)
       end
-  
+
       def info(progname = nil, &block)
         @wrap_logger.info(progname, &block)
       end
-  
+
       def warn(progname = nil, &block)
         @wrap_logger.warn(progname, &block)
       end
-  
+
       def error(progname = nil, &block)
         @wrap_logger.error(progname, &block)
       end
-  
+
       def fatal(progname = nil, &block)
         @wrap_logger.fatal(progname, &block)
       end
-  
+
       def unknown(progname = nil, &block)
         @wrap_logger.unknow(progname, &block)
       end
-  
+
       def close; @wrap_logger.close; end
 
       def set_log_shift_size(size)

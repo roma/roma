@@ -251,7 +251,7 @@ module Roma
         require "roma/plugin/#{f}"
         @logger.info("roma/plugin/#{f} loaded")
       end
-      Roma::CommandPlugin.plugins.each do|plugin|
+      Roma::CommandPlugin.plugins.each do |plugin|
           Roma::Command::Receiver.class_eval do
             include plugin
           end
@@ -358,9 +358,9 @@ module Roma
         routing_data = Roma::Routing::RoutingData::load(file_path)
         raise "It failed in loading the routing table data." unless routing_data
         if Config.const_defined? :RTTABLE_CLASS
-          @routing_table = Config::RTTABLE_CLASS.new(routing_data,file_path)
+          @routing_table = Config::RTTABLE_CLASS.new(routing_data, file_path)
         else
-          @routing_table = Roma::Routing::ChurnbasedRoutingTable.new(routing_data,file_path)
+          @routing_table = Roma::Routing::ChurnbasedRoutingTable.new(routing_data, file_path)
         end
       end
 
@@ -710,9 +710,9 @@ module Roma
     end
 
     def stop
-      @storages.each_value{|st|
-        st.closedb
-      }
+      @storages.each_value do |storage|
+        storage.closedb
+      end
       if @routing_table.instance_of?(Roma::Routing::ChurnbasedRoutingTable)
         @routing_table.close_log
       end
@@ -742,7 +742,7 @@ module Roma
     end
 
     def daemonize
-      Process.daemon
+      Process.daemon(true, true)
     end
 
     def check_pid!
