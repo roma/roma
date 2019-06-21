@@ -208,11 +208,11 @@ module Roma
     class StderrWrapper < IO
 
       def initialize
-        @logger = RLogger.instance
+        @log = RLogger.instance
       end
 
       def write(s)
-        @logger.error("STDERR:#{s}")
+        @log.error("STDERR:#{s}")
       end
 
       def flush; end

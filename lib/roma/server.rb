@@ -246,9 +246,9 @@ module Roma
       @wb_writer = Roma::WriteBehind::FileWriter.new(
                                                      Roma::Config::WRITEBEHIND_PATH,
                                                      Roma::Config::WRITEBEHIND_SHIFT_SIZE,
-                                                     @loggger)
+                                                     @logger)
 
-      @cr_writer = Roma::WriteBehind::StreamWriter.new(@loggger)
+      @cr_writer = Roma::WriteBehind::StreamWriter.new(@logger)
     end
 
     def initialize_plugin
@@ -278,7 +278,7 @@ module Roma
 
           def gets
             ret = gets2
-            @logger.info("command log:#{ret.chomp}") if ret
+            @log.info("command log:#{ret.chomp}") if ret
             ret
           end
         }
@@ -723,6 +723,7 @@ module Roma
       if @routing_table.instance_of?(Roma::Routing::ChurnbasedRoutingTable)
         @routing_table.close_log
       end
+      File.delete pid_file_path if File.exist?(pid_file_path)
       @logger.info("Roma server has stopped: #{@stats.ap_str}")
     end
 

@@ -1,4 +1,4 @@
-#
+# 
 # File: handler.rb
 #
 require 'eventmachine'
@@ -81,19 +81,19 @@ module Roma
 
         @storages = storages
         @rttable = rttable
-        @logger = Roma::Logging::RLogger.instance
+        @log = Roma::Logging::RLogger.instance
         @last_access = Time.now
       end
 
       def post_init
         @port, @addr = Socket.unpack_sockaddr_in(get_peername)
-        @logger.info("Connected from #{@addr}:#{@port}. I have #{EM.connection_count} connections.")
+        @log.info("Connected from #{@addr}:#{@port}. I have #{EM.connection_count} connections.")
         @connected = true
         @last_access = Time.now
         @@connections[self] = @last_access
         @fiber = Fiber.new { dispatcher }
       rescue Exception =>e
-        @logger.error("#{__FILE__}:#{__LINE__}:#{e.inspect} #{$@}")
+        @log.error("#{__FILE__}:#{__LINE__}:#{e.inspect} #{$@}")
       end
 
       def receive_data(data)
@@ -101,7 +101,7 @@ module Roma
         @last_access = Time.now
         @fiber.resume
       rescue Exception =>e
-        @logger.error("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e.inspect} #{$@}")
+        @log.error("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e.inspect} #{$@}")
       end
 
       def unbind
@@ -116,12 +116,12 @@ module Roma
           # hilatency check
           ps = Time.now - @enter_time
           if ps > @stats.hilatency_warn_time
-            @logger.warn("#{@lastcmd} has incompleted, passage of #{ps} seconds")
+            @log.warn("#{@lastcmd} has incompleted, passage of #{ps} seconds")
           end
         end
-        @logger.info("Disconnected from #{@addr}:#{@port}")
+        @log.info("Disconnected from #{@addr}:#{@port}")
       rescue Exception =>e
-        @logger.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e.inspect} #{$@}")
+        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e.inspect} #{$@}")
       end
 
       protected
@@ -152,7 +152,7 @@ module Roma
 
       def dispatcher
         @stats = Roma::Stats.instance
-        #@logger.debug("Roma::Event::Handler.dipatcher called")
+        #@log.debug("Roma::Event::Handler.dipatcher called")
         while(@connected) do
           @enter_time = nil
           next unless s=gets
@@ -174,7 +174,7 @@ module Roma
               send_data("\r\nERROR: '#{s[0]}' is not roma command.\r\nDid you mean this?\r\n\t#{similar_cmd}\r\n")
               next
             else
-              @logger.warn("command error:#{s}")
+              @log.warn("command error:#{s}")
               send_data("ERROR: '#{s[0]}' is not roma command. Please check command.\r\n(closing telnet connection command is 'quit')\r\n")
               next
             end
@@ -183,7 +183,7 @@ module Roma
           # hilatency check
           ps = Time.now - @enter_time
           if ps > @stats.hilatency_warn_time
-            @logger.warn("hilatency occurred in #{@lastcmd} put in a #{ps} seconds")
+            @log.warn("hilatency occurred in #{@lastcmd} put in a #{ps} seconds")
           end
           # check latency average
           if @stats.latency_check_cmd.include?(@lastcmd[0])
@@ -195,20 +195,20 @@ module Roma
               rand(100) < @@ccl_rate + (100 - @@ccl_rate) * d / (@@ccl_full - @@ccl_start)
             send_data("ERROR\r\n")
             close_connection_after_writing
-            @logger.warn("Connection count > #{@@ccl_start}:closed")
+            @log.warn("Connection count > #{@@ccl_start}:closed")
           end
         end
       rescue Storage::StorageException => e
-        @logger.error("#{e.inspect} #{s} #{$@}")
+        @log.error("#{e.inspect} #{s} #{$@}")
         send_data("SERVER_ERROR #{e} in storage engine\r\n")
         close_connection_after_writing
         if Config.const_defined?(:STORAGE_EXCEPTION_ACTION) &&
             Config::STORAGE_EXCEPTION_ACTION == :shutdown
-          @logger.error("Romad will stop")
+          @log.error("Romad will stop")
           @stop_event_loop = true
         end
       rescue Exception =>e
-        @logger.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e} #{$@}")
+        @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} #{e} #{$@}")
         close_connection
       end
 
@@ -238,7 +238,7 @@ module Roma
             remain = size - @rbuf.size
             Fiber.yield(remain)
             if Time.now.to_i - t > @@timeout * mult
-              @logger.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} read_bytes time out");
+              @log.warn("#{__FILE__}:#{__LINE__}:#{@addr}:#{@port} read_bytes time out");
               close_connection
               return nil
             end

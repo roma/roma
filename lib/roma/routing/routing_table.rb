@@ -21,7 +21,7 @@ module Roma
       attr_accessor :sub_nid
 
       def initialize(rd)
-        @logger = Roma::Logging::RLogger.instance
+        @log = Roma::Logging::RLogger.instance
         @rd = rd
         @rn = @rd.rn
         @div_bits = @rd.div_bits
@@ -108,7 +108,7 @@ module Roma
         @rd.v_idx.each_pair{ |vn, nids|
           nids.delete_if{ |nid2| nid2 == nid}
           if nids.length == 0
-            @logger.error("Vnode data is lost.(Vnode=#{vn})")
+            @log.error("Vnode data is lost.(Vnode=#{vn})")
           end
           @mtree.set(vn,nids)
         }
@@ -198,7 +198,7 @@ module Roma
         if addr =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/
           iaddr = ($1.to_i  << 24) + ($2.to_i << 16) + ($3.to_i << 8) + $4.to_i
         else
-          @logger.error("#{__method__}:Illigal format addr #{addr}")
+          @log.error("#{__method__}:Illigal format addr #{addr}")
           return false
         end
 
@@ -206,7 +206,7 @@ module Roma
           imask_addr = ($1.to_i  << 24) + ($2.to_i << 16) + ($3.to_i << 8) + $4.to_i
           imask = (2 ** $5.to_i - 1) << (32 - $5.to_i)
         else
-          @logger.error("#{__method__}:Illigal format mask #{mask}")
+          @log.error("#{__method__}:Illigal format mask #{mask}")
           return false
         end
         (iaddr & imask) == (imask_addr & imask)

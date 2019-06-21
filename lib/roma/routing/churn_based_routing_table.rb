@@ -239,7 +239,7 @@ module Roma
         @version_of_nodes.delete(nid)
         @min_version = find_min_version
 
-        @logger.warn("#{nid} just failed.")
+        @log.warn("#{nid} just failed.")
         write_log("leave #{nid}")
         set_event(nid, __method__)
 
@@ -252,7 +252,7 @@ module Roma
               set_route_and_inc_clk_inside_sync(vn, buf)
               if buf.length == 0
                 lost_vnodes << vn
-                @logger.error("Vnode data is lost.(Vnode=#{vn})")
+                @log.error("Vnode data is lost.(Vnode=#{vn})")
               elsif buf.length < @rd.rn
                 short_vnodes << vn
               end
@@ -267,7 +267,7 @@ module Roma
             }
           end
         elsif short_vnodes.length > 0
-          @logger.error("Short vnodes exist.")
+          @log.error("Short vnodes exist.")
           @recover_proc.call('start_auto_recover_process') if @recover_proc
         end
         @fail_cnt.delete(nid)
@@ -369,7 +369,7 @@ module Roma
           end
         }
 
-        @logger.debug("#{__method__}:n=#{n} pcount=#{pcount} scount=#{scount}")
+        @log.debug("#{__method__}:n=#{n} pcount=#{pcount} scount=#{scount}")
 
         if pcount > n
           return :over

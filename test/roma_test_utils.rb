@@ -63,10 +63,14 @@ module RomaTestUtils
     sleep 1
   end
 
+  def join_roma(node, conf = DEFAULT_CONFIG, replication_in_host: true)
+    do_command_romad(node, conf, replication_in_host, true)
+  end
+
   def do_command_romad(node, conf, replication_in_host = true, is_join = false)
     host, port = node.split('_')
     romad_command = [
-      ruby_path, roma_path,
+      ruby_path, romad_path,
       'server start',
       host,
       '-p', port,
@@ -89,6 +93,7 @@ module RomaTestUtils
   def wait_join(node)
     client = get_client
     wait_count = 0
+    retry_count = 0
     sleep 5
 
     until client.rttable.nodes.include?(node)
@@ -172,7 +177,7 @@ module RomaTestUtils
     (bin_dir + 'mkroute').to_s
   end
 
-  def roma_path
+  def romad_path
     (bin_dir + 'roma').to_s
   end
 

@@ -111,7 +111,7 @@ class DefCmdTest
     @stats = Struct.new(:ap_str).new(:ap_str)
     @rttable = RtStub.new
     @defhash = 'roma'
-    @logger = LogStub.new
+    @log = LogStub.new
     @storages = Hash.new(StorageStub.new)
   end
 
