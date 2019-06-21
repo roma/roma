@@ -66,7 +66,7 @@ module Roma
         rc = Roma::Client::RomaClient.new([ "#{addr}_#{port.to_s}" ])
         n=1000
         while @runnable
-          begin 
+          begin
             i = rand(n)
             ts = DateTime.now
             case rand(3)
@@ -104,30 +104,30 @@ module Roma
         @working_path = path
         @roma_procs = procs
         @stress = Stress.new 1
-        @log = Logger.new "./test-scenario.log", "daily"
+        @logger = Logger.new "./test-scenario.log", "daily"
       end
 
       def init_roma
-        @log.debug "begin init_roma"
+        @logger.debug "begin init_roma"
         exec "rm -f localhost_1121?.*"
         exec "bin/mkroute -d 7 #{RomaProc.to_str(@roma_procs)} --replication_in_host"
-        @log.debug "end init_roma"
+        @logger.debug "end init_roma"
       end
 
       def start_roma
-        @log.debug "begin start_roma"
+        @logger.debug "begin start_roma"
         @roma_procs.length.times { |i|
           start_roma_proc i
         }
-        @log.debug "end start_roma"
+        @logger.debug "end start_roma"
       end
 
       def start_roma_proc i
-        @log.debug "begin start_roma_proc"
+        @logger.debug "begin start_roma_proc"
         str = "bin/romad #{@roma_procs[i].addr} -p #{@roma_procs[i].port.to_s} -d --replication_in_host"
         exec str
         @roma_procs[i].pid = get_pid(str)
-        @log.debug "end start_roma_proc"
+        @logger.debug "end start_roma_proc"
       end
       private :start_roma_proc
 
@@ -147,17 +147,17 @@ module Roma
       private :get_pid
 
       def stop_roma
-        @log.debug "begin start_roma"
+        @logger.debug "begin start_roma"
         @roma_procs.length.times { |i|
           stop_roma_proc i
         }
-        @log.debug "end start_roma"
+        @logger.debug "end start_roma"
       end
 
       def stop_roma_proc i
-        @log.debug "begin start_roma_proc"
+        @logger.debug "begin start_roma_proc"
         exec "kill -9 #{@roma_procs[i].pid}"
-        @log.debug "end start_roma_proc"
+        @logger.debug "end start_roma_proc"
       end
       private :stop_roma_proc
 
@@ -192,7 +192,7 @@ module Roma
         }
         raise "not found a specified property: routing.nodes.length"
       end
-      
+
       def send_stats_run_acquire_vnodes addr, port
         commander = Roma::MultiCommander.new "#{addr}_#{port}"
         res = commander.send_cmd "stats stats.run_acquire_vnodes", "#{addr}_#{port}"
@@ -206,7 +206,7 @@ module Roma
       end
 
       def test_kill_join_recover
-        @log.info "begin method test_kill_join_recover"
+        @logger.info "begin method test_kill_join_recover"
 
         # initialize a ROMA
         init_roma
@@ -216,7 +216,7 @@ module Roma
 
         sleep 10
 
-        # stress 
+        # stress
         start_roma_client @roma_procs[0].addr, @roma_procs[0].port
 
         sleep 2
@@ -256,7 +256,7 @@ module Roma
         stop_roma_proc 0
         stop_roma_proc 1
 
-        @log.info "end method test_kill_join_recover"
+        @logger.info "end method test_kill_join_recover"
       end
 
       def test_suite
@@ -273,7 +273,7 @@ module Roma
       def initialize(argv)
         opts = OptionParser.new
         opts.banner="usage:#{File.basename($0)} [options]"
-        
+
         opts.on_tail("-h", "--help", "show this message") {
           puts opts; exit
         }
@@ -320,7 +320,7 @@ end
 
 procs = []
 cnf.number_of_nodes.times{ |i|
-  procs << Roma::Test::RomaProc.new(cnf.hostname, cnf.port + i)  
+  procs << Roma::Test::RomaProc.new(cnf.hostname, cnf.port + i)
 }
 
 s = Roma::Test::Scenario.new(cnf.working_path, procs)

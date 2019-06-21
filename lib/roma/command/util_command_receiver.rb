@@ -19,7 +19,7 @@ module Roma
         res.chomp
       rescue => e
         @rttable.proc_failed(nid)
-        @log.error("#{e}\n#{$@}")
+        @logger.error("#{e}\n#{$@}")
         nil
       end
 
@@ -45,7 +45,7 @@ module Roma
         res
       rescue => e
         @rttable.proc_failed(nid)
-        @log.error("#{e}\n#{$@}")
+        @logger.error("#{e}\n#{$@}")
         nil
       end
 
@@ -57,7 +57,7 @@ module Roma
         }
         res
       rescue => e
-        @log.error("#{e}\n#{$@}")
+        @logger.error("#{e}\n#{$@}")
         nil
       end
 

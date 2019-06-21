@@ -20,7 +20,7 @@ module Roma
           end
           @defhash = s[1]
           "STORED"
-        end        
+        end
       end
 
       # mounthash <name>
@@ -53,7 +53,7 @@ module Roma
         end
         umounthash(s[1])
       end
-            
+
       # createhash <name>
       def_command_with_relay :createhash do |s|
         if s.length != 2
@@ -88,10 +88,10 @@ module Roma
         st.option = Config::STORAGE_OPTION
         @storages[hname] = st
         @storages[hname].opendb
-        @log.info("createhash #{hname}")
+        @logger.info("createhash #{hname}")
         return msg
       rescue =>e
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
         "NOT #{msg}"
       end
       private :createhash
@@ -100,13 +100,13 @@ module Roma
         ret = umounthash(hname)
         return ret if ret != 'UNMOUNTED'
         FileUtils.rm_rf "#{Config::STORAGE_PATH}/#{@stats.ap_str}/#{hname}"
-        @log.info("deletehash #{hname}")
+        @logger.info("deletehash #{hname}")
         return "DELETED"
       rescue =>e
-        @log.error("#{e}")
+        @logger.error("#{e}")
       end
       private :deletehash
-      
+
       def umounthash(hname)
         if @defhash == hname
           return "SERVER_ERROR default hash can't unmount."

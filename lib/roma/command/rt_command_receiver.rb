@@ -12,7 +12,7 @@ module Roma
 
       # leave <node id>
       def ev_leave(s)
-        @log.warn("receive a leave #{s[1]} message.")
+        @logger.warn("receive a leave #{s[1]} message.")
         @rttable.leave(s[1])
         send_data("DELETED\r\n")
       end
@@ -183,7 +183,7 @@ module Roma
         res[@stats.ap_str] = "STORED"
         send_data("#{res}\r\n")
       end
-      
+
       def ev_rset_lost_action(s)
         if s.length != 2 || /^auto_assign$|^shutdown$/ !~ s[1]
           return send_data("CLIENT_ERROR changing lost_action must be auto_assign or shutdown\r\n")
@@ -192,7 +192,7 @@ module Roma
         end
         @rttable.lost_action = s[1].to_sym
         send_data("STORED\r\n")
-      end  
+      end
 
       # set_threshold_for_failover <n>
       def ev_set_threshold_for_failover(s)
@@ -222,7 +222,7 @@ module Roma
         res = broadcast_cmd("rset_gap_for_failover #{s[1]}\r\n")
         @rttable.fail_cnt_gap = s[1].to_f
         res[@stats.ap_str] = "STORED"
-        send_data("#{res}\r\n")        
+        send_data("#{res}\r\n")
       end
 
       # rset_gap_for_failover
@@ -231,7 +231,7 @@ module Roma
           return send_data("usage:rset_gap_for_failover <n>\r\n")
         end
         @rttable.fail_cnt_gap = s[1].to_f
-        send_data("STORED\r\n")        
+        send_data("STORED\r\n")
       end
 
       # cleat RTTABLE_SUB_NID map
@@ -246,7 +246,7 @@ module Roma
         @rttable.sub_nid.clear()
         send_data("CLEARED\r\n")
       end
-      
+
       # add_rttable_sub_nid <netmask> <regexp> <replace>
       def ev_add_rttable_sub_nid(s)
         if s.length != 4

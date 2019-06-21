@@ -56,7 +56,7 @@ module Roma
         vlen = val.length
         size = fd.write([t.to_i, cmd, klen, key, vlen, val].pack("NnNa#{klen}Na#{vlen}"))
         @total_size[hname] += size
-#        @log.debug("WriteBehind:hname=#{hname} cmd=#{cmd} key=#{key} val=#{val} total_size=#{@total_size}")
+#        @logger.debug("WriteBehind:hname=#{hname} cmd=#{cmd} key=#{key} val=#{val} total_size=#{@total_size}")
       ensure
         @do_write = false
       end
@@ -135,7 +135,7 @@ module Roma
       attr_accessor :replica_rttable
 
       def initialize(log)
-        @log = log
+        @logger = log
         @run_replication = false
         @run_existing_data_replication = false
         @replica_mklhash = nil
@@ -168,7 +168,7 @@ module Roma
         @replica_nodelist.shift
         if @replica_nodelist.length == 0
           @run_replication = false
-          @log.error("Replicate Cluster was down.")
+          @logger.error("Replicate Cluster was down.")
         else
           retry
         end
@@ -180,10 +180,10 @@ module Roma
           con.write("mklhash 0\r\n")
           @replica_mklhash = con.gets.chomp
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
-          @log.debug("replica_mklhash has updated: [#{@replica_mklhash}]")
+          @logger.debug("replica_mklhash has updated: [#{@replica_mklhash}]")
         end
       rescue => e
-        @log.error("#{e}\n#{$@}")
+        @logger.error("#{e}\n#{$@}")
       end
 
       def update_nodelist(nid)
@@ -192,10 +192,10 @@ module Roma
           con.write("nodelist\r\n")
           @replica_nodelist = con.gets.chomp.split("\s")
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
-          @log.debug("replica_nodelist has updated: #{@replica_nodelist}")
+          @logger.debug("replica_nodelist has updated: #{@replica_nodelist}")
         end
       rescue => e
-        @log.error("#{e}\n#{$@}")
+        @logger.error("#{e}\n#{$@}")
       end
 
       def update_rttable(nid)
@@ -205,7 +205,7 @@ module Roma
           routes_length = con.gets.to_i
           if (routes_length <= 0)
             con.close
-            @log.error("#{__method__} process was failed.\r\n") if routes_length < 0
+            @logger.error("#{__method__} process was failed.\r\n") if routes_length < 0
             return nil
           end
 
@@ -218,10 +218,10 @@ module Roma
           rd = Marshal.load(routes)
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
           @replica_rttable = rd
-          @log.debug("replica_rttable has updated: [#{@replica_rttable}]")
+          @logger.debug("replica_rttable has updated: [#{@replica_rttable}]")
         end
       rescue => e
-        @log.error("#{e}\n#{$@}")
+        @logger.error("#{e}\n#{$@}")
         nil
       end
 
@@ -230,7 +230,7 @@ module Roma
         nodes = @replica_rttable.v_idx[d & @replica_rttable.search_mask]
         return nodes[0] # for send primary node of replica cluster
       rescue => e
-        @log.error("#{e}\n#{$@}")
+        @logger.error("#{e}\n#{$@}")
         nil
       end
 
@@ -244,8 +244,8 @@ module Roma
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
         end
       rescue => e
-        @log.error("#{e}\n#{$@}")
-        @log.error("replication error: key=#{key} value=#{value}\r\n")
+        @logger.error("#{e}\n#{$@}")
+        @logger.error("replication error: key=#{key} value=#{value}\r\n")
       ensure
         @do_transmit = false
       end
@@ -274,7 +274,7 @@ module Roma
       }
       @wb_thread[:name] = 'write_behind'
     rescue =>e
-      @log.error("#{e}\n#{$@}")
+      @logger.error("#{e}\n#{$@}")
     end
 
     def stop_wb_process
@@ -311,7 +311,7 @@ module Roma
         end
       }
     rescue =>e
-      @log.error("#{e}\n#{$@}")
+      @logger.error("#{e}\n#{$@}")
       retry
     end
     private :wb_process_loop

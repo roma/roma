@@ -173,7 +173,7 @@ module Roma
         rescue => e
           msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
           send_data("#{msg}\r\n")
-          @log.error("#{e} #{$@}")
+          @logger.error("#{e} #{$@}")
         end
       end
 

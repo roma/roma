@@ -224,7 +224,7 @@ class CopyDataTest < Test::Unit::TestCase
       return nil
     end
   rescue => e
-    @log.error("#{e}\n#{$ERROR_POSITION}")
+    @logger.error("#{e}\n#{$ERROR_POSITION}")
     false
   end
 end

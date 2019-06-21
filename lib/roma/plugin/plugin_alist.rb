@@ -7,7 +7,7 @@ module Roma
 
     module PluginAshiatoList
       include ::Roma::CommandPlugin
- 
+
       # alist_at <key> <index> [forward]\r\n
       #
       # (
@@ -29,13 +29,13 @@ module Roma
           return send_data("VALUE #{s[1]} 0 #{ret.length}\r\n#{ret}\r\nEND\r\n")
         else
           return send_data("END\r\n")
-        end        
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
-      
+
       # alist_clear <key> [forward]\r\n
       #
       # (CLEARED|NOT_CLEARED|SERVER_ERROR <error message>)\r\n
@@ -59,11 +59,11 @@ module Roma
           send_data("CLEARED\r\n")
         else
           send_data("NOT_CLEARED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_delete <key> <bytes> [forward]\r\n
@@ -75,7 +75,7 @@ module Roma
         data = read_bytes(s[2].to_i)
         read_bytes(2)
         return forward2(nodes[0], s, data) if nodes[0] != @nid
-        
+
         ddata = @storages[hname].get(vn, k, d)
         return send_data("NOT_FOUND\r\n") unless ddata
 
@@ -98,11 +98,11 @@ module Roma
           send_data("DELETED\r\n")
         else
           send_data("NOT_DELETED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_delete_at <key> <index> [forward]\r\n
@@ -111,7 +111,7 @@ module Roma
       def ev_alist_delete_at(s)
         hname, k, d, vn, nodes = calc_hash(s[1])
         return forward2(nodes[0], s) if nodes[0] != @nid
-        
+
         ddata = @storages[hname].get(vn, k, d)
         return send_data("NOT_FOUND\r\n") unless ddata
 
@@ -132,11 +132,11 @@ module Roma
           send_data("DELETED\r\n")
         else
           send_data("NOT_DELETED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("${e} #{$@}")
+        @logger.error("${e} #{$@}")
       end
 
       # alist_empty? <key> [forward]\r\n
@@ -150,15 +150,15 @@ module Roma
         @stats.read_count += 1
 
         return send_data("NOT_FOUND\r\n") unless ddata
-        
+
         v = Marshal.load(ddata)
         ret = v[0].empty?
-        
+
         send_data("#{ret}\r\n")
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_first <key> [forward]\r\n
@@ -182,11 +182,11 @@ module Roma
           return send_data("VALUE #{s[1]} 0 #{ret.length}\r\n#{ret}\r\nEND\r\n")
         else
           return send_data("END\r\n")
-        end        
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_gets <key> [index|range] [forward]\r\n
@@ -232,7 +232,7 @@ module Roma
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_gets_with_time <key> [index|range] [forward]\r\n
@@ -284,7 +284,7 @@ module Roma
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
 
@@ -302,14 +302,14 @@ module Roma
         @stats.read_count += 1
 
         return send_data("NOT_FOUND\r\n") unless ddata
-        
+
         v = Marshal.load(ddata)[0]
         ret = v.include?(data)
-        
+
         send_data("#{ret}\r\n")
       rescue => e
         send_data("SERVER_ERROR #{e} #{$@}\r\n")
-        @log.error("#{e} #{$@}") 
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_index <key> <bytes> [forward]\r\n
@@ -326,7 +326,7 @@ module Roma
         @stats.read_count += 1
 
         return send_data("NOT_FOUND\r\n") unless ddata
-        
+
         v = Marshal.load(ddata)[0]
         ret = v.index(data)
         if ret
@@ -337,7 +337,7 @@ module Roma
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_insert <key> <index> <bytes> [forward]\r\n
@@ -371,11 +371,11 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       def ev_alist_sized_prepend(s); ev_alist_sized_insert(s); end
@@ -414,11 +414,11 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       def ev_alist_delete_and_prepend(s); ev_alist_swap_and_insert(s); end
@@ -460,11 +460,11 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       def ev_alist_sized_delete_and_prepend(s); ev_alist_swap_and_sized_insert(s); end
@@ -508,21 +508,21 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_expired_swap_and_insert <key> <expire-time> <bytes> [forward]\r\n
       # <data block>\r\n
-      # 
+      #
       # the data expire-time's ago will be deleated.
       # the unit of the expire-time's is a second.
       # however,as follows when there is a suffix.
       # 'h' as +expire-time+ suffix is hour.
-      # 'd' as +expire-time+ suffix is day. 
+      # 'd' as +expire-time+ suffix is day.
       #
       # (STORED|NOT_STORED|SERVER_ERROR <error message>)\r\n
       def ev_alist_expired_swap_and_insert(s)
@@ -539,7 +539,7 @@ module Roma
           return send_data("SERVER_ERROR data other than alist's format already exist.\r\n")
         end
 
-# @log.debug("#{s[2]} et=#{et}")
+# @logger.debug("#{s[2]} et=#{et}")
         v = expired_swap(v, data, et)
 
         v[0].insert(0,data)
@@ -557,21 +557,21 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_expired_swap_and_sized_insert <key> <expire-time> <array-size> <bytes> [forward]\r\n
       # <data block>\r\n
-      # 
+      #
       # the data expire-time's ago will be deleated.
       # the unit of the expire-time's is a second.
       # however,as follows when there is a suffix.
       # 'h' as +expire-time+ suffix is hour.
-      # 'd' as +expire-time+ suffix is day. 
+      # 'd' as +expire-time+ suffix is day.
       #
       # (STORED|NOT_STORED|SERVER_ERROR <error message>)\r\n
       def ev_alist_expired_swap_and_sized_insert(s)
@@ -588,7 +588,7 @@ module Roma
           return send_data("SERVER_ERROR data other than alist's format already exist.\r\n")
         end
 
-# @log.debug("#{s[2]} et=#{et}")
+# @logger.debug("#{s[2]} et=#{et}")
         v = expired_swap(v, data, et)
 
         v[0].insert(0,data)
@@ -608,11 +608,11 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
 
@@ -665,7 +665,7 @@ module Roma
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_join <key> <bytes> [index|range] [forward]\r\n
@@ -711,7 +711,7 @@ module Roma
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_to_json <key> [index|range] [forward]\r\n
@@ -750,7 +750,7 @@ module Roma
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_last <key> [forward]\r\n
@@ -774,11 +774,11 @@ module Roma
           return send_data("VALUE #{s[1]} 0 #{ret.length}\r\n#{ret}\r\nEND\r\n")
         else
           return send_data("END\r\n")
-        end        
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_length <key> [forward]\r\n
@@ -797,7 +797,7 @@ module Roma
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_pop <key> [forward]\r\n
@@ -831,13 +831,13 @@ module Roma
           send_data("VALUE #{s[1]} 0 #{retv.length}\r\n#{retv}\r\nEND\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
-      
+
       # alist_push <key> <bytes> [forward]\r\n
       # <data block>\r\n
       #
@@ -871,11 +871,11 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_sized_push <key> <array-size> <bytes> [forward]\r\n
@@ -916,11 +916,11 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_swap_and_push <key> <bytes> [forward]\r\n
@@ -960,11 +960,11 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_swap_and_sized_push <key> <array-size> <bytes> [forward]\r\n
@@ -1010,21 +1010,21 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_expired_swap_and_push <key> <expire-time> <bytes> [forward]\r\n
       # <data block>\r\n
-      # 
+      #
       # the data expire-time's ago will be deleated.
       # the unit of the expire-time's is a second.
       # however,as follows when there is a suffix.
       # 'h' as +expire-time+ suffix is hour.
-      # 'd' as +expire-time+ suffix is day. 
+      # 'd' as +expire-time+ suffix is day.
       #
       # (STORED|NOT_STORED|SERVER_ERROR <error message>)\r\n
       def ev_alist_expired_swap_and_push(s)
@@ -1041,7 +1041,7 @@ module Roma
           return send_data("SERVER_ERROR data other than alist's format already exist.\r\n")
         end
 
-# @log.debug("#{s[2]} et=#{et}")
+# @logger.debug("#{s[2]} et=#{et}")
         v = expired_swap(v, data, et)
 
         v[0].push(data)
@@ -1059,21 +1059,21 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_expired_swap_and_sized_push <key> <expire-time> <array-size> <bytes> [forward]\r\n
       # <data block>\r\n
-      # 
+      #
       # the data expire-time's ago will be deleated.
       # the unit of the expire-time's is a second.
       # however,as follows when there is a suffix.
       # 'h' as +expire-time+ suffix is hour.
-      # 'd' as +expire-time+ suffix is day. 
+      # 'd' as +expire-time+ suffix is day.
       #
       # (STORED|NOT_STORED|SERVER_ERROR <error message>)\r\n
       def ev_alist_expired_swap_and_sized_push(s)
@@ -1090,7 +1090,7 @@ module Roma
           return send_data("SERVER_ERROR data other than alist's format already exist.\r\n")
         end
 
-# @log.debug("#{s[2]} et=#{et}")
+# @logger.debug("#{s[2]} et=#{et}")
         v = expired_swap(v, data, et)
 
         max = s[3].to_i
@@ -1113,16 +1113,16 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_update_at <key> <index> <bytes>[forward]\r\n
       # <data block>\r\n
-      # 
+      #
       # (STORED|NOT_STORED|NOT_FOUND|SERVER_ERROR <error message>)\r\n
       def ev_alist_update_at(s)
         hname, k, d, vn, nodes = calc_hash(s[1])
@@ -1152,11 +1152,11 @@ module Roma
           send_data("STORED\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_shift <key> [forward]\r\n
@@ -1190,11 +1190,11 @@ module Roma
           send_data("VALUE #{s[1]} 0 #{retv.length}\r\n#{retv}\r\nEND\r\n")
         else
           send_data("NOT_STORED\r\n")
-        end  
+        end
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
       # alist_to_s <key> [index|range] [forward]\r\n
@@ -1235,7 +1235,7 @@ module Roma
       rescue => e
         msg = "SERVER_ERROR #{e} #{$@}".tr("\r\n"," ")
         send_data("#{msg}\r\n")
-        @log.error("#{e} #{$@}")
+        @logger.error("#{e} #{$@}")
       end
 
 
@@ -1250,12 +1250,12 @@ module Roma
       #  |<-['STORED'\r\n]                     |
       def ev_alist_spushv(s)
         if s.length != 3
-          @log.error("#{__method__}:wrong number of arguments(#{s})")
+          @logger.error("#{__method__}:wrong number of arguments(#{s})")
           return send_data("CLIENT_ERROR Wrong number of arguments.\r\n")
         end
         if @stats.spushv_protection
-          @log.info("#{__method__}:In spushv_protection")
-          return send_data("SERVER_ERROR In spushv_protection.\r\n")          
+          @logger.info("#{__method__}:In spushv_protection")
+          return send_data("SERVER_ERROR In spushv_protection.\r\n")
         end
         @stats.run_receive_a_vnode["#{s[1]}_#{s[2]}"] = true
 
@@ -1274,41 +1274,41 @@ module Roma
           v = read_bytes(vlen, 100)
           val = to_alist_value(v)
           if val
-# @log.debug("listdata #{vn} #{k} #{val.inspect}")
+# @logger.debug("listdata #{vn} #{k} #{val.inspect}")
              count += 1 if merge_list(s[1], vn, last, clk, expt, k, v, val)
           else
-# @log.debug("not listdata #{vn} #{k} #{val}")
+# @logger.debug("not listdata #{vn} #{k} #{val}")
             count += 1 if @storages[s[1]].load_stream_dump(vn, last, clk, expt, k, v)
           end
         }
         if @stats.spushv_protection
-          @log.info("#{__method__}:Canceled because of spushv_protection")
+          @logger.info("#{__method__}:Canceled because of spushv_protection")
           send_data("CANCELED\r\n")
         else
           send_data("STORED\r\n")
         end
-        @log.debug("alist #{count} keys loaded.")
+        @logger.debug("alist #{count} keys loaded.")
       rescue Storage::StorageException => e
-        @log.error("#{e.inspect} #{$@}")
+        @logger.error("#{e.inspect} #{$@}")
         close_connection
         if Config.const_defined?(:STORAGE_EXCEPTION_ACTION) &&
             Config::STORAGE_EXCEPTION_ACTION == :shutdown
-          @log.error("#{__method__}:Romad will stop")
+          @logger.error("#{__method__}:Romad will stop")
           @stop_event_loop = true
         end
       rescue => e
-        @log.error("#{e}\n#{$@}")
+        @logger.error("#{e}\n#{$@}")
       ensure
         @stats.run_receive_a_vnode.delete("#{s[1]}_#{s[2]}") if s.length == 3
-      end      
+      end
 
       private
-      
+
       def expired_swap(v, rcv_val, et)
         del = [rcv_val]
         expt =  Time.now.to_i - et
         v[1].each_with_index{|t,i|
-# @log.debug("v=#{v[0][i]} expt=#{expt} t=#{t} #{expt >= t}")
+# @logger.debug("v=#{v[0][i]} expt=#{expt} t=#{t} #{expt >= t}")
           del << v[0][i] if expt >= t
         }
         del.each{|dat|
@@ -1325,7 +1325,7 @@ module Roma
         if s.upcase =~ /(\d+)([H|D])?/
           t = $1.to_i
           if $2 == 'D'
-            t *= 86400 
+            t *= 86400
           elsif $2 == 'H'
             t *= 3600
           end
@@ -1386,7 +1386,7 @@ module Roma
         d = Digest::SHA1.hexdigest(k).hex % @rttable.hbits
         vn = @rttable.get_vnode_id(d)
         nodes = @rttable.search_nodes_for_write(vn)
-        [hname, k, d, vn, nodes]        
+        [hname, k, d, vn, nodes]
       end
 
       # for a several lines received command
@@ -1394,8 +1394,8 @@ module Roma
         if rs.last == "forward"
           return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
-        
-        @log.warn("forward #{rs} to #{nid}");
+
+        @logger.warn("forward #{rs} to #{nid}");
 
         buf = ''
         rs.each{|ss| buf << "#{ss} " }
@@ -1404,26 +1404,26 @@ module Roma
           buf << data
           buf << "\r\n"
         end
-        
+
         con = get_connection(nid)
         con.send(buf)
 
         buf = con.gets
         if buf == nil
           @rttable.proc_failed(nid)
-          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
+          @logger.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
           return send_data("SERVER_ERROR Message forward failed.\r\n")
         elsif buf.start_with?("ERROR")
           @rttable.proc_succeed(nid)
           con.close_connection
-          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
+          @logger.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
           return send_data("SERVER_ERROR Message forward failed.\r\n")
         elsif buf.start_with?("VALUE") == false
           return_connection(nid, con)
           @rttable.proc_succeed(nid)
           return send_data(buf)
         end
-        
+
         res = ''
         begin
           res << buf
@@ -1433,7 +1433,7 @@ module Roma
             @rttable.proc_succeed(nid)
             return send_data(buf)
           end
-          res << con.read_bytes(s[3].to_i + 2)          
+          res << con.read_bytes(s[3].to_i + 2)
         end while (buf = con.gets)!="END\r\n"
 
         res << "END\r\n"
@@ -1444,7 +1444,7 @@ module Roma
         send_data(res)
       rescue => e
         @rttable.proc_failed(nid) if e.message != "no connection"
-        @log.error("forward get failed:nid=#{nid} rs=#{rs} #{e} #{$@}")
+        @logger.error("forward get failed:nid=#{nid} rs=#{rs} #{e} #{$@}")
         send_data("SERVER_ERROR Message forward failed.\r\n")
       end
 
@@ -1454,7 +1454,7 @@ module Roma
           return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
 
-        @log.warn("forward #{rs} to #{nid}");
+        @logger.warn("forward #{rs} to #{nid}");
 
         buf = ''
         rs.each{|ss| buf << "#{ss} " }

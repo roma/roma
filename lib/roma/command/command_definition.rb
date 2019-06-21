@@ -31,7 +31,7 @@ module Roma
             rescue ServerErrorException => e
               send_data("SERVER_ERROR #{e.message}\r\n")
             rescue LocalJumpError => e
-              @log.warn("#{e} #{$@}")
+              @logger.warn("#{e} #{$@}")
               e.exit_value
             end
           end
@@ -45,7 +45,7 @@ module Roma
             rescue ServerErrorException => e
               send_data("SERVER_ERROR #{e.message}\r\n")
             rescue LocalJumpError => e
-              @log.warn("#{e} #{$@}")
+              @logger.warn("#{e} #{$@}")
               e.exit_value
             end
           end
@@ -88,7 +88,7 @@ module Roma
             rescue ServerErrorException => e
               send_data("SERVER_ERROR #{e.message}\r\n")
             rescue LocalJumpError => e
-              @log.warn("#{e} #{$@}")
+              @logger.warn("#{e} #{$@}")
               e.exit_value
             end
           end
@@ -129,7 +129,7 @@ module Roma
               ret = instance_exec(ctx, &block)
               if ret.instance_of? Array
                 flg, expt, value, count, msg = ret
-                ret = @storages[ctx.params.hash_name].set(ctx.params.vn, 
+                ret = @storages[ctx.params.hash_name].set(ctx.params.vn,
                                                           ctx.params.key,
                                                           ctx.params.digest,
                                                           expt,
@@ -159,7 +159,7 @@ module Roma
             rescue ServerErrorException => e
               send_data("SERVER_ERROR #{e.message}\r\n")
             rescue LocalJumpError => e
-              @log.warn("#{e} #{$@}")
+              @logger.warn("#{e} #{$@}")
               e.exit_value
             end
           end
@@ -197,7 +197,7 @@ module Roma
             rescue ServerErrorException => e
               send_data("SERVER_ERROR #{e.message}\r\n")
             rescue LocalJumpError => e
-              @log.warn("#{e} #{$@}")
+              @logger.warn("#{e} #{$@}")
               e.exit_value
             end
           end
@@ -238,11 +238,11 @@ module Roma
               end
 
               ctx = CommandContext.new(s, params, stored)
-              
+
               ret = instance_exec(ctx, &block)
               if ret.instance_of? Array
                 flg, expt, value, count, msg = ret
-                ret = @storages[ctx.params.hash_name].set(ctx.params.vn, 
+                ret = @storages[ctx.params.hash_name].set(ctx.params.vn,
                                                           ctx.params.key,
                                                           ctx.params.digest,
                                                           expt,
@@ -259,8 +259,8 @@ module Roma
                                                    @stats.wb_command_map[cmd.to_sym],
                                                    ctx.params.key, ret[4])
                   end
-                  redundant(ctx.params.nodes[1..-1], ctx.params.hash_name, 
-                            ctx.params.key, ctx.params.digest, ret[2], 
+                  redundant(ctx.params.nodes[1..-1], ctx.params.hash_name,
+                            ctx.params.key, ctx.params.digest, ret[2],
                             expt, ret[4])
                   send_data("#{msg}\r\n")
                 else
@@ -272,7 +272,7 @@ module Roma
             rescue ServerErrorException => e
               send_data("SERVER_ERROR #{e.message}\r\n")
             rescue LocalJumpError => e
-              @log.warn("#{e} #{$@}")
+              @logger.warn("#{e} #{$@}")
               e.exit_value
             end
           end
@@ -314,7 +314,7 @@ module Roma
             rescue ServerErrorException => e
               send_data("SERVER_ERROR #{e.message}\r\n")
             rescue LocalJumpError => e
-              @log.warn("#{e} #{$@}")
+              @logger.warn("#{e} #{$@}")
               e.exit_value
             end
           end
@@ -354,7 +354,7 @@ module Roma
             rescue ServerErrorException => e
               send_data("SERVER_ERROR #{e.message}\r\n")
             rescue LocalJumpError => e
-              @log.warn("#{e} #{$@}")
+              @logger.warn("#{e} #{$@}")
               e.exit_value
             end
           end
@@ -368,7 +368,7 @@ module Roma
           return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
 
-        @log.warn("forward #{rs} to #{nid}");
+        @logger.warn("forward #{rs} to #{nid}");
 
         buf = rs.join(' ') + " forward\r\n"
         buf << data + "\r\n" if data
@@ -379,13 +379,13 @@ module Roma
         send_data("#{res}\r\n")
       end
 
-      # 
+      #
       def forward_and_multi_line_receive(nid, rs, data=nil)
         if rs.last == "forward"
           return send_data("SERVER_ERROR Routing table is inconsistent.\r\n")
         end
 
-        @log.warn("forward #{rs} to #{nid}");
+        @logger.warn("forward #{rs} to #{nid}");
 
         buf = rs.join(' ') + " forward\r\n"
         buf << data + "\r\n" if data
@@ -396,12 +396,12 @@ module Roma
         buf = con.gets
         if buf == nil
           @rttable.proc_failed(nid)
-          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
+          @logger.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
           return send_data("SERVER_ERROR Message forward failed.\r\n")
         elsif buf.start_with?("ERROR")
           @rttable.proc_succeed(nid)
           con.close_connection
-          @log.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
+          @logger.error("forward get failed:nid=#{nid} rs=#{rs} #{$@}")
           return send_data("SERVER_ERROR Message forward failed.\r\n")
         elsif buf.start_with?("VALUE") == false
           return_connection(nid, con)
@@ -429,7 +429,7 @@ module Roma
         send_data(res)
       rescue => e
         @rttable.proc_failed(nid) if e.message != "no connection"
-        @log.error("forward get failed:nid=#{nid} rs=#{rs} #{e} #{$@}")
+        @logger.error("forward get failed:nid=#{nid} rs=#{rs} #{e} #{$@}")
         send_data("SERVER_ERROR Message forward failed.\r\n")
       end
 

@@ -8,7 +8,7 @@ module Roma
       # DANGER!!
       def ev_eval(s)
         cmd = s[1..-1].join(' ')
-        @log.debug("eval(#{cmd})")
+        @logger.debug("eval(#{cmd})")
         send_data("#{eval(cmd)}\r\n")
       rescue Exception =>e
         send_data("#{e}\r\n")

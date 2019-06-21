@@ -53,7 +53,7 @@ module Roma
 
       def initialize config
         @conf = config
-        @log = Logger.new @conf['log']['path'], @conf['log']['rotate']
+        @logger = Logger.new @conf['log']['path'], @conf['log']['rotate']
         @nodelist_inf = {}
         @errors = {}
         @subject_prefix = @conf['mail']['subject_prefix']
@@ -61,12 +61,12 @@ module Roma
       end
 
       def watch
-        @log.info "start watching a ROMA"
+        @logger.info "start watching a ROMA"
         watch_nodes
-        @log.info "end watching"
-        @log.info "start checking a ROMA"
+        @logger.info "end watching"
+        @logger.info "start checking a ROMA"
         check_nodes
-        @log.info "end checking"
+        @logger.info "end checking"
       end
 
       def watch_nodes
@@ -77,7 +77,7 @@ module Roma
       end
 
       def watch_node node
-        @log.debug "start watching a node: #{node}"
+        @logger.debug "start watching a node: #{node}"
         host, port = node.split(':')
         sock = nil
         begin
@@ -88,14 +88,14 @@ module Roma
               line = sock.gets.chomp!
               sock.puts Message::COMMAND_QUIT
             end
-            @log.debug "end watching a node: #{node}"
+            @logger.debug "end watching a node: #{node}"
             line.split(' ')
           }
         rescue Exception => e
           emsg = "Catch an error when checking a node #{node}: #{e.to_s}"
-          @log.error emsg
+          @logger.error emsg
           if (cnt ||= 0; cnt += 1) < @conf['retry']['count'].to_i
-            @log.info "retry: #{cnt} times"
+            @logger.info "retry: #{cnt} times"
             sleep @conf['retry']['period'].to_i
             retry
           end
@@ -110,15 +110,15 @@ module Roma
       end
 
       def check_vital
-        @log.debug "start checking the vital"
+        @logger.debug "start checking the vital"
         @errors.each { |node, emsg|
           @mailer.send_mail(@subject_prefix + Message::ERROR_NODE_DOWN, emsg)
         }
-        @log.debug "end checking the vital"
+        @logger.debug "end checking the vital"
       end
 
       def check_splitbrain
-        @log.debug "start checking a splitbrain"
+        @logger.debug "start checking a splitbrain"
         all_ring = []
         @nodelist_inf.each { |node, ring|
           all_ring << ring unless all_ring.include? ring
@@ -131,7 +131,7 @@ module Roma
           }
           @mailer.send_mail(@subject_prefix + Message::ERROR_SPLIT_BRAIN, emsg)
         end
-        @log.debug "end checking a splitbrain"
+        @logger.debug "end checking a splitbrain"
       end
     end
   end # Watch
