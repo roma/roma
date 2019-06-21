@@ -1,5 +1,4 @@
 require 'thor'
-require 'roma/config'
 require 'roma/server'
 
 module Roma
@@ -9,8 +8,8 @@ module Roma
 
       method_option :daemon, type: :boolean, default: false, aliases: '-d', desc: 'Run as a daemon'
       method_option :join, type: :string, aliases: '-j', desc: 'Concatination of server address and port with ":"'
-      method_option :name, type: :string, aliases: '-n', default: Roma::Config::DEFAULT_NAME, desc: "Server's name"
-      method_option :port, type: :numeric, default: Roma::Config::DEFAULT_PORT, aliases: '-p', desc: 'Port number'
+      method_option :name, type: :string, aliases: '-n', default: Roma::Server::DEFAULT_NAME, desc: "Server's name"
+      method_option :port, type: :numeric, default: Roma::Server::DEFAULT_PORT, aliases: '-p', desc: 'Port number'
       method_option :enabled_repeathost, type: :boolean, default: false, desc: 'Allow redundancy to same host'
       method_option :replication_in_host, type: :boolean, default: false, desc: 'Allow redundancy to same host'
       method_option :disabled_cmd_protect, type: :boolean, default: false, desc: 'Command protection disable while starting'

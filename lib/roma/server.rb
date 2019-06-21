@@ -16,7 +16,9 @@ module Roma
     include AsyncProcess
     include WriteBehindProcess
 
-    DEFAULT_PID_DIR = './tmp/pids'
+    DEFAULT_NAME = 'ROMA'.freeze
+    DEFAULT_PORT = 12000.freeze
+    DEFAULT_PID_DIR = './tmp/pids'.freeze
 
     attr :storages
     attr :routing_table
@@ -94,6 +96,7 @@ module Roma
             EventMachine.start_server('0.0.0.0', @stats.port,
                                       Roma::Command::Receiver,
                                       @storages, @routing_table)
+            @logger.info("Roma server established: #{@stats.address}:#{@stats.port}")
             # a management of connections lives
             EventMachine::add_periodic_timer( 10 ) {
               if Event::Handler::connection_expire_time > 0
@@ -143,7 +146,9 @@ module Roma
       stop
     end
 
-    def daemon?; @stats.daemon; end
+    def daemon?
+      @stats.daemon
+    end
 
     def stop_clean_up
       @stats.last_clean_up = Time.now
@@ -180,6 +185,8 @@ module Roma
         @stats.join_ap = @stats.join_ap.sub(':', '_')
         raise "[address:port] can not be parsed." if !(@stats.join_ap =~ /^.+_\d+$/)
       end
+
+      @stats.verbose = options[:verbose] unless options[:verbose].nil?
 
       if Config.const_defined?(:REDUNDANT_ZREDUNDANT_SIZE)
         @stats.size_of_zredundant = Config::REDUNDANT_ZREDUNDANT_SIZE
@@ -337,7 +344,7 @@ module Roma
         @storages[hname] = st
       end
 
-      if @storages.length == 0
+      if @storages.empty?
         hname = 'roma'
         st = st_class.new
         st.storage_path = "#{path}/#{hname}"

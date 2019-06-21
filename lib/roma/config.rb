@@ -1,3 +1,4 @@
+require 'roma/server'
 require 'roma/storage/ruby_hash_storage'
 
 module Roma
@@ -6,8 +7,8 @@ module Roma
     # check when the booting
     VERSION = "2.0.0.dev"
 
-    DEFAULT_PORT = 12000
-    DEFAULT_NAME = 'ROMA'
+    DEFAULT_PORT = Roma::Server::DEFAULT_PORT
+    DEFAULT_NAME = Roma::Server::DEFAULT_NAME
 
     # :no_action | :auto_assign | :shutdown
     DEFAULT_LOST_ACTION = :auto_assign
