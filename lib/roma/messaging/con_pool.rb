@@ -5,7 +5,7 @@ require 'roma/dns_cache'
 
 module Roma
   module Messaging
-    
+
     class ConPool
       include Singleton
 
@@ -34,14 +34,14 @@ module Roma
       end
 
       def check_connection(ap)
-        unless @pool.key?(ap)
-          host, port = ap.split(/[:_]/)
-          addr = DNSCache.instance.resolve_name(host)
-          sock = TCPSocket.open(addr, port)
-          sock.close
-        end
+        return true if @pool.key?(ap)
+        host, port = ap.split(/[:_]/)
+        addr = DNSCache.instance.resolve_name(host)
+        sock = TCPSocket.open(addr, port)
+        sock.close
         true
       rescue Errno::ECONNREFUSED => e
+        STDERR.puts e.message
         false
       rescue => e
         Logging::RLogger.instance.error("#{__FILE__}:#{__LINE__}:#{e}")
@@ -87,7 +87,7 @@ module Roma
           close_at(eap) if eap.split(/[:_]/)[0] == host
         }
       end
-      
+
       def close_at(ap)
         return unless @pool.key?(ap)
         @lock.synchronize {

@@ -12,11 +12,11 @@ module Roma
 
       attr_accessor :shift_size
 
-      def initialize(path, shift_size, log)
+      def initialize(path, shift_size, logger)
         @stats = Roma::Stats.instance
         path.chop! if path[-1]=='/'
         @path = path
-        @log = log
+        @log = logger
         @fdh = {} # file handle hash
         @fnh = {} # file name hash
         @do_write = false
@@ -48,7 +48,7 @@ module Roma
         fd = @fdh[hname]
         unless fd
           fd = openfile(hname)
-          @log.info("WriteBehind file has been created: [#{@fnh[hname]}]")
+          @logger.info("WriteBehind file has been created: [#{@fnh[hname]}]")
           @total_size[hname] = 0
         end
         klen = key.length
@@ -62,17 +62,17 @@ module Roma
       end
 
       def rotate(hname)
-        @log.info("WriteBehind:rotate #{hname}")
+        @logger.info("WriteBehind:rotate #{hname}")
         fd_old = @fdh[hname]
         unless fd_old
-          @log.info("WriteBehind:rotate #{hname} not opend")
+          @logger.info("WriteBehind:rotate #{hname} not opend")
           return false
         end
         @fdh.delete(hname)
         @fnh.delete(hname)
         sleep 0.01 while @do_write
         fd_old.close
-        @log.info("WriteBehind:rotate succeed")
+        @logger.info("WriteBehind:rotate succeed")
         true
       end
 
@@ -100,9 +100,9 @@ module Roma
       end
 
       def get_current_file_path(hname)
-        @log.info("WriteBehind:get_current_file_path #{hname}")
+        @logger.info("WriteBehind:get_current_file_path #{hname}")
         unless @fnh[hname]
-          @log.info("WriteBehind:get_current_file_path #{hname} not opend")
+          @logger.info("WriteBehind:get_current_file_path #{hname} not opend")
           return nil
         end
         File.expand_path("#{@fnh[hname]}")

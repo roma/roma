@@ -24,7 +24,7 @@ module Roma
         @log = Roma::Logging::RLogger.instance
         @rd = rd
         @rn = @rd.rn
-        @div_bits=@rd.div_bits
+        @div_bits = @rd.div_bits
         @hbits = 2**@rd.dgst_bits
         @search_mask = @rd.search_mask
         @fail_cnt = Hash.new(0)

@@ -4,6 +4,8 @@ require 'fileutils'
 require 'rbconfig'
 require 'roma/config'
 require 'roma/messaging/con_pool'
+require 'roma/routing/routing_data'
+require 'roma/server'
 require 'roma/logging/rlogger'
 require 'roma/client/rclient'
 require 'roma/client/version'
@@ -36,7 +38,8 @@ module RomaTestUtils
     FileUtils.rm_rf(Dir.glob("#{Roma::Config::STORAGE_PATH}/#{DEFAULT_IP}_#{DEFAULT_PORTS[0][0..-2]}?*"))
     sleep 0.1
 
-    system("#{ruby_path} #{mkroute_path} #{DEFAULT_NODES.join(' ')} -d #{div_bits} --replication_in_host >> #{SHELL_LOG} 2>&1")
+    routing_data = Roma::Routing::RoutingData.create(divide_bit_size: div_bits, replication_in_host: true, nodes: DEFAULT_NODES)
+    routing_data.save
     sleep 0.2
 
     DEFAULT_NODES.each do |node|
@@ -50,7 +53,8 @@ module RomaTestUtils
     FileUtils.rm_rf(Dir.glob("#{Roma::Config::STORAGE_PATH}/#{DEFAULT_IP}_#{REPLICA_PORTS[0][0..-2]}?*"))
     sleep 0.1
 
-    system("#{ruby_path} #{mkroute_path} #{REPLICA_NODES.join(' ')} -d #{div_bits} --replication_in_host >> #{SHELL_LOG} 2>&1")
+    routing_data = Roma::Routing::RoutingData.create(divide_bit_size: div_bits, replication_in_host: replication_in_host, nodes: REPLICA_NODES)
+    routing_data.save
     sleep 0.2
 
     REPLICA_NODES.each do |node|
@@ -66,12 +70,14 @@ module RomaTestUtils
   def do_command_romad(node, conf, replication_in_host = true, is_join = false)
     host, port = node.split('_')
     romad_command = [
-      ruby_path, romad_path, host,
+      ruby_path, romad_path,
+      'server start',
+      host,
       '-p', port,
-      '-d', '--verbose', '--disabled_cmd_protect',
+      '-d', '--verbose', '--disabled-cmd-protect',
       '--config', "#{test_dir}/#{conf}"
     ]
-    romad_command << '--replication_in_host' if replication_in_host
+    romad_command << '--replication-in-host' if replication_in_host
     romad_command << "-j #{DEFAULT_NODES[0]}" if is_join
     romad_command << ">> #{SHELL_LOG} 2>&1"
 
@@ -172,7 +178,7 @@ module RomaTestUtils
   end
 
   def romad_path
-    (bin_dir + 'romad').to_s
+    (bin_dir + 'roma').to_s
   end
 
   def ruby_path

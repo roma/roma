@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-require 'optparse'
 require 'roma/version'
 require 'roma/stats'
 require 'roma/command_plugin'
@@ -9,17 +8,20 @@ require 'roma/logging/rlogger'
 require 'roma/command/receiver'
 require 'roma/messaging/con_pool'
 require 'roma/event/con_pool'
-require 'roma/routing/cb_rttable'
+require 'roma/routing/churn_based_routing_table'
 require 'timeout'
 
 module Roma
-
-  class Romad
+  class Server
     include AsyncProcess
     include WriteBehindProcess
 
+    DEFAULT_NAME = 'ROMA'.freeze
+    DEFAULT_PORT = 12000.freeze
+    DEFAULT_PID_DIR = './tmp/pids'.freeze
+
     attr :storages
-    attr :rttable
+    attr :routing_table
     attr :stats
     attr :wb_writer
     attr :cr_writer
@@ -27,14 +29,14 @@ module Roma
     attr_accessor :eventloop
     attr_accessor :startup
 
-    def initialize(argv = nil)
-      @stats = Roma::Stats.instance
+    def initialize(address, options = {})
       @startup = true
-      options(argv)
-      initialize_stats
+      options[:address] ||= address
+      @stats = Roma::Stats.instance
+      initialize_stats(options)
       initialize_connection
       initialize_logger
-      initialize_rttable
+      initialize_routing_table
       initialize_storages
       initialize_handler
       initialize_plugin
@@ -42,34 +44,20 @@ module Roma
     end
 
     def start
-      # config version check
-      if !Config.const_defined?(:VERSION)
-        @log.error("ROMA FAIL TO BOOT! : config.rb's version is too old.")
-        exit
-      elsif Config::VERSION != Roma::VERSION
-        if /(\d+)\.(\d+)\.(\d+)/ =~ Config::VERSION
-          version_config = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
-        end
-        if /(\d+)\.(\d+)\.(\d+)/ =~ Roma::VERSION
-          version_roma = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
-        end
-
-        if version_config == version_roma
-          @log.info("This version is development version.")
-        else
-          @log.error("ROMA FAIL TO BOOT! : config.rb's version is differ from current ROMA version.")
-          exit
-        end
-      end
+      validate_version_number_in_config
 
       if node_check(@stats.ap_str)
-        @log.error("#{@stats.ap_str} is already running.")
+        @logger.error("#{@stats.ap_str} is already running.")
         return
       end
 
-      @storages.each{|hashname,st|
-        st.opendb
-      }
+      @storages.each { |_, storage| storage.opendb }
+
+      check_pid!
+      if daemon?
+        daemonize
+        write_pid
+      end
 
       start_async_process
       start_wb_process
@@ -81,13 +69,13 @@ module Roma
 
       # select a kind of system call
       if Config.const_defined?(:CONNECTION_USE_EPOLL) && Config::CONNECTION_USE_EPOLL
-        @log.info("use an epoll")
+        @logger.info("use an epoll")
         EM.epoll
         if Config.const_defined?(:CONNECTION_DESCRIPTOR_TABLE_SIZE)
           EM.set_descriptor_table_size(Config::CONNECTION_DESCRIPTOR_TABLE_SIZE)
         end
       else
-        @log.info("use a select")
+        @logger.info("use a select")
       end
 
       @eventloop = true
@@ -99,7 +87,7 @@ module Roma
             begin
               k.close_connection
             rescue Exception => e
-              @log.error("#{e}\n#{$@}")
+              @logger.error("#{e}\n#{$@}")
             end
           }
           Event::Handler::connections.clear
@@ -107,7 +95,8 @@ module Roma
           EventMachine::run do
             EventMachine.start_server('0.0.0.0', @stats.port,
                                       Roma::Command::Receiver,
-                                      @storages, @rttable)
+                                      @storages, @routing_table)
+            @logger.info("Roma server established: #{@stats.address}:#{@stats.port}")
             # a management of connections lives
             EventMachine::add_periodic_timer( 10 ) {
               if Event::Handler::connection_expire_time > 0
@@ -119,36 +108,36 @@ module Roma
                     begin
                       k.close_connection
                       if k.addr
-                        @log.info("connection expired from #{k.addr}:#{k.port},lastcmd = #{k.lastcmd}")
+                        @logger.info("connection expired from #{k.addr}:#{k.port},lastcmd = #{k.lastcmd}")
                       else
-                        @log.info("connection expired in irregular connection")
+                        @logger.info("connection expired in irregular connection")
                         dellist << k
                       end
                     rescue Exception => e
-                      @log.error("#{e}\n#{$@}")
+                      @logger.error("#{e}\n#{$@}")
                       dellist << k
                     end
                   end
                 }
                 dellist.each{|k|
-                  @log.info("delete connection lastcmd = #{k.lastcmd}")
+                  @logger.info("delete connection lastcmd = #{k.lastcmd}")
                   Event::Handler::connections.delete(k)
                 }
               end
             }
 
-            @log.info("Now accepting connections on address #{@stats.address}, port #{@stats.port}")
+            @logger.info("Now accepting connections on address #{@stats.address}, port #{@stats.port}")
           end
         rescue Interrupt => e
           if daemon?
-            @log.error("#{e.inspect}\n#{$@}")
+            @logger.error("#{e.inspect}\n#{$@}")
             retry
           else
             $stderr.puts "#{e.inspect}"
           end
         rescue Exception => e
-          @log.error("#{e}\n#{$@}")
-          @log.error("restart an eventmachine")
+          @logger.error("#{e}\n#{$@}")
+          @logger.error("restart an eventmachine")
           retry
         end
       end
@@ -157,12 +146,14 @@ module Roma
       stop
     end
 
-    def daemon?; @stats.daemon; end
+    def daemon?
+      @stats.daemon
+    end
 
     def stop_clean_up
       @stats.last_clean_up = Time.now
       while(@stats.run_storage_clean_up)
-        @log.info("Storage clean up process will be stop.")
+        @logger.info("Storage clean up process will be stop.")
         @storages.each_value{|st| st.stop_clean_up}
         sleep 0.005
       end
@@ -170,7 +161,33 @@ module Roma
 
     private
 
-    def initialize_stats
+    def initialize_stats(options)
+      @stats.daemon = options[:daemon]
+      @stats.join_ap = options[:join]
+      @stats.enabled_repetition_host_in_routing = true if options[:enabled_repeathost]
+      @stats.enabled_repetition_host_in_routing = true if options[:replication_in_host]
+      @stats.disabled_cmd_protect = options[:disabled_cmd_protect]
+      if options[:config]
+        @stats.config_path = File.expand_path(options[:config])
+      else
+        @stats.config_path = 'roma/config'
+      end
+
+      unless require @stats.config_path
+        STDERR.puts "The given configuration file has been already required: #{@stats.config_path}"
+      end
+
+      @stats.address = options[:address]
+      @stats.port = options[:port] || Config::DEFAULT_PORT
+      @stats.name = options[:name] || Config::DEFAULT_NAME
+
+      if @stats.join_ap
+        @stats.join_ap = @stats.join_ap.sub(':', '_')
+        raise "[address:port] can not be parsed." if !(@stats.join_ap =~ /^.+_\d+$/)
+      end
+
+      @stats.verbose = options[:verbose] unless options[:verbose].nil?
+
       if Config.const_defined?(:REDUNDANT_ZREDUNDANT_SIZE)
         @stats.size_of_zredundant = Config::REDUNDANT_ZREDUNDANT_SIZE
       end
@@ -229,9 +246,9 @@ module Roma
       @wb_writer = Roma::WriteBehind::FileWriter.new(
                                                      Roma::Config::WRITEBEHIND_PATH,
                                                      Roma::Config::WRITEBEHIND_SHIFT_SIZE,
-                                                     @log)
+                                                     @logger)
 
-      @cr_writer = Roma::WriteBehind::StreamWriter.new(@log)
+      @cr_writer = Roma::WriteBehind::StreamWriter.new(@logger)
     end
 
     def initialize_plugin
@@ -239,13 +256,13 @@ module Roma
 
       Roma::Config::PLUGIN_FILES.each do|f|
         require "roma/plugin/#{f}"
-        @log.info("roma/plugin/#{f} loaded")
+        @logger.info("roma/plugin/#{f} loaded")
       end
-      Roma::CommandPlugin.plugins.each do|plugin|
+      Roma::CommandPlugin.plugins.each do |plugin|
           Roma::Command::Receiver.class_eval do
             include plugin
           end
-          @log.info("#{plugin.to_s} included")
+          @logger.info("#{plugin.to_s} included")
       end
 
       if @stats.disabled_cmd_protect
@@ -278,90 +295,20 @@ module Roma
       Roma::Logging::RLogger.create_singleton_instance("#{Roma::Config::LOG_PATH}/#{@stats.ap_str}.log",
                                                        Roma::Config::LOG_SHIFT_AGE,
                                                        Roma::Config::LOG_SHIFT_SIZE)
-      @log = Roma::Logging::RLogger.instance
+      @logger = Roma::Logging::RLogger.instance
 
       if Config.const_defined? :LOG_LEVEL
         case Config::LOG_LEVEL
         when :debug
-          @log.level = Roma::Logging::RLogger::Severity::DEBUG
+          @logger.level = Roma::Logging::RLogger::Severity::DEBUG
         when :info
-          @log.level = Roma::Logging::RLogger::Severity::INFO
+          @logger.level = Roma::Logging::RLogger::Severity::INFO
         when :warn
-          @log.level = Roma::Logging::RLogger::Severity::WARN
+          @logger.level = Roma::Logging::RLogger::Severity::WARN
         when :error
-          @log.level = Roma::Logging::RLogger::Severity::ERROR
+          @logger.level = Roma::Logging::RLogger::Severity::ERROR
         end
       end
-    end
-
-    def options(argv)
-      opts = OptionParser.new
-      opts.banner="usage:#{File.basename($0)} [options] address"
-
-      @stats.daemon = false
-      opts.on("-d","--daemon") { |v| @stats.daemon = true }
-
-      opts.on_tail("-h", "--help", "Show this message") {
-        puts opts; exit
-      }
-
-      opts.on("-j","--join [address:port]") { |v| @stats.join_ap = v }
-
-      opts.on("-p", "--port [PORT]") { |v| @stats.port = v }
-
-      @stats.verbose = false
-      opts.on(nil,"--verbose"){ |v| @stats.verbose = true }
-
-      opts.on_tail("-v", "--version", "Show version") {
-        puts "romad.rb #{Roma::VERSION}"; exit
-      }
-
-      opts.on("-n", "--name [name]") { |v| @stats.name = v }
-
-      ##
-      # "--enabled_repeathost" is deplicated. We will rename it to "--replication_in_host"
-      ##
-      @stats.enabled_repetition_host_in_routing = false
-      opts.on(nil,"--enabled_repeathost", "Allow redundancy to same host"){
-        @stats.enabled_repetition_host_in_routing = true
-        puts "Warning: \"--enabled_repeathost\" is deplicated. Please use \"--replication_in_host\""
-      }
-      opts.on(nil,"--replication_in_host", "Allow redundancy to same host"){
-        @stats.enabled_repetition_host_in_routing = true
-      }
-
-      @stats.disabled_cmd_protect = false
-      opts.on(nil,"--disabled_cmd_protect", "Command protection disable while starting"){
-        @stats.disabled_cmd_protect = true
-      }
-
-      opts.on("--config [file path of the config.rb]"){ |v| @stats.config_path = File.expand_path(v) }
-
-      opts.parse!(argv)
-      raise OptionParser::ParseError.new if argv.length < 1
-      @stats.address = argv[0]
-
-      @stats.config_path = 'roma/config' unless @stats.config_path
-
-      unless require @stats.config_path
-        raise "config.rb has already been load outside the romad.rb."
-      end
-
-      @stats.name = Config::DEFAULT_NAME unless @stats.name
-      @stats.port = Config::DEFAULT_PORT.to_s unless @stats.port
-
-      unless @stats.port =~ /^\d+$/
-        raise OptionParser::ParseError.new('Port number is not numeric.')
-      end
-
-      @stats.join_ap.sub!(':','_') if @stats.join_ap
-      if @stats.join_ap && !(@stats.join_ap =~ /^.+_\d+$/)
-        raise OptionParser::ParseError.new('[address:port] can not parse.')
-      end
-    rescue OptionParser::ParseError => e
-      $stderr.puts e.message
-      $stderr.puts opts.help
-      exit 1
     end
 
     def initialize_storages
@@ -385,23 +332,23 @@ module Roma
       st_class ||= Storage::RubyHashStorage
       st_divnum ||= 10
       st_option ||= nil
-      Dir.glob("#{path}/*").each{|f|
-        if File.directory?(f)
-          hname = File.basename(f)
-          st = st_class.new
-          st.storage_path = "#{path}/#{hname}"
-          st.vn_list = @rttable.vnodes
-          st.st_class = st_class
-          st.divnum = st_divnum
-          st.option = st_option
-          @storages[hname] = st
-        end
-      }
-      if @storages.length == 0
+      Dir.glob("#{path}/*").each do |f|
+        next unless File.directory?(f)
+        hname = File.basename(f)
+        st = st_class.new
+        st.storage_path = "#{path}/#{hname}"
+        st.vn_list = @routing_table.vnodes
+        st.st_class = st_class
+        st.divnum = st_divnum
+        st.option = st_option
+        @storages[hname] = st
+      end
+
+      if @storages.empty?
         hname = 'roma'
         st = st_class.new
         st.storage_path = "#{path}/#{hname}"
-        st.vn_list = @rttable.vnodes
+        st.vn_list = @routing_table.vnodes
         st.st_class = st_class
         st.divnum = st_divnum
         st.option = st_option
@@ -409,62 +356,62 @@ module Roma
       end
     end
 
-    def initialize_rttable
+    def initialize_routing_table
       if @stats.join_ap
-        initialize_rttable_join
+        initialize_routing_table_join
       else
-        fname = "#{Roma::Config::RTTABLE_PATH}/#{@stats.ap_str}.route"
-        raise "#{fname} not found." unless File::exist?(fname)
-        rd = Roma::Routing::RoutingData::load(fname)
-        raise "It failed in loading the routing table data." unless rd
+        file_path = "#{Roma::Config::RTTABLE_PATH}/#{@stats.ap_str}.route"
+        raise "#{file_path} not found." unless File::exist?(file_path)
+        routing_data = Roma::Routing::RoutingData::load(file_path)
+        raise "It failed in loading the routing table data." unless routing_data
         if Config.const_defined? :RTTABLE_CLASS
-          @rttable = Config::RTTABLE_CLASS.new(rd,fname)
+          @routing_table = Config::RTTABLE_CLASS.new(routing_data, file_path)
         else
-          @rttable = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
+          @routing_table = Roma::Routing::ChurnbasedRoutingTable.new(routing_data, file_path)
         end
       end
 
       if Roma::Config.const_defined?(:RTTABLE_SUB_NID)
-        @rttable.sub_nid = Roma::Config::RTTABLE_SUB_NID
+        @routing_table.sub_nid = Roma::Config::RTTABLE_SUB_NID
       end
 
       if Roma::Config.const_defined?(:ROUTING_FAIL_CNT_THRESHOLD)
-        @rttable.fail_cnt_threshold = Roma::Config::ROUTING_FAIL_CNT_THRESHOLD
+        @routing_table.fail_cnt_threshold = Roma::Config::ROUTING_FAIL_CNT_THRESHOLD
       end
       if Roma::Config.const_defined?(:ROUTING_FAIL_CNT_GAP)
-        @rttable.fail_cnt_gap = Roma::Config::ROUTING_FAIL_CNT_GAP
+        @routing_table.fail_cnt_gap = Roma::Config::ROUTING_FAIL_CNT_GAP
       end
-      @rttable.lost_action = Roma::Config::DEFAULT_LOST_ACTION
-      @rttable.auto_recover = Roma::Config::AUTO_RECOVER if defined?(Roma::Config::AUTO_RECOVER)
+      @routing_table.lost_action = Roma::Config::DEFAULT_LOST_ACTION
+      @routing_table.auto_recover = Roma::Config::AUTO_RECOVER if defined?(Roma::Config::AUTO_RECOVER)
 
-      @rttable.enabled_failover = false
-      @rttable.set_leave_proc{|nid|
+      @routing_table.enabled_failover = false
+      @routing_table.set_leave_proc{|nid|
         Roma::Messaging::ConPool.instance.close_same_host(nid)
         Roma::Event::EMConPool.instance.close_same_host(nid)
         Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('broadcast_cmd',["leave #{nid}",[@stats.ap_str,nid,5]]))
       }
-      @rttable.set_lost_proc{
-        if @rttable.lost_action == :shutdown
+      @routing_table.set_lost_proc{
+        if @routing_table.lost_action == :shutdown
           async_broadcast_cmd("rbalse lose_data\r\n")
           EventMachine::stop_event_loop
-          @log.error("Romad has stopped, so that lose data.")
+          @logger.error("Roma server has stopped, so that lose data.")
         end
       }
-      @rttable.set_recover_proc{|action|
-        if (@rttable.lost_action == :shutdown || @rttable.lost_action == :auto_assign) && @rttable.auto_recover == true
+      @routing_table.set_recover_proc{|action|
+        if (@routing_table.lost_action == :shutdown || @routing_table.lost_action == :auto_assign) && @routing_table.auto_recover == true
           Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new("#{action}"))
         elsif
-          @log.error("AUTO_RECOVER is off or Unavailable value is set to [DEFAULT_LOST_ACTION] => #{@rttable.lost_action}")
+          @logger.error("AUTO_RECOVER is off or Unavailable value is set to [DEFAULT_LOST_ACTION] => #{@routing_table.lost_action}")
         end
       }
 
       if Roma::Config.const_defined?(:ROUTING_EVENT_LIMIT_LINE)
-        @rttable.event_limit_line = Roma::Config::ROUTING_EVENT_LIMIT_LINE
+        @routing_table.event_limit_line = Roma::Config::ROUTING_EVENT_LIMIT_LINE
       end
       Roma::AsyncProcess::queue.push(Roma::AsyncMessage.new('start_get_routing_event'))
     end
 
-    def initialize_rttable_join
+    def initialize_routing_table_join
       name = async_send_cmd(@stats.join_ap,"whoami\r\n")
       unless name
         raise "No respons from #{@stats.join_ap}."
@@ -475,19 +422,19 @@ module Roma
           "me = \"#{@stats.name}\"  #{@stats.join_ap} = \"#{name}\""
       end
 
-      fname = "#{Roma::Config::RTTABLE_PATH}/#{@stats.ap_str}.route"
-      if rd = get_routedump(@stats.join_ap)
-        rd.save(fname)
+      file_path = "#{Roma::Config::RTTABLE_PATH}/#{@stats.ap_str}.route"
+      if routing_dump = get_routedump(@stats.join_ap)
+        routing_dump.save(file_path)
       else
         raise "It failed in getting the routing table data from #{@stats.join_ap}."
       end
 
-      if rd.nodes.include?(@stats.ap_str)
+      if routing_dump.nodes.include?(@stats.ap_str)
         raise "ROMA has already contained #{@stats.ap_str}."
       end
 
-      @rttable = Roma::Routing::ChurnbasedRoutingTable.new(rd,fname)
-      nodes = @rttable.nodes
+      @routing_table = Roma::Routing::ChurnbasedRoutingTable.new(routing_dump,file_path)
+      nodes = @routing_table.nodes
 
       nodes.each{|nid|
         begin
@@ -497,22 +444,22 @@ module Roma
             raise "Hotscale initialize failed.\n#{nid} is busy."
           end
           Roma::Messaging::ConPool.instance.return_connection(nid, con)
-        rescue =>e
+        rescue => e
           raise "Hotscale initialize failed.\n#{nid} unreachable connection."
         end
       }
-      @rttable.add_node(@stats.ap_str)
+      @routing_table.add_node(@stats.ap_str)
     end
 
     def get_routedump(nid)
       rcv = receive_routing_dump(nid, "routingdump bin\r\n")
       unless rcv
         rcv = receive_routing_dump(nid, "routingdump\r\n")
-        rd = Marshal.load(rcv)
+        routing_dump = Marshal.load(rcv)
       else
-        rd = Routing::RoutingData.decode_binary(rcv)
+        routing_dump = Routing::RoutingData.decode_binary(rcv)
       end
-      rd
+      routing_dump
     rescue
       nil
     end
@@ -560,8 +507,8 @@ module Roma
     end
 
     def timer_event_1sec
-      if @rttable.enabled_failover
-        nodes=@rttable.nodes
+      if @routing_table.enabled_failover
+        nodes=@routing_table.nodes
         nodes.delete(@stats.ap_str)
         nodes_check(nodes)
       end
@@ -571,30 +518,30 @@ module Roma
         stop_clean_up
       end
     rescue Exception =>e
-      @log.error("#{e}\n#{$@}")
+      @logger.error("#{e}\n#{$@}")
     end
 
     def timer_event_10sec
-      if @startup && @rttable.enabled_failover == false
-        @log.debug("nodes_check start")
-        nodes=@rttable.nodes
+      if @startup && @routing_table.enabled_failover == false
+        @logger.debug("nodes_check start")
+        nodes=@routing_table.nodes
         nodes.delete(@stats.ap_str)
         if nodes_check(nodes)
-          @log.info("all nodes started")
+          @logger.info("all nodes started")
           AsyncProcess::queue.clear
-          @rttable.enabled_failover = true
+          @routing_table.enabled_failover = true
           Command::Receiver::mk_evlist
           @startup = false
         end
-      elsif @rttable.enabled_failover == false
-        @log.warn("failover disable now!!")
+      elsif @routing_table.enabled_failover == false
+        @logger.warn("failover disable now!!")
       else
         version_check
-        @rttable.delete_old_trans(@stats.routing_trans_timeout)
+        @routing_table.delete_old_trans(@stats.routing_trans_timeout)
         start_sync_routing_process
       end
 
-      if (@rttable.enabled_failover &&
+      if (@routing_table.enabled_failover &&
           @stats.run_storage_clean_up == false &&
           @stats.run_balance == false &&
           @stats.run_recover == false &&
@@ -610,13 +557,13 @@ module Roma
           nid = @cr_writer.replica_nodelist.sample
           @cr_writer.update_mklhash(nid)
           @cr_writer.update_nodelist(nid)
-          @cr_writer.update_rttable(nid)
+          @cr_writer.update_routing_table(nid)
         end
       end
 
       @stats.clear_counters
     rescue Exception =>e
-      @log.error("#{e}\n#{$@}")
+      @logger.error("#{e}\n#{$@}")
     end
 
     def nodes_check(nodes)
@@ -627,30 +574,30 @@ module Roma
     end
 
     def node_check(nid)
-      if @startup && @rttable.enabled_failover == false
+      if @startup && @routing_table.enabled_failover == false
         unless Roma::Messaging::ConPool.instance.check_connection(nid)
-          @log.info("I'm waiting for booting the #{nid} instance.")
+          @logger.info("I'm waiting for booting the #{nid} instance.")
           return false
         end
       end
       name = async_send_cmd(nid,"whoami\r\n",2)
       return false unless name
       if name != @stats.name
-        @log.error("#{nid} has diffarent name.")
-        @log.error("me = \"#{@stats.name}\"  #{nid} = \"#{name}\"")
+        @logger.error("#{nid} has diffarent name.")
+        @logger.error("me = \"#{@stats.name}\"  #{nid} = \"#{name}\"")
         return false
       end
       return true
     end
 
     def version_check
-      nodes=@rttable.nodes
+      nodes=@routing_table.nodes
       nodes.each{|nid|
         vs = async_send_cmd(nid,"version\r\n",2)
         next unless vs
         if /VERSION\s(?:ROMA-)?(\d+)\.(\d+)\.(\d+)/ =~ vs
           ver = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
-          @rttable.set_version(nid, ver)
+          @routing_table.set_version(nid, ver)
         end
       }
     end
@@ -658,14 +605,14 @@ module Roma
     def start_sync_routing_process
       return if @stats.run_join || @stats.run_recover || @stats.run_balance || @stats.run_sync_routing
 
-      nodes = @rttable.nodes
+      nodes = @routing_table.nodes
       return if nodes.length == 1 && nodes[0] == @stats.ap_str
 
       @stats.run_sync_routing = true
 
       idx=nodes.index(@stats.ap_str)
       unless idx
-        @log.error("My node-id(=#{@stats.ap_str}) does not found in the routingtable.")
+        @logger.error("My node-id(=#{@stats.ap_str}) does not found in the routingtable.")
         EventMachine::stop_event_loop
         return
       end
@@ -673,24 +620,24 @@ module Roma
         begin
           ret = routing_hash_comparison(nodes[idx-1])
           if ret == :inconsistent
-            @log.info("create nodes from v_idx");
+            @logger.info("create nodes from v_idx");
 
-            @rttable.create_nodes_from_v_idx
+            @routing_table.create_nodes_from_v_idx
             begin
               con = Roma::Messaging::ConPool.instance.get_connection(nodes[idx-1])
               con.write("create_nodes_from_v_idx\r\n")
               if con.gets == "CREATED\r\n"
                 Roma::Messaging::ConPool.instance.return_connection(nodes[idx-1], con)
               else
-                @log.error("get busy result in create_nodes_from_v_idx command from #{nodes[idx-1]}.")
+                @logger.error("get busy result in create_nodes_from_v_idx command from #{nodes[idx-1]}.")
                 con.close
               end
             rescue Exception =>e
-              @log.error("create_nodes_from_v_idx command unreachable to the #{nodes[idx-1]}.")
+              @logger.error("create_nodes_from_v_idx command unreachable to the #{nodes[idx-1]}.")
             end
           end
         rescue Exception =>e
-          @log.error("#{e}\n#{$@}")
+          @logger.error("#{e}\n#{$@}")
         end
         @stats.run_sync_routing = false
       }
@@ -701,8 +648,8 @@ module Roma
       return :skip if @stats.run_join || @stats.run_recover || @stats.run_balance
 
       h = async_send_cmd(nid,"mklhash #{id}\r\n")
-      if h && h.start_with?("ERROR") == false && @rttable.mtree.get(id) != h
-        if (id.length - 1) == @rttable.div_bits
+      if h && h.start_with?("ERROR") == false && @routing_table.mtree.get(id) != h
+        if (id.length - 1) == @routing_table.div_bits
           sync_routing(nid,id)
         else
           routing_hash_comparison(nid,"#{id}0")
@@ -714,80 +661,124 @@ module Roma
     end
 
     def sync_routing(nid,id)
-      vn = @rttable.mtree.to_vn(id)
-      @log.warn("vn=#{vn} inconsistent")
+      vn = @routing_table.mtree.to_vn(id)
+      @logger.warn("vn=#{vn} inconsistent")
 
       res = async_send_cmd(nid,"getroute #{vn}\r\n")
       return if res == nil || res.start_with?("ERROR")
       clk,*nids = res.split(' ')
-      clk = @rttable.set_route(vn, clk.to_i, nids)
+      clk = @routing_table.set_route(vn, clk.to_i, nids)
 
       if clk.is_a?(Integer) == false
-        clk,nids = @rttable.search_nodes_with_clk(vn)
+        clk,nids = @routing_table.search_nodes_with_clk(vn)
         cmd = "setroute #{vn} #{clk-1}"
         nids.each{|nid2| cmd << " #{nid2}" }
         async_send_cmd(nid,"#{cmd}\r\n")
       end
     end
 
-    def async_send_cmd(nid, cmd, tout=nil)
-      con = res = nil
-      if tout
-        Timeout.timeout(tout){
-          con = Roma::Messaging::ConPool.instance.get_connection(nid)
-          unless con
-            @rttable.proc_failed(nid) if @rttable
-            @log.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
-            return nil
-          end
-          con.write(cmd)
-          res = con.gets
-        }
-      else
-        con = Roma::Messaging::ConPool.instance.get_connection(nid)
-        unless con
-          @rttable.proc_failed(nid) if @rttable
-          @log.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
+    def async_send_cmd(nid, cmd, timeout_sec=nil)
+      connection = res = nil
+      Timeout.timeout(timeout_sec) do
+        connection = Roma::Messaging::ConPool.instance.get_connection(nid)
+        unless connection
+          @routing_table.proc_failed(nid) if @routing_table
+          @logger.error("#{__FILE__}:#{__LINE__}:#{nid} connection refused,command is #{cmd}.")
           return nil
         end
-        con.write(cmd)
-        res = con.gets
+        connection.write(cmd)
+        res = connection.gets
       end
       if res == nil
-        @rttable.proc_failed(nid) if @rttable
+        @routing_table.proc_failed(nid) if @routing_table
         return nil
       elsif res.start_with?("ERROR") == false
-        @rttable.proc_succeed(nid) if @rttable
-        Roma::Messaging::ConPool.instance.return_connection(nid, con)
+        @routing_table.proc_succeed(nid) if @routing_table
+        Roma::Messaging::ConPool.instance.return_connection(nid, connection)
       end
       res.chomp
     rescue Exception => e
-      @rttable.proc_failed(nid) if @rttable
-      @log.error("#{__FILE__}:#{__LINE__}:#{e} #{$@}")
-      @log.error("#{__FILE__}:#{__LINE__}:Send command failed that node-id is #{nid},command is #{cmd}.")
+      @routing_table.proc_failed(nid) if @routing_table
+      @logger.error("#{__FILE__}:#{__LINE__}:#{e} #{$@}")
+      @logger.error("#{__FILE__}:#{__LINE__}:Send command failed that node-id is #{nid},command is #{cmd}.")
       nil
     end
 
     def async_broadcast_cmd(cmd,without_nids=nil,tout=nil)
       without_nids=[@stats.ap_str] unless without_nids
       res = {}
-      @rttable.nodes.each{ |nid|
+      @routing_table.nodes.each{ |nid|
         res[nid] = async_send_cmd(nid,cmd,tout) unless without_nids.include?(nid)
       }
       res
     rescue Exception => e
-      @log.error("#{e}\n#{$@}")
+      @logger.error("#{e}\n#{$@}")
       nil
     end
 
     def stop
-      @storages.each_value{|st|
-        st.closedb
-      }
-      if @rttable.instance_of?(Roma::Routing::ChurnbasedRoutingTable)
-        @rttable.close_log
+      @storages.each_value do |storage|
+        storage.closedb
       end
-      @log.info("Romad has stopped: #{@stats.ap_str}")
+      if @routing_table.instance_of?(Roma::Routing::ChurnbasedRoutingTable)
+        @routing_table.close_log
+      end
+      File.delete pid_file_path if File.exist?(pid_file_path)
+      @logger.info("Roma server has stopped: #{@stats.ap_str}")
+    end
+
+    def validate_version_number_in_config
+      # config version check
+      if !Config.const_defined?(:VERSION)
+        @logger.error("ROMA FAIL TO BOOT! : config.rb's version is too old.")
+        exit
+      elsif Config::VERSION != Roma::VERSION
+        if /(\d+)\.(\d+)\.(\d+)/ =~ Config::VERSION
+          version_config = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
+        end
+        if /(\d+)\.(\d+)\.(\d+)/ =~ Roma::VERSION
+          version_roma = ($1.to_i << 16) + ($2.to_i << 8) + $3.to_i
+        end
+
+        if version_config == version_roma
+          @logger.info("This version is development version.")
+        else
+          @logger.error("ROMA FAIL TO BOOT! : config.rb's version is differ from current ROMA version.")
+          exit
+        end
+      end
+    end
+
+    def daemonize
+      Process.daemon(true, true)
+    end
+
+    def check_pid!
+      return unless File.exist?(pid_file_path)
+      begin
+        pid = File.read(pid_file_path).to_i
+        File.delete(pid_file_path) if pid.zero?
+
+        $stderr.puts "A server is already running. Check #{pid_file_path}"
+        exit(1)
+      rescue Errno::ESRCH
+        File.delete(pid_file_path)
+      rescue Errno::EPERM
+        $stderr.puts "A server is already running. Check #{pid_file_path}"
+        exit(1)
+      end
+    end
+
+    def write_pid
+      File.open(pid_file_path, 'w') { |f| f.write(Process.pid.to_s) }
+      at_exit { FileUtils.rm_f(pid_file_path) }
+    rescue Errno::EEXIST
+      check_pid!
+      retry
+    end
+
+    def pid_file_path
+      File.expand_path("./#{@stats.address}_#{@stats.port}.pid", DEFAULT_PID_DIR)
     end
 
   end # class Romad

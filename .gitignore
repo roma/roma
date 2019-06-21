@@ -11,3 +11,4 @@ wb_test
 localhost_*
 127.0.0.1_*
 coverage/
+tmp/pids/*.pid

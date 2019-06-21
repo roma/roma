@@ -3,9 +3,7 @@ require 'roma/routing/random_balancer'
 
 module Roma
   module Routing
-
     class RoutingData
-
       include Routing::RandomBalancer
 
       attr_accessor :dgst_bits
@@ -15,49 +13,55 @@ module Roma
       attr_accessor :v_idx
       attr_accessor :v_clk
 
-      def initialize(dgst_bits,div_bits,rn)
-        @dgst_bits=dgst_bits
-        @div_bits=div_bits
-        @rn=rn
-        @nodes=[]
-        @v_idx={}
-        @v_clk={}
+      DEFAULT_DIGEST_BIT_SIZE = 32
+      DEFAULT_DIVIDE_BIT_SIZE = 9
+      DEFAULT_REDUNDANT_SIZE = 2
+      MAX_BIT_LENGTH = 32
+
+      def initialize(dgst_bits = DEFAULT_DIGEST_BIT_SIZE, div_bits = DEFAULT_DIVIDE_BIT_SIZE, rn = DEFAULT_REDUNDANT_SIZE)
+        raise ArgumentError, 'The hash bits should be divide bits or more' if dgst_bits < div_bits
+        raise ArgumentError, "The upper bound of divide bits is #{MAX_BIT_LENGTH}." if div_bits > MAX_BIT_LENGTH
+
+        @dgst_bits = dgst_bits
+        @div_bits = div_bits
+        @rn = rn
+        @nodes = []
+        @v_idx = {}
+        @v_clk = {}
       end
 
-      def save(fname)
+      def save
         @nodes.sort!
-        open(fname,'wb'){|io|
-          io.write(YAML.dump(self))
-        }
+        @nodes.each do |node|
+          file_path = "#{node}.route"
+          open(file_path, 'wb') do |io|
+            YAML.dump(self, io)
+          end
+        end
       end
 
       def self.load(fname)
-        rd=load_snapshot(fname)
+        rd = load_snapshot(fname)
         rd.load_log_all(fname)
         rd
       end
 
-      def self.load_snapshot(fname)
-        rd=nil
-        open(fname,'rb'){|io|
-          rd = YAML.load(io.read)
-        }
-        rd
+      def self.load_snapshot(file_path)
+        YAML.load_file(file_path)
       end
 
-      def self.snapshot(fname)
-        rd=load_snapshot(fname)
-        loglist=rd.get_file_list(fname)
-        if loglist.length<2
-          return false
-        end
+      def self.snapshot(file_name)
+        rd = load_snapshot(file_name)
+        loglist = rd.get_file_list(file_name)
+        return false if loglist.length < 2
+
         loglist.delete(loglist.last)
-        loglist.each{|i,f|
+        loglist.each do |i,f|
           rd.load_log_one(f)
-          File.rename(f,"#{f}~")
-        }
-        File.rename(fname,"#{fname}~")
-        rd.save(fname)
+          File.rename(f, "#{f}~")
+        end
+        File.rename(file_name, "#{file_name}~")
+        rd.save(file_name)
         true
       end
 
@@ -66,37 +70,37 @@ module Roma
         raise 'Illegal format error' if magic != 'RT'
         raise 'Unsupported version error' if ver != 1
 
-        rd = RoutingData.new(dgst_bits, div_bits, rn)
-        
+        routing_data = RoutingData.new(dgst_bits, div_bits, rn)
+
         bin = bin[9..-1]
-        nodeslen.times{|i|
+        nodeslen.times do |i|
           len, = bin.unpack('n')
           bin = bin[2..-1]
           nid, = bin.unpack("a#{len}")
           bin = bin[len..-1]
-          nid.encode!("utf-8") if RUBY_VERSION >= "1.9.3"
-          rd.nodes << nid 
-        }
-        (2**div_bits).times{|i|
-          vn=i<<(dgst_bits-div_bits)
-          v_clk,len = bin.unpack('Nc')
-          rd.v_clk[vn] = v_clk
+          nid.encode!("utf-8")
+          routing_data.nodes << nid
+        end
+        (2**div_bits).times do |i|
+          vn = i << (dgst_bits - div_bits)
+          v_clk, len = bin.unpack('Nc')
+          routing_data.v_clk[vn] = v_clk
           bin = bin[5..-1]
-          len.times{|i|
+          len.times do |i|
             idx, = bin.unpack('n')
-            rd.v_idx[vn] = [] unless rd.v_idx[vn]
-            rd.v_idx[vn] << rd.nodes[idx]
+            routing_data.v_idx[vn] ||= []
+            routing_data.v_idx[vn] << routing_data.nodes[idx]
             bin = bin[2..-1]
-          }
-        }
-        rd
+          end
+        end
+        routing_data
       end
 
       # for deep copy
       def clone
         Marshal.load(Marshal.dump(self))
       end
- 
+
       # 2 bytes('RT'):magic code
       # unsigned short:format version
       # unsigned char:dgst_bits
@@ -146,7 +150,7 @@ module Roma
             line.chomp!
             next if line[0]=="#" || line.length==0
             if line =~ /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.\d+\s(.+)/
-              yield Time.mktime($1, $2, $3, $4, $5, $6), $7 
+              yield Time.mktime($1, $2, $3, $4, $5, $6), $7
             end
           end
         }
@@ -213,23 +217,25 @@ module Roma
         ret
       end
 
-      def self.create(dgst_bits,div_bits,rn,nodes,repethost=false)
-        ret=RoutingData.new(dgst_bits,div_bits,rn)
-        ret.nodes=nodes.clone
+      def self.create(digest_bit_size: DEFAULT_DIGEST_BIT_SIZE, divide_bit_size: DEFAULT_DIVIDE_BIT_SIZE, redundant: DEFAULT_REDUNDANT_SIZE, nodes: [], replication_in_host: false)
+        raise ArgumentError, 'The node-id number should be redundant number or more.' if nodes.length < redundant
 
-        rnlm=RandomNodeListMaker.new(nodes,repethost)
+        routing_data = RoutingData.new(digest_bit_size, divide_bit_size, redundant)
+        routing_data.nodes = nodes.clone
 
-        (2**div_bits).times do |i|
-          vn=i<<(dgst_bits-div_bits)
-          ret.v_clk[vn]=0
-          ret.v_idx[vn]=rnlm.list(rn)
+        rnlm = RandomNodeListMaker.new(nodes, replication_in_host)
+
+        (2**divide_bit_size).times do |i|
+          vn = i<<(digest_bit_size - divide_bit_size)
+          routing_data.v_clk[vn] = 0
+          routing_data.v_idx[vn] = rnlm.list(redundant)
         end
 
         # vnode balanceing process
-        rlist = ret.get_balanced_vn_replacement_list(repethost)
-        ret.balance!(rlist, repethost) if rlist
+        rlist = routing_data.get_balanced_vn_replacement_list(replication_in_host)
+        routing_data.balance!(rlist, replication_in_host) if rlist
 
-        ret
+        routing_data
       end
 
       # Returns the log file list by old ordered.
@@ -275,7 +281,7 @@ module Roma
             else
               @host_idx[h]=[nid]
             end
-          }          
+          }
         end
 
         # Returns the random node-list without repetition.
@@ -294,7 +300,7 @@ module Roma
           }
           ret
         end
-        
+
         # +exp_hosts+:: ignore
         # +exp_nodes+:: exceptional nodes(ex.['roma0_11211'])
         def get_other_one_repethost(exp_hosts,exp_nodes)
@@ -309,7 +315,7 @@ module Roma
           hidx=@host_idx.clone
           exp_hosts.each{|h| hidx.delete(h) }
           return nil if hidx.length == 0
-          
+
           rh=hidx.keys[rand(hidx.keys.length)]
           nodes=hidx[rh]
           nodes[rand(nodes.length)]
